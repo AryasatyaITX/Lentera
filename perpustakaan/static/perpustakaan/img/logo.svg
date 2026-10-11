@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
+    <title>LENTERA — Literatur Teknik dan Referensi Akademik</title>
+    <desc>Logo minimalis berupa lentera yang berdiri di atas buku terbuka.</desc>
+    <rect width="512" height="512" rx="112" fill="#173C3A"/>
+    <!-- glow -->
+    <path d="M256 78v-22M201 93l-11-19M311 93l11-19" stroke="#DFFF68" stroke-width="12" stroke-linecap="round"/>
+    <!-- lantern handle -->
+    <path d="M201 169v-22c0-36 25-63 55-63s55 27 55 63v22" stroke="#F7FBF4" stroke-width="13" stroke-linecap="round"/>
+    <!-- lantern cap -->
+    <path d="M190 169h132l-17 25H207l-17-25Z" fill="#DFFF68"/>
+    <path d="M207 194h98v102h-98V194Z" fill="#F7FBF4"/>
+    <path d="M207 194h98M207 296h98" stroke="#F7FBF4" stroke-width="13" stroke-linecap="round"/>
+    <!-- lantern window and flame -->
+    <path d="M222 211h68v67h-68v-67Z" fill="#BDEBCE"/>
+    <path d="M256 266c-16-13-14-26 1-42 3 12 12 16 12 27 0 7-5 12-13 15Z" fill="#DFFF68"/>
+    <!-- lantern base -->
+    <path d="M190 296h132l-17 24H207l-17-24Z" fill="#DFFF68"/>
+    <!-- book -->
+    <path d="M256 348c-39-28-91-34-145-15-9 3-15 12-15 22v58c0 13 12 22 25 19 50-12 93-4 135 25V348Z" fill="#F7FBF4"/>
+    <path d="M256 348c39-28 91-34 145-15 9 3 15 12 15 22v58c0 13-12 22-25 19-50-12-93-4-135 25V348Z" fill="#BDEBCE"/>
+    <path d="M256 348v109M119 378c40-9 83-1 119 21M119 407c40-9 83-1 119 21M393 378c-40-9-83-1-119 21M393 407c-40-9-83-1-119 21" stroke="#173C3A" stroke-width="10" stroke-linecap="round" opacity=".72"/>
+    <path d="M101 444c56-20 108-14 155 17 47-31 99-37 155-17" stroke="#DFFF68" stroke-width="13" stroke-linecap="round"/>
+</svg>

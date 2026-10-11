@@ -9,48 +9,84 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1001">
-    <script src="{% static 'perpustakaan/js/script.js' %}" defer></script>
+    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1015">
+    <script src="{% static 'perpustakaan/js/script.js' %}?v=2" defer></script>
     <script src="{% static 'perpustakaan/js/buku.js' %}?v=3" defer></script>
 </head>
 <body>
 
-    
-    <div class="sidebar">
+    <div class="app-layout" id="appLayout">
+        <div class="sidebar">
+            <div class="sidebar-brand">
+            <img src="{% static 'perpustakaan/img/logo.svg' %}" alt="Logo Lentera" class="sidebar-logo">
+            <div>
+                <h2>lentera<span>.</span></h2>
+            </div>
+        </div>
+
         <ul class="sidebar-menu">
             <li><a href="#" class="active"><i class="fas fa-border-all"></i> Dashboard</a></li>
             <li><a href="{% url 'katalog' %}"><i class="fas fa-book"></i> Katalog Buku</a></li>
             <li><a href="{% url 'ejournal' %}"><i class="fas fa-file-alt"></i> E-journal</a></li>
-            <li><a href="{% url 'peminjaman' %}"><i class="fas fa-book-reader"></i> Peminjaman</a></li>
-            <li><a href="{% url 'bookmarks' %}" class="{% if request.resolver_match.url_name == 'bookmarks' %}active{% endif %}"><i class="fas fa-heart"></i> Bookmarks</a></li>
+            <li>
+                <a href="{% url 'peminjaman' %}">
+                    <i class="fas fa-book-reader"></i> Peminjaman
+                    {% if sedang_dipinjam %}<span class="menu-badge">{{ sedang_dipinjam }}</span>{% endif %}
+                </a>
+            </li>
+            <li><a href="{% url 'bookmarks' %}"><i class="fas fa-heart"></i> Bookmarks</a></li>
             <li><a href="{% url 'riwayat' %}"><i class="fas fa-history"></i> Riwayat Peminjaman</a></li>
             <li><a href="{% url 'leaderboard' %}"><i class="fas fa-trophy"></i> Top List Reader</a></li>
             <li><a href="{% url 'profil' %}"><i class="fas fa-user"></i> Profil</a></li>
         </ul>
-        
+
         <div class="sidebar-profile">
-            <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=D4F838&color=121824" alt="Avatar">
+            <div class="avatar-circle">
+                {% if user.foto_profil %}
+                    <img src="{{ user.foto_profil.url }}" alt="Avatar">
+                {% else %}
+                    {{ user.nama_tampilan|default:user.username|slice:2|upper }}
+                {% endif %}
+            </div>
             <div>
-                <h4>{{ user.username }}</h4>
-                <p>Anggota</p>
+                <h4>{{ user.nama_tampilan|default:user.username }}</h4>
+                <p>User / Anggota</p>
             </div>
         </div>
     </div>
 
-    
     <div class="main-content">
-        
         <div class="top-nav">
-            <div class="greeting">
-                <h4>{{ user.username }} / Anggota</h4>
-                <h1 class="page-title-space">Selamat Datang, {{ user.nama_tampilan|default:user.username }}</h1>
-                <p>Siap menemukan bacaan baru hari ini?</p>
+            <div class="top-nav-left">
+                <button id="menuButton" 
+                        class="menu-button" 
+                        type="button" 
+                        aria-label="Buka atau tutup menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="top-divider"></div>
+                <div class="greeting">
+                    <h4> Lentera / Anggota</h4>
+                    <h1 class="page-title-space">
+                        <span id="salam">Selamat Datang</span>, {{ user.nama_tampilan|default:user.username }}
+                    </h1>
+                    <p>Siap menemukan bacaan baru hari ini?</p>
+                </div>
             </div>
             <div class="nav-actions">
                 <i class="far fa-bell"></i>
-                <div class="avatar-circle">{{ user.username|make_list|first|upper }}</div>
-                
-                <a href="{% url 'logout' %}" style="margin-left:15px; color:#dc2626; font-size: 20px;" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
+                <div class="avatar-circle">
+                    {% if user.foto_profil %}
+                        <img src="{{ user.foto_profil.url }}" alt="Avatar">
+                    {% else %}
+                        {{ user.nama_tampilan|default:user.username|slice:2|upper }}
+                    {% endif %}
+                </div>
+                <a href="{% url 'logout' %}"
+                        style="margin-left:15px; color:#dc2626; font-size:20px;"
+                        title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
             </div>
         </div>
 
@@ -59,14 +95,17 @@
             <h2>Temukan ide baru,<br><span>satu halaman</span> setiap hari.</h2>
             <p>Temukan ribuan ebook, lanjutkan bacaan, simpan wishlist, dan akses artikel literasi dalam satu aplikasi yang cepat dan mudah digunakan.</p>
             
-            <a href="{% url 'katalog' %}" class="btn-katalog">Jelajahi Katalog <i class="fas fa-arrow-right"></i></a>
+            <div class="hero-actions">
+                <a href="{% url 'katalog' %}" class="btn-katalog">Jelajahi Katalog <i class="fas fa-arrow-right"></i></a>
+
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="hero-search" placeholder="Cari judul atau penulis, lalu tekan Enter...">
+                </div>
+            </div>
 
             <div class="hero-decoration">
                 <i class="fas fa-book-open"></i>
-            </div>
-
-            <div class="search-bar">
-                <input type="text" id="hero-search" placeholder="Cari judul atau penulis, lalu tekan Enter">
             </div>
         </div>
 
@@ -98,8 +137,8 @@
             </div>
             <div class="stat-card c-purple">
                 <h4>Peringkat & EXP</h4>
-                <h2>{{ user.exp }}</h2>
-                <p>Total EXP Point</p>
+                <h2>#{{ peringkat }}</h2>
+                <p>{{ user.exp }} Total EXP Point</p>
             <svg class="stat-icon" width="22" height="22"
                 style="position:absolute; top:20px; right:20px; width:22px; height:22px; color:#000;"
                 xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
@@ -143,18 +182,23 @@
                 
                 <div class="continue-card">
                     {% if bacaan_terakhir %}
-                        {% if bacaan_terakhir.buku_digital %}
-                        <a href="{% url 'baca_buku' bacaan_terakhir.buku_digital.id_item %}" title="Lanjut membaca">
-                            <img src="{% if bacaan_terakhir.buku_digital.cover %}{{ bacaan_terakhir.buku_digital.cover }}{% else %}https://images.unsplash.com/photo-1532012197267-da84d127e765?w=120{% endif %}" alt="Cover">
-                        </a>
-                        {% endif %}
-                        <div class="continue-info" style="width: 100%;">
-                            <h3>{{ bacaan_terakhir.buku_digital.judul }}</h3>
-                            <p>Progress Membaca</p>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="--progress: {{ bacaan_terakhir.progress_baca|default:0 }}%;"></div>
+                        <div class="cc-top">
+                            <a href="{% url 'baca_buku' bacaan_terakhir.buku_digital.id_item %}" class="cc-cover" title="Lanjut membaca">
+                                <img src="{% if bacaan_terakhir.buku_digital.cover %}{{ bacaan_terakhir.buku_digital.cover }}{% else %}https://images.unsplash.com/photo-1532012197267-da84d127e765?w=120{% endif %}" alt="Cover">
+                            </a>
+
+                            <div class="cc-info">
+                                <h3>{{ bacaan_terakhir.buku_digital.judul }}</h3>
+                                <p class="cc-label">Progress Membaca</p>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="--progress: {{ bacaan_terakhir.progress_baca|default:0 }}%;"></div>
+                                </div>
+                                <p class="cc-meta">{{ bacaan_terakhir.progress_baca|default:0 }}%</p>
                             </div>
                         </div>
+                        <a href="{% url 'peminjaman' %}" class="cc-footer">
+                            Lihat peminjaman <i class="fas fa-arrow-right"></i>
+                        </a>
                     {% else %}
                         <div class="continue-info">
                             <h3>Belum ada bacaan</h3>
@@ -163,8 +207,24 @@
                     {% endif %}
                 </div>
             </div>
-
         </div>
     </div>
+
+<script>
+    (function () {
+        var jam = new Date().getHours();
+        var salam = "Selamat Malam";           // 18.00 - 03.59
+        if (jam >= 4 && jam < 11) {
+            salam = "Selamat Pagi";            // 04.00 - 10.59
+        } else if (jam >= 11 && jam < 15) {
+            salam = "Selamat Siang";           // 11.00 - 14.59
+        } else if (jam >= 15 && jam < 18) {
+            salam = "Selamat Sore";            // 15.00 - 17.59
+        }
+        var el = document.getElementById("salam");
+        if (el) el.textContent = salam;
+    })();
+    
+</script>
 </body>
 </html>

@@ -9,134 +9,138 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1001">
-    <script src="{% static 'perpustakaan/js/script.js' %}" defer></script>
+    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1013">
+    <script src="{% static 'perpustakaan/js/script.js' %}?v=4" defer></script>
     <script src="{% static 'perpustakaan/js/buku.js' %}?v=3" defer></script>
 </head>
-<body class="app-body">
+<body>
 
-    
-    <div class="sidebar">
-        <ul class="sidebar-menu">
-            <li><a href="{% url 'dashboard' %}"><i class="fas fa-border-all"></i> Dashboard</a></li>
-            <li><a href="{% url 'katalog' %}" class="active"><i class="fas fa-book"></i> Katalog Buku</a></li>
-            <li><a href="{% url 'ejournal' %}"><i class="fas fa-file-alt"></i> E-journal</a></li>
-            <li><a href="{% url 'peminjaman' %}"><i class="fas fa-book-reader"></i> Peminjaman</a></li>
-            <li><a href="{% url 'bookmarks' %}"><i class="fas fa-heart"></i> Bookmarks</a></li>
-            <li><a href="{% url 'riwayat' %}"><i class="fas fa-history"></i> Riwayat Peminjaman</a></li>
-            <li><a href="{% url 'leaderboard' %}"><i class="fas fa-trophy"></i> Top List Reader</a></li>
-            <li><a href="{% url 'profil' %}"><i class="fas fa-user"></i> Profil</a></li>
-        </ul>
+    <div class="app-layout" id="appLayout">
 
-        <div class="sidebar-profile">
-            <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=D4F838&color=121824" alt="Avatar">
-            <div>
-                <h4>{{ user.nama_tampilan|default:user.username }}</h4>
-                <p>Anggota</p>
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-brand">
+                <img src="{% static 'perpustakaan/img/logo.svg' %}" alt="Logo Lentera" class="sidebar-logo">
+                <div>
+                    <h2>lentera<span>.</span></h2>
+                    <p>LAYANAN REFERENSI TEKNIK</p>
+                </div>
+            </div>
+
+            <ul class="sidebar-menu">
+                <li><a href="{% url 'dashboard' %}"><i class="fas fa-border-all"></i> Dashboard</a></li>
+                <li><a href="{% url 'katalog' %}" class="active"><i class="fas fa-book"></i> Katalog Buku</a></li>
+                <li><a href="{% url 'ejournal' %}"><i class="fas fa-file-alt"></i> E-journal</a></li>
+                <li><a href="{% url 'peminjaman' %}"><i class="fas fa-book-reader"></i> Peminjaman</a></li>
+                <li><a href="{% url 'bookmarks' %}"><i class="fas fa-heart"></i> Bookmarks</a></li>
+                <li><a href="{% url 'riwayat' %}"><i class="fas fa-history"></i> Riwayat Peminjaman</a></li>
+                <li><a href="{% url 'leaderboard' %}"><i class="fas fa-trophy"></i> Top List Reader</a></li>
+                <li><a href="{% url 'profil' %}"><i class="fas fa-user"></i> Profil</a></li>
+            </ul>
+
+            <!-- Sidebar Profile Sinkron -->
+            <div class="sidebar-profile">
+                <div class="avatar-circle">
+                    {% if user.foto_profil %}
+                        <img src="{{ user.foto_profil.url }}" alt="Avatar">
+                    {% else %}
+                        {{ user.nama_tampilan|default:user.username|make_list|first|upper }}
+                    {% endif %}
+                </div>
+                <div>
+                    <h4>{{ user.nama_tampilan|default:user.username }}</h4>
+                    <p>User / Anggota</p>
+                </div>
             </div>
         </div>
-    </div>
 
-    
-    <div class="main-content">
+        <!-- Main Content -->
+        <div class="main-content">
 
-        <nav class="bd-crumb" aria-label="Navigasi">
-            <a href="{% url 'katalog' %}"><i class="fas fa-arrow-left"></i> Kembali ke katalog</a>
-        </nav>
-
-        {% for message in messages %}
-        <div class="alert-msg {{ message.tags }}" role="status">{{ message }}</div>
-        {% endfor %}
-
-        <div class="alert-msg warning" id="bd-error" role="status" hidden></div>
-
-        <div id="bd-page" data-olid="{{ olid }}" data-in-db="{% if buku_db %}1{% endif %}">
-
-        
-        <section class="bd-hero">
-            <div class="bd-cover-wrap">
-                {% if pinjam_aktif %}
-                <a href="{% url 'baca_buku' olid %}" class="bd-cover-link" title="Klik untuk membaca">
-                    <img src="https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400" alt="" class="bd-cover" id="bd-cover">
-                    <span class="bd-cover-hint"><i class="fas fa-book-open"></i> Baca</span>
+            <!-- Top Nav dengan Tombol Profil / Sinkronisasi Foto -->
+        <div class="top-nav" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 10px;">
+            <div class="nav-actions">
+                <i class="far fa-bell" style="margin-right: 15px; cursor: pointer;"></i>
+                <a href="{% url 'profil' %}" style="display: inline-block;">
+                    {% if user.foto_profil %}
+                        <img src="{{ user.foto_profil.url }}?v={{ user.last_login|date:'U' }}" alt="Avatar" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid #D4F838;">
+                    {% else %}
+                        <div class="avatar-circle" style="display: flex; align-items: center; justify-content: center; width: 35px; height: 35px; border-radius: 50%; background: #D4F838; color: #1e293b; font-weight: bold;">{{ user.username|make_list|first|upper }}</div>
+                    {% endif %}
                 </a>
-                {% else %}
-                <img src="https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400" alt="" class="bd-cover" id="bd-cover">
-                {% endif %}
+                <a href="{% url 'logout' %}" style="margin-left: 15px; color: #dc2626; font-size: 20px;" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
             </div>
+        </div>
 
-            <div class="bd-main">
-                <p class="bd-type">Buku Digital</p>
-                <h1 class="bd-title" id="bd-title">Memuat buku...</h1>
-                <p class="bd-author" id="bd-author">&nbsp;</p>
+            <nav class="bd-crumb" aria-label="Navigasi">
+                <a href="{% url 'katalog' %}"><i class="fas fa-arrow-left"></i> Kembali ke katalog</a>
+            </nav>
 
-                <div class="bd-stats" id="bd-stats"></div>
+            {% for message in messages %}
+            <div class="alert-msg {{ message.tags }}" role="status">{{ message }}</div>
+            {% endfor %}
 
-                <div class="bd-actions">
+            <div class="alert-msg warning" id="bd-error" role="status" hidden></div>
+
+            <div id="bd-page" data-olid="{{ olid }}" data-in-db="{% if buku_db %}1{% endif %}">
+
+            <section class="bd-hero">
+                <div class="bd-cover-wrap">
                     {% if pinjam_aktif %}
-                        <a href="{% url 'baca_buku' olid %}" class="bd-btn bd-btn-primary"><i class="fas fa-book-open"></i> Baca sekarang</a>
-                        <a href="{% url 'peminjaman' %}" class="bd-btn bd-btn-done"><i class="fas fa-check"></i> Sedang dipinjam</a>
-                    {% elif slot_penuh %}
-                        <button type="button" class="bd-btn bd-btn-disabled" disabled><i class="fas fa-ban"></i> Batas pinjam tercapai</button>
-                    {% else %}
-                        <form method="post" action="{% url 'pinjam_buku' olid %}" id="pinjam-form">
-                            {% csrf_token %}
-                            <input type="hidden" name="judul"><input type="hidden" name="penulis">
-                            <input type="hidden" name="tahun"><input type="hidden" name="cover">
-                            <input type="hidden" name="ia"><input type="hidden" name="deskripsi">
-                            <button type="submit" class="bd-btn bd-btn-primary" id="pinjam-btn" disabled><i class="fas fa-book-reader"></i> Pinjam buku</button>
-                        </form>
-                    {% endif %}
-
-                    <button type="button" id="bm-btn" data-olid="{{ olid }}" class="bd-btn bd-btn-outline{% if bookmarked %} active{% endif %}">
-                        <i class="{% if bookmarked %}fas{% else %}far{% endif %} fa-heart"></i>
-                        <span>{% if bookmarked %}Tersimpan{% else %}Simpan{% endif %}</span>
-                    </button>
-
-                    <a href="#" target="_blank" rel="noopener" class="bd-btn bd-btn-ghost" id="bd-ia" hidden>
-                        <i class="fas fa-up-right-from-square"></i> Lihat di Internet Archive
+                    <a href="{% url 'baca_buku' olid %}" class="bd-cover-link" title="Klik untuk membaca">
+                        <img src="https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400" alt="" class="bd-cover" id="bd-cover">
+                        <span class="bd-cover-hint"><i class="fas fa-book-open"></i> Baca</span>
                     </a>
-                </div>
-
-                <p class="bd-loan-note">
-                    {% if pinjam_aktif %}
-                        Jatuh tempo {{ jatuh_tempo|date:"d M Y" }}.
                     {% else %}
-                        Dipinjam selama {{ masa_pinjam }} hari. Slot terpakai {{ jumlah_aktif }} dari {{ max_loans }}.
+                    <img src="https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400" alt="" class="bd-cover" id="bd-cover">
                     {% endif %}
-                </p>
-            </div>
-        </section>
-
-        <div class="bd-body">
-            <section class="bd-card">
-                <h2>Tentang buku ini</h2>
-                <p class="bd-desc bd-muted" id="bd-desc">Memuat deskripsi...</p>
-            </section>
-
-            <aside class="bd-card">
-                <h2>Detail</h2>
-                <dl class="bd-dl">
-                    <dt>Penulis</dt><dd id="bd-dl-author">-</dd>
-                    <dt>Terbit pertama</dt><dd id="bd-dl-year">-</dd>
-                    <dt>ID Open Library</dt><dd>{{ olid }}</dd>
-                </dl>
-                <div id="bd-subjects-wrap" hidden>
-                    <h2 class="bd-sub-h">Subjek</h2>
-                    <div class="bd-tags" id="bd-tags"></div>
                 </div>
-            </aside>
+
+                <div class="bd-main">
+                    <p class="bd-type">Buku Digital</p>
+                    <h1 class="bd-title" id="bd-title">Memuat buku...</h1>
+                    <p class="bd-author" id="bd-author">&nbsp;</p>
+
+                    <div class="bd-stats" id="bd-stats"></div>
+
+                    <div class="bd-actions">
+                        {% if pinjam_aktif %}
+                            <a href="{% url 'baca_buku' olid %}" class="bd-btn bd-btn-primary"><i class="fas fa-book-open"></i> Baca sekarang</a>
+                            <a href="{% url 'peminjaman' %}" class="bd-btn bd-btn-done"><i class="fas fa-check"></i> Sedang dipinjam</a>
+                        {% elif slot_penuh %}
+                            <button type="button" class="bd-btn bd-btn-disabled" disabled><i class="fas fa-ban"></i> Batas pinjam tercapai</button>
+                        {% else %}
+                            <form method="post" action="{% url 'pinjam_buku' olid %}" id="pinjam-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="judul"><input type="hidden" name="penulis">
+                                <input type="hidden" name="tahun"><input type="hidden" name="cover">
+                                <input type="hidden" name="ia"><input type="hidden" name="deskripsi">
+                                <button type="submit" class="bd-btn bd-btn-primary" id="pinjam-btn" disabled><i class="fas fa-book-reader"></i> Pinjam buku</button>
+                            </form>
+                        {% endif %}
+
+                        <button type="button" id="bm-btn" data-olid="{{ olid }}" class="bd-btn bd-btn-outline{% if bookmarked %} active{% endif %}">
+                            <i class="{% if bookmarked %}fas{% else %}far{% endif %} fa-heart"></i>
+                            <span>{% if bookmarked %}Tersimpan{% else %}Simpan{% endif %}</span>
+                        </button>
+
+                        <a href="#" target="_blank" rel="noopener" class="bd-btn bd-btn-ghost" id="bd-ia" hidden>
+                            <i class="fas fa-up-right-from-square"></i> Lihat di Internet Archive
+                        </a>
+                    </div>
+
+                    <section class="bd-related" id="bd-related" hidden>
+                        <h2>Buku terkait</h2>
+                        <div class="catalog-grid" id="bd-related-grid"></div>
+                    </section>
+
+                </div>
+                {{ buku_db|json_script:"buku-db" }}
+
+                <p class="ol-credit">Data buku dari <a href="https://openlibrary.org" target="_blank" rel="noopener">Open Library</a>.</p>
+            </div>
+
         </div>
-
-        <section class="bd-related" id="bd-related" hidden>
-            <h2>Buku terkait</h2>
-            <div class="catalog-grid" id="bd-related-grid"></div>
-        </section>
-
-        </div>
-        {{ buku_db|json_script:"buku-db" }}
-
-        <p class="ol-credit">Data buku dari <a href="https://openlibrary.org" target="_blank" rel="noopener">Open Library</a>.</p>
     </div>
 </body>
 </html>

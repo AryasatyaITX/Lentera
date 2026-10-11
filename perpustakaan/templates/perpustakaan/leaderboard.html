@@ -4,125 +4,341 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leaderboard</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <title>Top List Reader</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=999">
-    <script src="{% static 'perpustakaan/js/script.js' %}" defer></script>
+    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1012">
+    <script src="{% static 'perpustakaan/js/script.js' %}?v=2" defer></script>
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Quicksand:wght@300..700&family=Space+Grotesk:wght@300..700&display=swap');
+        /* CSS Khusus Podium Top 3 & Highlight */
+        .podium-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 20px;
+            margin: 30px 0 40px;
+            padding: 20px;
+        }
+
+        .podium-card {
+            flex: 1;
+            max-width: 220px;
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 20px 15px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            border: 2px solid #e2e8f0;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .podium-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* Latar Belakang Elemen Dekoratif Angka Besar */
+        .podium-card::before {
+            position: absolute;
+            right: -10px;
+            bottom: -20px;
+            font-size: 110px;
+            font-weight: 800;
+            font-family: 'Space Grotesk', sans-serif;
+            color: rgba(0, 0, 0, 0.03);
+            pointer-events: none;
+            line-height: 1;
+        }
+
+        .podium-1::before { content: "1"; }
+        .podium-2::before { content: "2"; }
+        .podium-3::before { content: "3"; }
+
+        /* Aksen Warna Podium */
+        .podium-1 {
+            border-color: #f59e0b;
+            background: linear-gradient(180deg, #fffdf0 0%, #ffffff 100%);
+            order: 2;
+            padding-top: 30px;
+        }
+
+        .podium-2 {
+            border-color: #94a3b8;
+            background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+            order: 1;
+        }
+
+        .podium-3 {
+            border-color: #d97706;
+            background: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%);
+            order: 3;
+        }
+
+        /* Avatar Podium */
+        .podium-avatar-wrap {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 12px;
+        }
+
+        .podium-1 .podium-avatar-wrap {
+            width: 95px;
+            height: 95px;
+        }
+
+        .podium-avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #ffffff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .crown-icon {
+            position: absolute;
+            top: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 22px;
+        }
+
+        .podium-1 .crown-icon { color: #f59e0b; font-size: 28px; }
+        .podium-2 .crown-icon { color: #94a3b8; }
+        .podium-3 .crown-icon { color: #d97706; }
+
+        /* Mencegah Teks Username Panjang Merusak Tampilan */
+        .podium-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: #0f172a;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            display: block;
+            text-decoration: none;
+            margin-bottom: 4px;
+        }
+
+        .podium-name:hover {
+            color: #2563eb;
+        }
+
+        .podium-exp {
+            display: inline-block;
+            background: #121824;
+            color: #D4F838;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-top: 8px;
+        }
+
+        /* Highlight Pengguna Login di Tabel */
+        .table-row-highlight {
+            background-color: #fef08a !important;
+            border-left: 4px solid #ca8a04 !important;
+            font-weight: 600;
+        }
+
+        .user-link {
+            color: #0f172a;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+
+        .user-link:hover {
+            color: #2563eb;
+            text-decoration: underline;
+        }
     </style>
 </head>
-<body class="app-body">
+<body>
+    <div class="app-layout" id="appLayout">
 
-    
+    <!-- ===== Sidebar (sama dengan dashboard) ===== -->
     <div class="sidebar">
+        <div class="sidebar-brand">
+            <img src="{% static 'perpustakaan/img/logo.svg' %}" alt="Logo Lentera" class="sidebar-logo">
+            <div>
+                <h2>lentera<span>.</span></h2>
+            </div>
+        </div>
+
         <ul class="sidebar-menu">
             <li><a href="{% url 'dashboard' %}"><i class="fas fa-border-all"></i> Dashboard</a></li>
             <li><a href="{% url 'katalog' %}"><i class="fas fa-book"></i> Katalog Buku</a></li>
             <li><a href="{% url 'ejournal' %}"><i class="fas fa-file-alt"></i> E-journal</a></li>
-            <li><a href="{% url 'peminjaman' %}"><i class="fas fa-book-reader"></i> Peminjaman</a></li>
+            <li>
+                <a href="{% url 'peminjaman' %}">
+                    <i class="fas fa-book-reader"></i> Peminjaman
+                    {% if sedang_dipinjam %}<span class="menu-badge">{{ sedang_dipinjam }}</span>{% endif %}
+                </a>
+            </li>
             <li><a href="{% url 'bookmarks' %}"><i class="fas fa-heart"></i> Bookmarks</a></li>
             <li><a href="{% url 'riwayat' %}"><i class="fas fa-history"></i> Riwayat Peminjaman</a></li>
             <li><a href="{% url 'leaderboard' %}" class="active"><i class="fas fa-trophy"></i> Top List Reader</a></li>
             <li><a href="{% url 'profil' %}"><i class="fas fa-user"></i> Profil</a></li>
         </ul>
-        
+
         <div class="sidebar-profile">
-            <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=D4F838&color=121824" alt="Avatar">
+            <div class="avatar-circle">
+                {% if user.foto_profil %}
+                    <img src="{{ user.foto_profil.url }}" alt="Avatar">
+                {% else %}
+                    {{ user.nama_tampilan|default:user.username|slice:2|upper }}
+                {% endif %}
+            </div>
             <div>
-                <h4>{{ user.username }}</h4>
-                <p>Anggota</p>
+                <h4>{{ user.nama_tampilan|default:user.username }}</h4>
+                <p>User / Anggota</p>
             </div>
         </div>
     </div>
+    <!-- ===== / Sidebar ===== -->
 
-    
+    <!-- ===== Konten utama ===== -->
     <div class="main-content">
-        
-        
+
         <div class="top-nav">
-            <div class="greeting">
-                <h4>{{ user.username }} / ANGGOTA</h4>
-                <h1 class="page-title-space">Top List Reader</h1>
-                <p>Bersaing dan jadilah pembaca terbaik bulan ini!</p>
+            <div class="top-nav-left">
+                <button id="menuButton"
+                        class="menu-button"
+                        type="button"
+                        aria-label="Buka atau tutup menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="top-divider"></div>
+                <div class="greeting">
+                    <h4>Lentera / Anggota</h4>
+                    <h1 class="page-title-space">Top List Reader</h1>
+                    <p>Peringkat pembaca paling aktif dan berprestasi.</p>
+                </div>
             </div>
             <div class="nav-actions">
                 <i class="far fa-bell"></i>
-                <div class="avatar-circle">{{ user.username|make_list|first|upper }}</div>
-                <a href="{% url 'logout' %}" style="margin-left:15px; color:#dc2626; font-size: 20px;" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
+                <a href="{% url 'profil' %}" style="display: inline-block;">
+                    <div class="avatar-circle">
+                        {% if user.foto_profil %}
+                            <img src="{{ user.foto_profil.url }}" alt="Avatar">
+                        {% else %}
+                            {{ user.nama_tampilan|default:user.username|slice:2|upper }}
+                        {% endif %}
+                    </div>
+                </a>
+                <a href="{% url 'logout' %}"
+                   style="margin-left:15px; color:#dc2626; font-size:20px;"
+                   title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
             </div>
         </div>
 
-        
+    <!-- ================= PODIUM TOP 3 ================= -->
         <div class="podium-container">
-            <div class="podium-title">TOP 3 BULAN INI</div>
-            <div class="podium-wrapper">
-                
-                
-                {% if podium.rank2 %}
-                <div class="podium-step step-2">
-                    <div class="podium-avatar">{{ podium.rank2.username|make_list|first|upper }}</div>
-                    <h4>{{ podium.rank2.nama_tampilan }}</h4>
-                    <p>{{ podium.rank2.exp }} EXP</p>
-                    <div class="badge-rank">2</div>
+            <!-- Juara 2 -->
+            {% if podium.rank2 %}
+            <div class="podium-card podium-2">
+                <div class="podium-avatar-wrap">
+                    <i class="fas fa-crown crown-icon"></i>
+                    <img src="{% if podium.rank2.foto_profil %}{{ podium.rank2.foto_profil.url }}{% else %}https://ui-avatars.com/api/?name={{ podium.rank2.username }}&background=94a3b8&color=ffffff{% endif %}" class="podium-avatar" alt="Juara 2">
                 </div>
-                {% endif %}
-
-                
-                {% if podium.rank1 %}
-                <div style="position: relative;">
-                    <i class="fas fa-star" style="color: #D4F838; font-size: 24px; position: absolute; top: -35px; left: 50%; transform: translateX(-50%);"></i>
-                    <div class="podium-step step-1">
-                        <div class="podium-avatar">{{ podium.rank1.username|make_list|first|upper }}</div>
-                        <h4>{{ podium.rank1.nama_tampilan }}</h4>
-                        <p>{{ podium.rank1.exp }} EXP</p>
-                        <div class="badge-rank">1</div>
-                    </div>
-                </div>
-                {% endif %}
-
-                
-                {% if podium.rank3 %}
-                <div class="podium-step step-3">
-                    <div class="podium-avatar">{{ podium.rank3.username|make_list|first|upper }}</div>
-                    <h4>{{ podium.rank3.nama_tampilan }}</h4>
-                    <p>{{ podium.rank3.exp }} EXP</p>
-                    <div class="badge-rank">3</div>
-                </div>
-                {% endif %}
-
+                <a href="{% url 'profil_user_detail' podium.rank2.username %}" class="podium-name" title="{{ podium.rank2.nama_tampilan|default:podium.rank2.username }}">
+                    {{ podium.rank2.nama_tampilan|default:podium.rank2.username }}
+                </a>
+                <p style="font-size: 12px; color: #64748b; margin: 0;">NIM: {{ podium.rank2.username }}</p>
+                <span class="podium-exp"><i class="fas fa-star"></i> {{ podium.rank2.exp }} EXP</span>
             </div>
+            {% endif %}
+
+            <!-- Juara 1 -->
+            {% if podium.rank1 %}
+            <div class="podium-card podium-1">
+                <div class="podium-avatar-wrap">
+                    <i class="fas fa-crown crown-icon"></i>
+                    <img src="{% if podium.rank1.foto_profil %}{{ podium.rank1.foto_profil.url }}{% else %}https://ui-avatars.com/api/?name={{ podium.rank1.username }}&background=f59e0b&color=ffffff{% endif %}" class="podium-avatar" alt="Juara 1">
+                </div>
+                <a href="{% url 'profil_user_detail' podium.rank1.username %}" class="podium-name" title="{{ podium.rank1.nama_tampilan|default:podium.rank1.username }}">
+                    {{ podium.rank1.nama_tampilan|default:podium.rank1.username }}
+                </a>
+                <p style="font-size: 12px; color: #64748b; margin: 0;">NIM: {{ podium.rank1.username }}</p>
+                <span class="podium-exp"><i class="fas fa-crown" style="color:#f59e0b;"></i> {{ podium.rank1.exp }} EXP</span>
+            </div>
+            {% endif %}
+
+            <!-- Juara 3 -->
+            {% if podium.rank3 %}
+            <div class="podium-card podium-3">
+                <div class="podium-avatar-wrap">
+                    <i class="fas fa-crown crown-icon"></i>
+                    <img src="{% if podium.rank3.foto_profil %}{{ podium.rank3.foto_profil.url }}{% else %}https://ui-avatars.com/api/?name={{ podium.rank3.username }}&background=d97706&color=ffffff{% endif %}" class="podium-avatar" alt="Juara 3">
+                </div>
+                <a href="{% url 'profil_user_detail' podium.rank3.username %}" class="podium-name" title="{{ podium.rank3.nama_tampilan|default:podium.rank3.username }}">
+                    {{ podium.rank3.nama_tampilan|default:podium.rank3.username }}
+                </a>
+                <p style="font-size: 12px; color: #64748b; margin: 0;">NIM: {{ podium.rank3.username }}</p>
+                <span class="podium-exp"><i class="fas fa-star"></i> {{ podium.rank3.exp }} EXP</span>
+            </div>
+            {% endif %}
         </div>
 
-        
-        <div class="leaderboard-list">
-            {% for lb in list_users %}
-            <div class="lb-row">
-                <div class="lb-number">{{ lb.rank }}</div>
-                <img src="https://ui-avatars.com/api/?name={{ lb.user.username }}&background=random" alt="Avatar" class="lb-avatar">
-                
-                <div class="lb-details">
-                    <h3>{{ lb.user.username }}</h3>
-                    
-                    <div class="lb-progress-bg">
-                        <div class="lb-progress-fill" style="--width: {{ lb.percentage|floatformat:0 }}%;"></div>
-                    </div>
-                </div>
-
-                <div class="lb-points">
-                    {{ lb.user.exp }} <br><span>points</span>
-                </div>
-            </div>
-            {% empty %}
+        <!-- ================= TABEL PERINGKAT 4 - 10 ================= -->
+        <div style="background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-top: 20px;">
+            <h3 style="font-size: 18px; font-family: 'Space Grotesk', sans-serif; margin-bottom: 15px; color: #0f172a;">
+                <i class="fas fa-list-ol" style="color: #2563eb;"></i> Peringkat Pembaca Lainnya
+            </h3>
             
-            <div style="text-align: center; padding: 20px; color: #8A8A7A; font-size: 14px;">
-                Belum ada pembaca lain di peringkat ini.
-            </div>
-            {% endfor %}
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="text-align: left; border-bottom: 2px solid #e2e8f0; color: #64748b; font-size: 13px;">
+                        <th style="padding: 12px; width: 60px;">Rank</th>
+                        <th style="padding: 12px;">Pengguna</th>
+                        <th style="padding: 12px; text-align: center;">Streak</th>
+                        <th style="padding: 12px; text-align: right;">Total EXP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in list_users %}
+                    <tr class="{% if item.user == request.user %}table-row-highlight{% endif %}" style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s;">
+                        <td style="padding: 12px; font-weight: 700; color: #475569;">#{{ item.rank }}</td>
+                        <td style="padding: 12px;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <img src="{% if item.user.foto_profil %}{{ item.user.foto_profil.url }}{% else %}https://ui-avatars.com/api/?name={{ item.user.username }}&background=1e293b&color=ffffff{% endif %}" alt="Avatar" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
+                                <div>
+                                    <a href="{% url 'profil_user_detail' item.user.username %}" class="user-link">
+                                        {{ item.user.nama_tampilan|default:item.user.username }}
+                                    </a>
+                                    {% if item.user == request.user %}
+                                        <span style="background: #ca8a04; color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: 700;">Kamu</span>
+                                    {% endif %}
+                                    <p style="font-size: 11px; color: #64748b; margin: 0;">NIM: {{ item.user.username }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="padding: 12px; text-align: center; color: #ef4444; font-weight: 600;">
+                            <i class="fas fa-fire"></i> {{ item.user.streak_days|default:0 }} hari
+                        </td>
+                        <td style="padding: 12px; text-align: right; font-weight: 700; color: #0f172a;">
+                            {{ item.user.exp }} EXP
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 20px; color: #94a3b8; font-style: italic;">Belum ada data pembaca lainnya.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
 
     </div>
+    <!-- ===== / Konten utama ===== -->
 
+    </div>
 </body>
 </html>

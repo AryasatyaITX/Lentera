@@ -245,3 +245,26 @@ function simpanBukuKeDatabase(id, judul, penulis, tahun, cover, linkBaca) {
     // Kirim diam-diam ke backend saat buku dirender (Sesuaikan dengan nama view pengamananmu jika ada)
     // fetch(`/buku/${id}/`, { method: 'POST', body: formData, headers: {'X-CSRFToken': getCookie('csrftoken')} });
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+    const appLayout = document.getElementById("appLayout");
+    const menuButton = document.getElementById("menuButton");
+
+    if (!appLayout || !menuButton) {
+        console.error("appLayout atau menuButton tidak ditemukan");
+        return;
+    }
+    
+    try {
+        if (localStorage.getItem("sidebarOpen") === "1") {
+            appLayout.classList.add("sidebar-open");
+        }
+    } catch (e) {}
+
+    menuButton.addEventListener("click", function () {
+        appLayout.classList.toggle("sidebar-open");
+        try {
+            localStorage.setItem("sidebarOpen", appLayout.classList.contains("sidebar-open") ? "1" : "0");
+        } catch (e) {}
+    });
+});

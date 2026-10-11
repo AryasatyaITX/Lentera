@@ -4,165 +4,256 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profil</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <title>Profil{% if request.user != user %} {{ user.nama_tampilan|default:user.username }}{% endif %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=999">
-    <script src="{% static 'perpustakaan/js/script.js' %}" defer></script>
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Quicksand:wght@300..700&family=Space+Grotesk:wght@300..700&display=swap');
-    </style>
+    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1011">
+    <script src="{% static 'perpustakaan/js/script.js' %}?v=2" defer></script>
 </head>
-<body class="app-body">
+<body>
 
-    
-    <div class="sidebar">
-        <ul class="sidebar-menu">
-            <li><a href="{% url 'dashboard' %}"><i class="fas fa-border-all"></i> Dashboard</a></li>
-            <li><a href="{% url 'katalog' %}"><i class="fas fa-book"></i> Katalog Buku</a></li>
-            <li><a href="{% url 'ejournal' %}"><i class="fas fa-file-alt"></i> E-journal</a></li>
-            <li><a href="{% url 'peminjaman' %}"><i class="fas fa-book-reader"></i> Peminjaman</a></li>
-            <li><a href="{% url 'bookmarks' %}"><i class="fas fa-heart"></i> Bookmarks</a></li>
-            <li><a href="{% url 'riwayat' %}"><i class="fas fa-history"></i> Riwayat Peminjaman</a></li>
-            <li><a href="{% url 'leaderboard' %}"><i class="fas fa-trophy"></i> Top List Reader</a></li>
-            
-            <li><a href="{% url 'profil' %}" class="active"><i class="fas fa-user"></i> Profil</a></li>
-        </ul>
-        
-        <div class="sidebar-profile">
-            <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=D4F838&color=121824" alt="Avatar">
-            <div>
-                <h4>{{ user.username }}</h4>
-                <p>Anggota</p>
-            </div>
-        </div>
-    </div>
+    <div class="app-layout" id="appLayout">
 
-    
-    <div class="main-content">
-        
-        
-        <div class="top-nav">
-            <div class="greeting">
-                <h4>{{ user.username }} / ANGGOTA</h4>
-                <h1 class="page-title-space">Profil Saya</h1>
-                <p>Atur informasi dan keamanan akun kamu di sini.</p>
-            </div>
-            <div class="nav-actions">
-                <i class="far fa-bell"></i>
-                <div class="avatar-circle">{{ user.username|make_list|first|upper }}</div>
-                <a href="{% url 'logout' %}" style="margin-left:15px; color:#dc2626; font-size: 20px;" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
-            </div>
-        </div>
-
-        <div class="profile-container">
-            
-            
-            <div class="profile-card">
-                
-                <div class="profile-header-bg"
-                    {% if user.foto_background %}style="background: url('{{ user.foto_background.url }}') center/cover;"{% endif %}>
+        <!-- ===== Sidebar (sama dengan dashboard) ===== -->
+        <div class="sidebar">
+            <div class="sidebar-brand">
+                <img src="{% static 'perpustakaan/img/logo.svg' %}" alt="Logo Lentera" class="sidebar-logo">
+                <div>
+                    <h2>lentera<span>.</span></h2>
                 </div>
-                
-                <div class="profile-info-wrap">
-                    
-                    <div class="profile-name-row">
-                        <div>
-                            
-                            {% if user.foto_profil %}
-                                <img src="{{ user.foto_profil.url }}" alt="Profile" class="profile-avatar-large" style="object-fit: cover; border-radius: 50%; padding: 0;">
+            </div>
+
+            <ul class="sidebar-menu">
+                <li><a href="{% url 'dashboard' %}"><i class="fas fa-border-all"></i> Dashboard</a></li>
+                <li><a href="{% url 'katalog' %}"><i class="fas fa-book"></i> Katalog Buku</a></li>
+                <li><a href="{% url 'ejournal' %}"><i class="fas fa-file-alt"></i> E-journal</a></li>
+                <li>
+                    <a href="{% url 'peminjaman' %}">
+                        <i class="fas fa-book-reader"></i> Peminjaman
+                        {% if sedang_dipinjam %}<span class="menu-badge">{{ sedang_dipinjam }}</span>{% endif %}
+                    </a>
+                </li>
+                <li><a href="{% url 'bookmarks' %}"><i class="fas fa-heart"></i> Bookmarks</a></li>
+                <li><a href="{% url 'riwayat' %}"><i class="fas fa-history"></i> Riwayat Peminjaman</a></li>
+                <li><a href="{% url 'leaderboard' %}"{% if request.user != user %} class="active"{% endif %}><i class="fas fa-trophy"></i> Top List Reader</a></li>
+                <li><a href="{% url 'profil' %}"{% if request.user == user %} class="active"{% endif %}><i class="fas fa-user"></i> Profil</a></li>
+            </ul>
+
+            <!-- Selalu menampilkan akun yang sedang login, bukan pemilik profil yang dilihat -->
+            <div class="sidebar-profile">
+                <div class="avatar-circle">
+                    {% if request.user.foto_profil %}
+                        <img src="{{ request.user.foto_profil.url }}" alt="Avatar">
+                    {% else %}
+                        {{ request.user.nama_tampilan|default:request.user.username|slice:2|upper }}
+                    {% endif %}
+                </div>
+                <div>
+                    <h4>{{ request.user.nama_tampilan|default:request.user.username }}</h4>
+                    <p>User / Anggota</p>
+                </div>
+            </div>
+        </div>
+        <!-- ===== / Sidebar ===== -->
+
+        <!-- ===== Konten utama ===== -->
+        <div class="main-content">
+
+            <div class="top-nav">
+                <div class="top-nav-left">
+                    <button id="menuButton"
+                            class="menu-button"
+                            type="button"
+                            aria-label="Buka atau tutup menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="top-divider"></div>
+                    <div class="greeting">
+                        <h4>Lentera / Anggota</h4>
+                        <h1 class="page-title-space">{% if request.user == user %}Profil Saya{% else %}Profil Anggota{% endif %}</h1>
+                        <p>{% if request.user == user %}Atur informasi dan keamanan akun kamu di sini.{% else %}Melihat informasi dan pencapaian pembaca.{% endif %}</p>
+                    </div>
+                </div>
+                <div class="nav-actions">
+                    <i class="far fa-bell"></i>
+                    <a href="{% url 'profil' %}" style="display: inline-block;">
+                        <div class="avatar-circle">
+                            {% if request.user.foto_profil %}
+                                <img src="{{ request.user.foto_profil.url }}" alt="Avatar">
                             {% else %}
-                                <div class="profile-avatar-large">{{ user.nama_tampilan|make_list|first|upper }}</div>
+                                {{ request.user.nama_tampilan|default:request.user.username|slice:2|upper }}
                             {% endif %}
-                            
-                            
-                            <h2>{{ user.nama_tampilan }}</h2>
-                            <p style="font-weight: bold; color: #121824; font-size: 13px; margin-top: 5px;">NIM: {{ user.username }}</p>
-                            <p>Anggota sejak {{ user.date_joined|date:"F Y" }}</p>
                         </div>
-                        <div class="streak-badge">
-                            <i class="fas fa-fire"></i> {{ user.streak_days }} hari streak
-                        </div>
-                    </div>
-
-                    
-                    <div class="profile-status-badges">
-                        <span class="p-badge active">Anggota aktif</span>
-                        <span class="p-badge count">{{ total_dibaca }} buku dibaca</span>
-                    </div>
+                    </a>
+                    <a href="{% url 'logout' %}"
+                       style="margin-left:15px; color:#dc2626; font-size:20px;"
+                       title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
                 </div>
             </div>
 
-            
-            <div class="settings-card">
-                <div class="settings-header">
-                    <div>
-                        <h4>PENGATURAN AKUN</h4>
-                        <h2>Informasi pribadi</h2>
+            <div class="profile-container">
+
+                <!-- ===== Kartu profil (pemilik profil yang sedang dilihat) ===== -->
+                <div class="profile-card">
+                    <div class="profile-header-bg"
+                         {% if user.foto_background %}style="background: url('{{ user.foto_background.url }}') center/cover;"{% endif %}>
+                    </div>
+
+                    <div class="profile-info-wrap">
+                        <div style="position: relative;">
+                            {% if user.foto_profil %}
+                                <img src="{{ user.foto_profil.url }}?v={{ user.last_login|date:'U' }}" alt="Profile" class="profile-avatar-large" style="object-fit: cover; border-radius: 50%; padding: 0;">
+                            {% else %}
+                                <div class="profile-avatar-large">{{ user.nama_tampilan|default:user.username|slice:1|upper }}</div>
+                            {% endif %}
+                        </div>
+
+                        <h2 style="margin-top: 10px; font-weight: 700; color: #121824; font-size: 18px;">{{ user.nama_tampilan|default:user.username }}</h2>
+                        <p style="font-weight: 600; color: #52525b; font-size: 13px; margin-top: 2px;">NIM: {{ user.username }}</p>
+
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; margin-bottom: 8px;">
+                            <span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; background: #ecfdf5; color: #059669; border: 1px solid #d1fae5; font-size: 12px;" title="Badge Keaktifan">
+                                <i class="fas fa-award"></i>
+                            </span>
+                            <span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; background: #ecfdf5; color: #059669; border: 1px solid #d1fae5; font-size: 12px;" title="Buku Dibaca">
+                                <i class="fas fa-book-open"></i>
+                            </span>
+                            <span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; background: #ecfdf5; color: #059669; border: 1px solid #d1fae5; font-size: 12px;" title="Total EXP">
+                                <i class="fas fa-star"></i>
+                            </span>
+
+                            <div style="display: inline-flex; align-items: center; gap: 6px; background: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; padding: 5px 10px; border-radius: 8px; font-size: 12px; font-weight: 600;">
+                                <i class="fas fa-fire" style="color: #f97316;"></i>
+                                <span>{{ user.streak_days|default:0 }} hari streak</span>
+                            </div>
+                        </div>
+
+                        <p style="font-size: 12px; color: #71717a; margin-bottom: 20px;">Anggota sejak {{ user.date_joined|date:"F Y" }}</p>
+
+                        <div style="border-top: 1px solid #f4f4f5; padding-top: 15px; margin-top: 15px; width: 100%; text-align: left;">
+                            <h4 style="font-size: 11px; font-weight: 700; letter-spacing: 0.05em; color: #a1a1aa; text-transform: uppercase; margin-bottom: 10px;">Achievement</h4>
+
+                            {% if achievements %}
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    {% for ach in achievements %}
+                                    <div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; background: #f9fafb; border: 1px solid #f3f4f6;">
+                                        <div style="width: 32px; height: 32px; border-radius: 8px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            <i class="fas fa-medal"></i>
+                                        </div>
+                                        <div style="overflow: hidden;">
+                                            <h5 style="font-size: 12px; font-weight: 600; color: #1f2937; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ ach.title }}</h5>
+                                            <p style="font-size: 10px; color: #6b7280; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ ach.description }}</p>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div style="padding: 10px 0; text-align: center;">
+                                    <p style="font-size: 12px; color: #a1a1aa; font-style: italic; margin: 0;">Belum ada achievement</p>
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
 
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert-msg {% if message.tags == 'success' %}success{% else %}error{% endif %}">
-                            <i class="fas {% if message.tags == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %}"></i>
-                            {{ message }}
+                <!-- ===== Form edit: HANYA tampil di profil sendiri ===== -->
+                {% if request.user == user %}
+                <div class="settings-card">
+                    <div class="settings-header">
+                        <div>
+                            <h4>PENGATURAN AKUN</h4>
+                            <h2>Informasi pribadi</h2>
                         </div>
-                    {% endfor %}
+                        <div class="profile-status-badges" style="margin: 0;">
+                            <span class="p-badge active">Anggota aktif</span>
+                            <span class="p-badge count">{{ total_dibaca }} buku dibaca</span>
+                        </div>
+                    </div>
+
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert-msg {% if 'success' in message.tags %}success{% else %}error{% endif %}">
+                                <i class="fas {% if 'success' in message.tags %}fa-check-circle{% else %}fa-exclamation-circle{% endif %}"></i>
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="POST" class="settings-form" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <div class="input-group">
+                            <label>NIM (Tidak dapat diubah)</label>
+                            <input type="text" value="{{ user.username }}" disabled style="background:#F0F4F8; color:#8A8A7A; cursor:not-allowed;">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Nama Tampilan (Display Name)</label>
+                            <input type="text" name="nama_tampilan" value="{{ user.nama_tampilan }}" required>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Ubah Foto Profil (Max 2MB)</label>
+                            <input type="file" name="foto_profil" accept="image/*" style="padding: 9px 16px; margin-bottom: 5px;">
+                            {% if user.foto_profil %}
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" name="hapus_foto_profil" value="1" id="hapusProfile" style="width: auto; margin: 0;">
+                                <label for="hapusProfile" style="font-weight: normal; font-size: 12px; color: #dc2626; cursor: pointer; margin: 0;">Hapus foto profil saat ini</label>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="input-group">
+                            <label>Ubah Background Cover (Max 2MB)</label>
+                            <input type="file" name="foto_background" accept="image/*" style="padding: 9px 16px; margin-bottom: 5px;">
+                            {% if user.foto_background %}
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" name="hapus_foto_background" value="1" id="hapusBg" style="width: auto; margin: 0;">
+                                <label for="hapusBg" style="font-weight: normal; font-size: 12px; color: #dc2626; cursor: pointer; margin: 0;">Hapus background cover saat ini</label>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="input-group">
+                            <label>Password lama</label>
+                            <input type="password" name="password_lama" id="passLama" placeholder="Kosongkan jika tidak ingin mengubah password">
+                            <i class="far fa-eye toggle-password" onclick="togglePassword('passLama', this)"></i>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Password baru</label>
+                            <input type="password" name="password_baru" id="passBaru" placeholder="Masukkan password baru">
+                            <i class="far fa-eye toggle-password" onclick="togglePassword('passBaru', this)"></i>
+                        </div>
+
+                        <div class="form-actions">
+                            <a href="{% url 'dashboard' %}" class="btn-cancel">Batal</a>
+                            <button type="submit" class="btn-save">Simpan perubahan <i class="fas fa-check"></i></button>
+                        </div>
+                    </form>
+                </div>
                 {% endif %}
 
-                
-                <form method="POST" class="settings-form" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    
-                    <div class="input-group">
-                        <label>NIM (Tidak dapat diubah)</label>
-                        <input type="text" value="{{ user.username }}" disabled style="background:#F0F4F8; color:#8A8A7A; cursor:not-allowed;">
-                    </div>
-
-                    <div class="input-group">
-                        <label>Nama Tampilan (Display Name)</label>
-                        <input type="text" name="nama_tampilan" value="{{ user.nama_tampilan }}" required>
-                    </div>
-
-                    <div class="input-group">
-                        <label>Ubah Foto Profil</label>
-                        <input type="file" name="foto_profil" accept="image/*" style="padding: 9px 16px;">
-                    </div>
-
-                    <div class="input-group">
-                        <label>Ubah Background Cover</label>
-                        <input type="file" name="foto_background" accept="image/*" style="padding: 9px 16px;">
-                    </div>
-
-                    <div class="input-group">
-                        <label>Email</label>
-                        <input type="email" name="email" value="{{ user.email }}">
-                    </div>
-
-                    <div class="input-group">
-                        <label>Password lama</label>
-                        <input type="password" name="password_lama" id="passLama" placeholder="Kosongkan jika tidak ingin mengubah password">
-                        <i class="far fa-eye toggle-password" onclick="togglePassword('passLama', this)"></i>
-                    </div>
-
-                    <div class="input-group">
-                        <label>Password baru</label>
-                        <input type="password" name="password_baru" id="passBaru" placeholder="Masukkan password baru">
-                        <i class="far fa-eye toggle-password" onclick="togglePassword('passBaru', this)"></i>
-                    </div>
-
-                    <div class="form-actions">
-                        <a href="{% url 'dashboard' %}" class="btn-cancel">Batal</a>
-                        <button type="submit" class="btn-save">Simpan perubahan <i class="fas fa-check"></i></button>
-                    </div>
-                </form>
             </div>
-
         </div>
+        <!-- ===== / Konten utama ===== -->
 
-        </div>
     </div>
 
+    <script>
+        // Cadangan kalau script.js belum punya fungsi ini
+        window.togglePassword = window.togglePassword || function (id, ikon) {
+            var input = document.getElementById(id);
+            if (!input) return;
+            var tampil = input.type === "password";
+            input.type = tampil ? "text" : "password";
+            ikon.classList.toggle("fa-eye", !tampil);
+            ikon.classList.toggle("fa-eye-slash", tampil);
+        };
+    </script>
 </body>
 </html>
