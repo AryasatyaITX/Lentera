@@ -1,4 +1,6 @@
 from datetime import timedelta
+from django.core.paginator import Paginator
+from django.utils import timezone
 import requests
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
@@ -12,6 +14,7 @@ from django.contrib.auth import update_session_auth_hash
 import re
 
 MASA_PINJAM_HARI = 14
+PAGINATION_PAGE_SIZE = 10
 ITEM_ID_RE = re.compile(r'^[\w-]+$')
 COVER_PREFIX = 'https://covers.openlibrary.org/'
 
@@ -116,6 +119,24 @@ def katalog_view(request):
             Bookmark.objects.filter(user=request.user, buku_digital__isnull=False)
             .values_list('buku_digital_id', flat=True)
         ),
+        'buku_lokal': [
+            {
+                'olid': buku.id_item,
+                'judul': buku.judul,
+                'penulis': buku.penulis,
+                'tahun': buku.tahun_terbit,
+                'cover': buku.cover or '',
+                'cover_besar': buku.cover or '',
+                'rating': None,
+                'want': None,
+                'ia': buku.ia_id,
+                'ia_semua': [],
+                'akses': '',
+                'deskripsi': buku.deskripsi,
+                'subjek': [],
+            }
+            for buku in BukuDigital.objects.order_by('judul')
+        ],
     }
     return render(request, 'perpustakaan/katalog.html', context)
 
@@ -178,7 +199,7 @@ def buku_detail(request, olid):
         'buku_db': {
             'olid': buku_db.id_item, 'judul': buku_db.judul, 'penulis': buku_db.penulis,
             'tahun': buku_db.tahun_terbit, 'cover': buku_db.cover or '', 'cover_besar': buku_db.cover or '',
-            'ia': buku_db.ia_id, 'deskripsi': buku_db.deskripsi, 'subjek': [], 'rating': None, 'want': 0,
+            'ia': buku_db.ia_id, 'deskripsi': buku_db.deskripsi, 'subjek': [], 'rating': None, 'want': None,
         } if buku_db else None,
         'bookmarked': Bookmark.objects.filter(user=user, buku_digital_id=olid).exists(),
         'pinjam_aktif': pinjam_aktif,
@@ -277,6 +298,7 @@ def kembalikan_buku(request, pinjaman_id):
     if pinjaman.status == 'Dibaca':
         pinjaman.status = 'Selesai'
         pinjaman.progress_baca = 100
+        pinjaman.tanggal_kembali = timezone.now()
         pinjaman.save()
         request.user.add_exp(50)
         
@@ -285,11 +307,17 @@ def kembalikan_buku(request, pinjaman_id):
 
 @login_required(login_url='login')
 def bookmarks_view(request):
-    daftar_bookmark = Bookmark.objects.filter(user=request.user).order_by('-tanggal_disimpan')
+    daftar_bookmark = (
+        Bookmark.objects.filter(user=request.user)
+        .select_related('buku_digital', 'jurnal')
+        .order_by('-tanggal_disimpan', '-pk')
+    )
+    page_obj = Paginator(daftar_bookmark, PAGINATION_PAGE_SIZE).get_page(request.GET.get('page'))
     context = {
         'user': request.user,
-        'bookmarks': daftar_bookmark,
-        'total_tersimpan': daftar_bookmark.count(),
+        'bookmarks': page_obj,
+        'page_obj': page_obj,
+        'total_tersimpan': page_obj.paginator.count,
     }
     return render(request, 'perpustakaan/bookmarks.html', context)
 
@@ -305,15 +333,27 @@ def hapus_bookmark_api(request, bookmark_id):
 
 @login_required(login_url='login')
 def riwayat_view(request):
-    riwayat_list = Peminjaman.objects.filter(user=request.user).order_by('-tanggal_pinjam')
+    riwayat_queryset = (
+        Peminjaman.objects.filter(user=request.user)
+        .select_related('buku_digital', 'jurnal')
+        .order_by('-tanggal_pinjam', '-pk')
+    )
+    page_obj = Paginator(riwayat_queryset, PAGINATION_PAGE_SIZE).get_page(request.GET.get('page'))
+    riwayat_list = page_obj.object_list
     
     for item in riwayat_list:
-        item.tanggal_kembali = item.tanggal_pinjam + timedelta(days=MASA_PINJAM_HARI)
+        if not item.tanggal_kembali:
+            if item.status == 'Selesai':
+                # Fallback untuk data lama yang dikembalikan sebelum perbaikan ini
+                item.tanggal_kembali = item.tanggal_pinjam + timedelta(days=MASA_PINJAM_HARI)
+            else:
+                item.jatuh_tempo = item.tanggal_pinjam + timedelta(days=MASA_PINJAM_HARI)
 
     context = {
         'user': request.user,
         'riwayat_list': riwayat_list,
-        'total_aktivitas': riwayat_list.count(),
+        'page_obj': page_obj,
+        'total_aktivitas': page_obj.paginator.count,
     }
     return render(request, 'perpustakaan/riwayat.html', context)
 

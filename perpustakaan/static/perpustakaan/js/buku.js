@@ -44,8 +44,12 @@
             tahun: doc.first_publish_year || '',
             cover: coverUrl(doc.cover_i, 'M'),
             cover_besar: coverUrl(doc.cover_i, 'L'),
-            rating: doc.ratings_average ? Math.round(doc.ratings_average * 10) / 10 : null,
-            want: doc.want_to_read_count || 0,
+            rating: typeof doc.ratings_average === 'number' && Number.isFinite(doc.ratings_average)
+                ? Math.round(doc.ratings_average * 10) / 10
+                : null,
+            want: typeof doc.want_to_read_count === 'number' && Number.isFinite(doc.want_to_read_count)
+                ? doc.want_to_read_count
+                : null,
             ia: (doc.ia || [''])[0],
             ia_semua: (doc.ia || []).slice(0, 8),   // semua versi di Internet Archive (untuk halaman baca)
             akses: doc.ebook_access || '',          // 'public' = bisa dibaca gratis
@@ -108,6 +112,28 @@
         return book;
     }
 
+    async function hydrateBookmarkStats() {
+        const cards = Array.from(document.querySelectorAll('[data-bookmark-stats]'));
+        await Promise.all(cards.map(async (card) => {
+            const ratingEl = card.querySelector('[data-book-rating]');
+            const wantEl = card.querySelector('[data-book-want]');
+            try {
+                const result = await olSearch(`key:/works/${card.dataset.olid}`, 1, 1);
+                const book = result.books.find(item => item.olid === card.dataset.olid);
+                if (!book) throw new Error('Book not found in Open Library response');
+
+                ratingEl.textContent = book.rating === null ? 'Belum ada rating' : book.rating.toFixed(1);
+                wantEl.textContent = book.want === null
+                    ? ' • Jumlah ingin membaca tidak tersedia'
+                    : ` • ${new Intl.NumberFormat('id-ID').format(book.want)} ingin membaca`;
+            } catch (error) {
+                ratingEl.textContent = 'Data tidak tersedia';
+                wantEl.textContent = '';
+            }
+        }));
+    }
+    hydrateBookmarkStats();
+
     // ---------- Bookmark ----------
     const bookCache = new Map();                    // olid -> data buku, dikirim ke Django saat bookmark
     const tersimpan = new Set(readJson('tersimpan-ids') || []);
@@ -153,7 +179,8 @@
     });
 
     function cardHtml(b, withHeart) {
-        const rating = b.rating ? b.rating.toFixed(1) : '-';
+        const rating = b.rating === null ? '-' : b.rating.toFixed(1);
+        const want = b.want === null ? '—' : new Intl.NumberFormat('id-ID').format(b.want);
         const tahun = b.tahun ? ` • ${escHtml(b.tahun)}` : '';
         const on = tersimpan.has(b.olid);
         return `
@@ -164,7 +191,7 @@
                 <p class="type">Buku Digital${b.akses === 'public' ? ' <span class="badge-free">Bisa dibaca</span>' : ''}</p>
                 <h3>${escHtml(b.judul)}</h3>
                 <p class="author">${escHtml(b.penulis)}${tahun}</p>
-                <span class="book-rating"><i class="fas fa-star"></i> ${rating} • <i class="fas fa-bookmark"></i> ${b.want}</span>
+                <span class="book-rating"><i class="fas fa-star"></i> ${rating} • <i class="fas fa-bookmark"></i> ${want}</span>
                 ${withHeart ? `<i class="${on ? 'fas active' : 'far'} fa-heart heart" data-toggle-bookmark title="${on ? 'Hapus dari bookmark' : 'Simpan ke bookmark'}"></i>` : ''}
             </div>
         </div>`;
@@ -204,8 +231,10 @@
             if (b.cover_besar) { cover.onerror = () => { cover.onerror = null; cover.src = NO_COVER; }; cover.src = b.cover_besar; }
 
             $('bd-stats').innerHTML =
-                `<span><i class="fas fa-star"></i> ${b.rating ? b.rating : 'Belum ada rating'}</span>` +
-                `<span><i class="fas fa-bookmark"></i> ${b.want} orang ingin membaca</span>` +
+                `<span><i class="fas fa-star"></i> ${b.rating === null ? 'Belum ada rating' : b.rating}</span>` +
+                `<span><i class="fas fa-bookmark"></i> ${b.want === null
+                    ? 'Jumlah ingin membaca tidak tersedia'
+                    : `${new Intl.NumberFormat('id-ID').format(b.want)} orang ingin membaca`}</span>` +
                 (b.akses === 'public' ? '<span><i class="fas fa-book-open"></i> Bisa dibaca gratis</span>' : '');
 
             const desc = $('bd-desc');
@@ -408,6 +437,7 @@
     const chips = Array.from(document.querySelectorAll('#chip-row .chip'));
     const DEFAULT_KAT = grid.dataset.defaultKategori;
     const LIMIT = 20;
+    const localBooks = readJson('buku-lokal') || [];
 
     const state = { q: '', kategori: DEFAULT_KAT, bahasa: '', gratis: false, page: 1, loading: false, done: false, failed: false };
     let token = 0; // naik setiap filter berubah, supaya respons lama diabaikan
@@ -464,6 +494,23 @@
             if (mine !== token) return;
             clearSkeleton();
             state.failed = true;
+            if (localBooks.length) {
+                const q = state.q.toLocaleLowerCase();
+                const available = localBooks.filter(b =>
+                    !q || `${b.judul} ${b.penulis}`.toLocaleLowerCase().includes(q)
+                );
+                available.forEach(b => bookCache.set(b.olid, b));
+                grid.insertAdjacentHTML('beforeend', available.map(b => cardHtml(b, true)).join(''));
+                setStatus(
+                    `<span>${available.length
+                        ? 'Open Library sedang tidak bisa dihubungi. Menampilkan buku yang sudah tersimpan.'
+                        : 'Tidak ada buku tersimpan yang cocok dengan pencarian ini. Hapus kata kunci untuk melihat semua buku lokal.'}</span> ` +
+                    '<button type="button" class="link-btn" id="retry-btn">Coba lagi</button>'
+                );
+                const retry = document.getElementById('retry-btn');
+                if (retry) retry.addEventListener('click', () => { state.failed = false; load(false); });
+                return;
+            }
             setStatus('Gagal memuat buku dari Open Library. <button type="button" class="link-btn" id="retry-btn">Coba lagi</button>');
             const retry = document.getElementById('retry-btn');
             if (retry) retry.addEventListener('click', () => { state.failed = false; load(false); });

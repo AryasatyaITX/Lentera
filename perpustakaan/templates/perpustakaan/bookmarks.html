@@ -75,7 +75,11 @@
                     
                     <p class="author">{% if mark.buku_digital %}{{ mark.buku_digital.penulis }}{% else %}{{ mark.jurnal.penulis }}{% endif %}</p>
                     
-                    <span class="book-rating"><i class="fas fa-star"></i> 4.8  •  <i class="fas fa-eye"></i> 78</span>
+                    {% if mark.buku_digital %}
+                    <span class="book-rating" data-bookmark-stats data-olid="{{ mark.buku_digital.id_item }}">
+                        <i class="fas fa-star"></i> <span data-book-rating>Memuat rating...</span><span data-book-want></span>
+                    </span>
+                    {% endif %}
                     
                     
                     <i class="fas fa-heart heart active" data-id="{{ mark.id }}" onclick="removeBookmark(this)" title="Hapus dari Bookmark"></i>
@@ -89,6 +93,20 @@
             </div>
             {% endfor %}
         </div>
+
+        {% if page_obj.paginator.num_pages > 1 %}
+        <nav class="pagination" aria-label="Navigasi halaman bookmark">
+            <span class="pagination-status">Halaman {{ page_obj.number }} dari {{ page_obj.paginator.num_pages }}</span>
+            <div class="pagination-actions">
+                {% if page_obj.has_previous %}
+                <a class="pagination-link" href="?page={{ page_obj.previous_page_number }}" rel="prev">Sebelumnya</a>
+                {% endif %}
+                {% if page_obj.has_next %}
+                <a class="pagination-link" href="?page={{ page_obj.next_page_number }}" rel="next">Berikutnya</a>
+                {% endif %}
+            </div>
+        </nav>
+        {% endif %}
 
     </div>
 </body>

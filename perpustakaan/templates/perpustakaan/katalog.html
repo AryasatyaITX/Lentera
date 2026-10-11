@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1001">
     <script src="{% static 'perpustakaan/js/script.js' %}" defer></script>
-    <script src="{% static 'perpustakaan/js/buku.js' %}?v=3" defer></script>
+    <script src="{% static 'perpustakaan/js/buku.js' %}?v=4" defer></script>
 </head>
 <body class="app-body">
 
@@ -88,6 +88,7 @@
         
         <div class="catalog-grid" id="katalog-grid" data-default-kategori="{{ default_kategori }}"></div>
         {{ tersimpan_ids|json_script:"tersimpan-ids" }}
+        {{ buku_lokal|json_script:"buku-lokal" }}
 
         <div class="grid-status" id="grid-status" aria-live="polite"></div>
         <div id="grid-sentinel" style="height:1px;"></div>

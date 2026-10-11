@@ -722,6 +722,28 @@ body.auth-body {
 .bookmark-header-info p { font-size: 14px; color: #8A8A7A; }
 .bookmark-count { font-size: 12px; color: #A0AABF; font-weight: 600; }
 
+.pagination {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin: 20px 0 30px;
+}
+
+.pagination-status { font-size: 12px; color: #8A8A7A; }
+.pagination-actions { display: flex; gap: 8px; }
+.pagination-link {
+    padding: 9px 14px;
+    border: 1px solid #E5E5D8;
+    border-radius: 8px;
+    color: #121824;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+}
+.pagination-link:hover { background: #f5f7ec; }
+
 .heart.active {
     color: #D4F838 !important;
     font-weight: 900 !important;
@@ -990,7 +1012,7 @@ body.auth-body {
 /* Header tabel */
 .riwayat-header {
     display: grid;
-    grid-template-columns: 3fr 1.5fr 1.5fr 1.2fr 1fr;
+    grid-template-columns: minmax(260px, 3fr) minmax(120px, 1.25fr) minmax(150px, 1.5fr) minmax(120px, 1.25fr);
     padding: 18px 30px;
     background: #fafafa;
     border-bottom: 1px solid #eee;
@@ -1034,11 +1056,27 @@ body.auth-body {
 /* Baris data riwayat */
 .riwayat-row {
     display: grid;
-    grid-template-columns: 3fr 1.5fr 1.5fr 1.2fr 1fr;
+    grid-template-columns: minmax(260px, 3fr) minmax(120px, 1.25fr) minmax(150px, 1.5fr) minmax(120px, 1.25fr);
     align-items: center;
     padding: 20px 30px;
     border-bottom: 1px solid #f3f4f6;
     transition: background 0.2s;
+}
+
+.history-due-date {
+    color: #8A8A7A;
+    font-size: 12px;
+}
+
+@media (max-width: 900px) {
+    .riwayat-container {
+        overflow-x: auto;
+    }
+
+    .riwayat-header,
+    .riwayat-row {
+        min-width: 760px;
+    }
 }
 
 .riwayat-row:hover {
