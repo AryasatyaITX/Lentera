@@ -113,7 +113,7 @@ class CustomUser(AbstractUser):
         """Logika otomatis memperbarui streak harian user"""
         today = timezone.localdate()
         if self.last_read_date == today:
-            return  # Sudah dihitung hari ini
+            return
 
         if self.last_read_date == today - timedelta(days=1):
             self.streak_days += 1
