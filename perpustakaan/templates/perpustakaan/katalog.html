@@ -22,7 +22,6 @@
                 <img src="{% static 'perpustakaan/img/logo.svg' %}" alt="Logo Lentera" class="sidebar-logo">
                 <div>
                     <h2>lentera<span>.</span></h2>
-                    <p>LAYANAN REFERENSI TEKNIK</p>
                 </div>
             </div>
 
@@ -213,6 +212,26 @@
             <p class="ol-credit">Data buku dan sampul dari <a href="https://openlibrary.org" target="_blank" rel="noopener">Open Library</a>.</p>
 
         </div>
+        <!-- ===== / Konten utama ===== -->
+
+        
+        <div class="chip-row" id="chip-row">
+            {% for nilai, label in kategori_list %}
+            <button type="button" class="chip{% if nilai == default_kategori %} active{% endif %}" data-kategori="{{ nilai }}">{{ label }}</button>
+            {% endfor %}
+        </div>
+
+        <h2 class="grid-title" id="grid-title"></h2>
+
+        
+        <div class="catalog-grid" id="katalog-grid" data-default-kategori="{{ default_kategori }}"></div>
+        {{ tersimpan_ids|json_script:"tersimpan-ids" }}
+        {{ buku_lokal|json_script:"buku-lokal" }}
+
+        <div class="grid-status" id="grid-status" aria-live="polite"></div>
+        <div id="grid-sentinel" style="height:1px;"></div>
+
+        <p class="ol-credit">Data buku dan sampul dari <a href="https://openlibrary.org" target="_blank" rel="noopener">Open Library</a>.</p>
     </div>
 </body>
 </html>

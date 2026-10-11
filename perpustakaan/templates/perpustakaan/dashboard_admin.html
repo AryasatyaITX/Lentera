@@ -1,0 +1,114 @@
+{% extends 'perpustakaan/base_admin.html' %}
+{% load static %}
+
+{% block title %}Dashboard Admin · Lentera{% endblock %}
+{% block page_title %}Pusat Kendali Perpustakaan{% endblock %}
+{% block page_subtitle %}Ringkasan aktivitas hari ini.{% endblock %}
+
+{% block content %}
+<section class="hero-banner adm-hero">
+  <h3>Ringkasan hari ini • {{ tanggal_teks }}</h3>
+  <h2>Halo, {{ nama }}</h2>
+  <p>
+    {% if sedang_dipinjam %}Ada {{ sedang_dipinjam }} buku yang sedang dipinjam anggota.{% else %}Belum ada buku yang sedang dipinjam.{% endif %}
+    Lihat ringkasan hari ini yang perlu kamu ketahui.
+  </p>
+  <div class="hero-decoration" aria-hidden="true"></div>
+  <svg class="adm-star" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 1l2.6 7.4L22 11l-7.4 2.6L12 21l-2.6-7.4L2 11l7.4-2.6z"/></svg>
+</section>
+
+<section class="stats-grid adm-stats" aria-label="Statistik utama">
+  <div class="stat-card c-green">
+    <h4>Total buku</h4>
+    <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/></svg>
+    <h2>{{ total_buku }}</h2>
+    <p>+ {{ total_jurnal }} jurnal</p>
+  </div>
+  <div class="stat-card c-blue">
+    <h4>Total anggota</h4>
+    <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.4 3.2-5.5 6.5-5.5s5.9 2.1 6.5 5.5"/><path d="M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14.8c2 .7 3.2 2.5 3.5 5.2"/></svg>
+    <h2>{{ total_anggota }}</h2>
+    <p>+{{ anggota_baru }} bulan ini</p>
+  </div>
+  <div class="stat-card c-pink">
+    <h4>Sedang dipinjam</h4>
+    <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+    <h2>{{ sedang_dipinjam }}</h2>
+    <p>buku terpinjam</p>
+  </div>
+  <div class="stat-card c-purple">
+    <h4>Dikembalikan</h4>
+    <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3l4 4-4 4M21 7H8M7 21l-4-4 4-4M3 17h13"/></svg>
+    <h2>{{ dikembalikan_minggu }}</h2>
+    <p>minggu ini</p>
+  </div>
+</section>
+
+<section class="adm-panels">
+  <div class="adm-panel">
+    <div class="section-header"><div><h4>Aktivitas peminjaman</h4><h2>Aktivitas 7 hari terakhir</h2></div></div>
+    <ul class="adm-legend">
+      <li><span class="adm-dot adm-dot--loan"></span>Peminjaman</li>
+      <li><span class="adm-dot adm-dot--return"></span>Pengembalian</li>
+    </ul>
+    <div class="adm-chart">
+      <canvas id="chart-aktivitas" role="img" aria-label="Grafik peminjaman dan pengembalian 7 hari terakhir"></canvas>
+    </div>
+  </div>
+
+  <div class="adm-panel">
+    <div class="section-header"><div><h4>Paling sering dipinjam</h4><h2>Buku terpopuler</h2></div></div>
+    {% if populer %}
+    <ol class="adm-popular">
+      {% for b in populer %}
+      <li>
+        <div class="adm-popular-row">
+          <span class="adm-popular-title">{{ b.judul }}</span>
+          <span class="adm-popular-count">{{ b.jumlah }}×</span>
+        </div>
+        <div class="adm-bar"><span style="--width: {{ b.persen }}%"></span></div>
+      </li>
+      {% endfor %}
+    </ol>
+    {% else %}
+    <p class="adm-empty">Belum ada peminjaman. Buku yang sering dipinjam akan muncul di sini.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="adm-recent">
+  <div class="section-header"><div><h4>Aktivitas terbaru</h4><h2>Apa yang baru saja terjadi?</h2></div></div>
+  {% if aktivitas %}
+  <ul class="adm-event-list">
+    {% for e in aktivitas %}
+    <li class="adm-event adm-event--{{ e.jenis }}">
+      <span class="adm-event-icon" aria-hidden="true">
+        {% if e.jenis == "anggota" %}
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.5"/><path d="M3 20c.6-3.4 3.2-5.5 7-5.5M18 8v6M15 11h6"/></svg>
+        {% elif e.jenis == "kembali" %}
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4-4 4M21 7H8M7 21l-4-4 4-4M3 17h13"/></svg>
+        {% elif e.jenis == "bookmark" %}
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+        {% else %}
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/></svg>
+        {% endif %}
+      </span>
+      <div class="adm-event-body">
+        <strong class="adm-event-title">{{ e.judul }}</strong>
+        <span class="adm-event-desc">{{ e.deskripsi }}</span>
+        <time class="adm-event-time">{{ e.waktu_lalu }}</time>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="adm-empty">Belum ada aktivitas. Peminjaman dan anggota baru akan muncul di sini.</p>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block extra_js %}
+{{ grafik|json_script:"data-grafik" }}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="{% static 'perpustakaan/js/admin-dashboard.js' %}"></script>
+{% endblock %}
