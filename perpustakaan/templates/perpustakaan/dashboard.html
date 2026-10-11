@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1006">
+    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1015">
     <script src="{% static 'perpustakaan/js/script.js' %}?v=2" defer></script>
     <script src="{% static 'perpustakaan/js/buku.js' %}?v=3" defer></script>
 </head>
@@ -95,14 +95,17 @@
             <h2>Temukan ide baru,<br><span>satu halaman</span> setiap hari.</h2>
             <p>Temukan ribuan ebook, lanjutkan bacaan, simpan wishlist, dan akses artikel literasi dalam satu aplikasi yang cepat dan mudah digunakan.</p>
             
-            <a href="{% url 'katalog' %}" class="btn-katalog">Jelajahi Katalog <i class="fas fa-arrow-right"></i></a>
+            <div class="hero-actions">
+                <a href="{% url 'katalog' %}" class="btn-katalog">Jelajahi Katalog <i class="fas fa-arrow-right"></i></a>
+
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="hero-search" placeholder="Cari judul atau penulis, lalu tekan Enter...">
+                </div>
+            </div>
 
             <div class="hero-decoration">
                 <i class="fas fa-book-open"></i>
-            </div>
-            <div class="search-bar">
-                <i class="fas fa-search"></i>
-                <input type="text" id="hero-search" placeholder="Cari judul atau penulis, lalu tekan Enter...">
             </div>
         </div>
 

@@ -866,6 +866,11 @@ body.auth-body {
     gap: 8px;
 }
 
+.slot-dots {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+}
+
 .slot-dot {
     width: 14px;
     height: 14px;
@@ -1915,4 +1920,38 @@ body {
     .app-layout .main-content.adm-main { padding: 24px 20px; }
     .adm-event-list { grid-template-columns: 1fr; }
 }
- 
+
+/* Membuat font selamat */
+.page-title-space span {
+    font-family: inherit !important;
+}
+
+.app-layout.no-anim .sidebar {
+    transition: none;
+}
+
+/* presisi dengan jelajahi katalog */
+.hero-banner .hero-actions {
+    position: absolute;
+    left: 40px;
+    right: 40px;
+    bottom: 35px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    z-index: 10;
+}
+
+.hero-banner .hero-actions .btn-katalog {
+    position: static;
+    height: 48px;
+    padding: 0 24px;
+    flex-shrink: 0;
+}
+
+.hero-banner .hero-actions .search-bar {
+    position: static;
+    height: 48px;
+    width: 420px;
+    max-width: 100%;
+}

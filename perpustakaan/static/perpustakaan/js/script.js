@@ -254,9 +254,17 @@ document.addEventListener("DOMContentLoaded", function () {
         console.error("appLayout atau menuButton tidak ditemukan");
         return;
     }
+    
+    try {
+        if (localStorage.getItem("sidebarOpen") === "1") {
+            appLayout.classList.add("sidebar-open");
+        }
+    } catch (e) {}
 
     menuButton.addEventListener("click", function () {
         appLayout.classList.toggle("sidebar-open");
-        console.log("Sidebar:", appLayout.classList.contains("sidebar-open") ? "terbuka" : "tertutup");
+        try {
+            localStorage.setItem("sidebarOpen", appLayout.classList.contains("sidebar-open") ? "1" : "0");
+        } catch (e) {}
     });
 });
