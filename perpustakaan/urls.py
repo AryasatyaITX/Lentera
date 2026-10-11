@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import views_admin
 
 urlpatterns = [
     path('', views.dashboard, name='dashboard'),
@@ -25,4 +26,6 @@ urlpatterns = [
     
     # Perbaikan nama URL di sini:
     path('profil/<str:username>/', views.profil_user_detail_view, name='profil_user_detail'),
+
+    path("dashboard-admin/", views_admin.dashboard_admin, name="dashboard_admin"),
 ]

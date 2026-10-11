@@ -13,6 +13,7 @@ from django.contrib.auth import (
     logout,
     update_session_auth_hash,
 )
+from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -53,7 +54,7 @@ def login_view(request):
         if user is not None:
             login(request, user)
             if user.is_staff or user.is_admin:
-                return redirect("/admin/")
+                return redirect("dashboard_admin")
             return redirect("dashboard")
         else:
             messages.error(request, "Username/Email atau Password salah!")
@@ -419,6 +420,7 @@ def kembalikan_buku(request, pinjaman_id):
     if pinjaman.status == "Dibaca":
         pinjaman.status = "Selesai"
         pinjaman.progress_baca = 100
+        pinjaman.tanggal_kembali = timezone.now()
         pinjaman.save()
         request.user.add_exp(50)
 

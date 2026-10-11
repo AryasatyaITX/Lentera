@@ -1674,3 +1674,245 @@ body {
     object-fit: cover;
     display: block;
 }
+
+
+/* =========================================================
+   DASHBOARD ADMIN
+   Tambahan baru. Kode di atas tidak diubah.
+   Class baru memakai awalan .adm- agar tidak bentrok.
+========================================================= */
+
+/* ---------- Hero (memakai .hero-banner yang sudah ada) ---------- */
+.hero-banner.adm-hero {
+    padding: 36px 40px;
+    min-height: 160px;
+    margin-bottom: 20px;
+}
+
+.hero-banner.adm-hero h2 {
+    font-weight: 500;
+    margin: 12px 0 10px;
+}
+
+.hero-banner.adm-hero p {
+    max-width: 420px;
+    font-size: 13px;
+}
+
+.adm-hero .hero-decoration {
+    border-color: rgba(212, 248, 56, 0.22);
+}
+
+.adm-hero .hero-decoration::after {
+    content: "";
+    position: absolute;
+    inset: 22px;
+    border-radius: 50%;
+    border: 1px solid rgba(212, 248, 56, 0.22);
+}
+
+.adm-hero .adm-star {
+    position: absolute;
+    top: 30px;
+    right: 48px;
+    width: 22px;
+    height: 22px;
+    color: #D4F838;
+    z-index: 2;
+}
+
+/* ---------- Kartu statistik (memakai .stats-grid & .stat-card) ---------- */
+.stats-grid.adm-stats {
+    margin-bottom: 28px;
+}
+
+.adm-stats .stat-card h2 {
+    font-family: 'Space Grotesk', 'Plus Jakarta Sans', sans-serif !important;
+    font-weight: 500;
+    margin: 8px 0 16px;
+}
+
+.adm-stats .stat-card .stat-icon {
+    box-sizing: content-box;
+    padding: 5px;
+    background: #fff;
+    border-radius: 6px;
+}
+
+/* ---------- Grafik + buku terpopuler ---------- */
+.adm-panels {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 24px;
+    margin-bottom: 36px;
+}
+
+.adm-panel {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+}
+
+.adm-panel .section-header {
+    margin-bottom: 12px;
+}
+
+.adm-legend {
+    display: flex;
+    gap: 18px;
+    list-style: none;
+    margin-bottom: 12px;
+    font-size: 11px;
+    color: #8A8A7A;
+}
+
+.adm-legend li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.adm-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.adm-dot--loan { background: #F2C94C; }
+.adm-dot--return { background: #173C3A; }
+
+.adm-chart {
+    position: relative;
+    height: 240px;
+}
+
+.adm-popular {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 18px;
+}
+
+.adm-popular-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13px;
+    color: #173C3A;
+}
+
+.adm-popular-title {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.adm-popular-count {
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: #8A8A7A;
+}
+
+.adm-bar {
+    height: 6px;
+    margin-top: 6px;
+    background: #ECEFE4;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.adm-bar span {
+    display: block;
+    width: var(--width, 0%);
+    height: 100%;
+    background: #173C3A;
+    border-radius: 999px;
+}
+
+.adm-empty {
+    margin-top: 18px;
+    max-width: 320px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #8A8A7A;
+}
+
+/* ---------- Aktivitas terbaru ---------- */
+.adm-recent {
+    padding-bottom: 40px;
+}
+
+.adm-event-list {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.adm-event {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+}
+
+.adm-event-icon {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+    background: #E8F5E9;
+    color: #2E7D32;
+}
+
+.adm-event--anggota .adm-event-icon { background: #FCE4EC; color: #C2185B; }
+.adm-event--kembali .adm-event-icon { background: #F3E5F5; color: #7B1FA2; }
+.adm-event--bookmark .adm-event-icon { background: #E3F2FD; color: #1976D2; }
+
+.adm-event-body {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.adm-event-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #173C3A;
+}
+
+.adm-event-desc {
+    margin-top: 2px;
+    font-size: 11px;
+    color: #6A6A5C;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.adm-event-time {
+    margin-top: 14px;
+    font-size: 10px;
+    color: #8A8A7A;
+}
+
+/* ---------- Responsif ---------- */
+@media (max-width: 1100px) {
+    .adm-panels { grid-template-columns: 1fr; }
+    .adm-event-list { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 760px) {
+    .app-layout .main-content.adm-main { padding: 24px 20px; }
+    .adm-event-list { grid-template-columns: 1fr; }
+}
+ 
