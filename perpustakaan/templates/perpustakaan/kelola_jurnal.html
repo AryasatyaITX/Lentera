@@ -1,0 +1,53 @@
+{% extends 'perpustakaan/admin_base.html' %}
+
+{% block title %}Kelola Jurnal{% endblock %}
+{% block page_title %}Kelola Jurnal{% endblock %}
+{% block page_subtitle %}Atur koleksi jurnal yang tersedia di perpustakaan{% endblock %}
+
+{% block content %}
+<div class="a-toolbar">
+    <div class="a-search">
+        <i class="fas fa-search"></i>
+        <input type="text" id="a-search-input" placeholder="Cari judul atau penulis...">
+    </div>
+    <button type="button" class="a-btn-filter"><i class="fas fa-sliders-h"></i> Filter</button>
+</div>
+
+<div class="a-card">
+    <h3 class="a-card-title">Daftar koleksi</h3>
+    <table class="a-table">
+        <thead>
+            <tr>
+                <th style="width:30%">Judul Jurnal</th>
+                <th>Kategori</th>
+                <th>Tipe</th>
+                <th>Tahun</th>
+                <th>Pembaca</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for j in jurnals %}
+            <tr data-row>
+                <td>
+                    <div class="a-item">
+                        <img class="cover" src="{% if j.cover %}{{ j.cover }}{% else %}https://images.unsplash.com/photo-1580536203673-93e150937a54?w=200{% endif %}" alt="Cover">
+                        <div>
+                            <div class="t">{{ j.judul }}</div>
+                            <div class="s">{{ j.penulis }}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>{{ j.kategori|default:"-" }}</td>
+                <td>{{ j.tipe|default:"Jurnal" }}</td>
+                <td>{{ j.tahun|default:"-" }}</td>
+                <td>{{ j.jumlah_pembaca|default:0 }}</td>
+                <td><a href="#" class="a-icon-btn" title="Detail"><i class="fas fa-ellipsis-h"></i></a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="a-empty">Belum ada koleksi jurnal.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
