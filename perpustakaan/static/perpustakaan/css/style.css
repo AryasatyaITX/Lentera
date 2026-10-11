@@ -1994,3 +1994,144 @@ body {
     width: 420px;
     max-width: 100%;
 }
+
+/* =========================================================
+   SIDEBAR ADMIN (desain baru) — khusus .adm-sidebar
+.app-layout .sidebar.adm-sidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 28px 16px 20px;
+    background-color: #173C3A;
+    overflow-y: auto;
+}
+
+/* Logo */
+.adm-sidebar .sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 10px;
+    margin-bottom: 40px;
+    text-decoration: none;
+}
+
+.adm-sidebar .sidebar-logo {
+    width: 34px;
+    height: 34px;
+}
+
+.adm-sidebar .sidebar-brand h2 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.3px;
+}
+
+.adm-sidebar .sidebar-brand h2 span {
+    color: #D4F838;
+}
+
+/* Menu */
+.adm-sidebar .sidebar-menu {
+    flex: 1;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.adm-sidebar .sidebar-menu li {
+    margin: 0;
+}
+
+.adm-sidebar .sidebar-menu a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    color: #B7C4C1;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.35;
+}
+
+.adm-sidebar .sidebar-menu a i {
+    margin: 0;
+    width: 18px;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+}
+
+.adm-sidebar .sidebar-menu a:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+.adm-sidebar .sidebar-menu a.active {
+    background: rgba(212, 248, 56, 0.12);
+    color: #D4F838;
+    font-weight: 700;
+}
+
+/* Profil di bawah */
+.adm-sidebar .sidebar-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 24px;
+    padding: 16px 6px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.adm-sidebar .sidebar-profile .avatar-circle {
+    width: 40px;
+    height: 40px;
+    margin: 0;
+    font-size: 13px;
+}
+
+.adm-sidebar .sidebar-profile .avatar-circle img {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    object-fit: cover;
+}
+
+.adm-sidebar .profile-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.adm-sidebar .profile-text h4 {
+    color: #9DB5B0;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.adm-sidebar .profile-text p {
+    color: #fff;
+    font-size: 13px;
+    margin-top: 2px;
+}
+
+.adm-logout {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    color: #9DB5B0;
+    transition: 0.2s;
+}
+
+.adm-logout:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #D4F838;
+}

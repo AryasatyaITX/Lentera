@@ -9,14 +9,206 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1011">
+    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1052">
     <script src="{% static 'perpustakaan/js/script.js' %}?v=2" defer></script>
+    <style>
+        .profile-header-bg-dynamic {
+            position: relative;
+            background-color: #112222;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            height: 130px;
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+            z-index: 1;
+            overflow: hidden;
+            transition: filter 0.2s ease-in-out;
+        }
+        
+        /* Efek Menggelap & Ikon Kamera saat Hover (Khusus Pemilik Akun) */
+        .profile-editable {
+            cursor: pointer;
+        }
+        .profile-editable:hover {
+            filter: brightness(0.8);
+        }
+        .profile-header-bg-dynamic.profile-editable:hover::after {
+            content: '\f030';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 20px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 10px;
+            border-radius: 50%;
+        }
+
+        #previewContainer.profile-editable:hover::after {
+            content: '\f030';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.45);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        /* Kotak Panduan Password Elegan */
+        .password-policy-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 12px 16px;
+            margin-top: 10px;
+        }
+        .password-policy-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .password-policy-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .password-policy-item {
+            font-size: 11px;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .password-policy-item i {
+            font-size: 10px;
+            color: #94a3b8;
+        }
+        .password-policy-item.valid {
+            color: #16a34a;
+            font-weight: 600;
+        }
+        .password-policy-item.valid i {
+            color: #16a34a;
+        }
+        .password-policy-item.error-state {
+            color: #ef4444;
+            font-weight: 600;
+        }
+        .password-policy-item.error-state i {
+            color: #ef4444;
+        }
+        .input-error {
+            border: 2px solid #ef4444 !important;
+            background-color: #fef2f2 !important;
+        }
+        .password-inline-error {
+            display: none;
+            font-size: 11px;
+            color: #dc2626;
+            background: #fef2f2;
+            border: 1px solid #fee2e2;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-top: 8px;
+            font-weight: 600;
+            align-items: center;
+            gap: 6px;
+        }
+        .custom-modal-backdrop {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(6px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.25s ease-out;
+        }
+        .custom-modal-box {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            border-radius: 28px;
+            width: 330px;
+            padding: 28px 24px;
+            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+            text-align: center;
+            transform: translateY(0);
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .modal-btn-primary {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            color: #0f172a;
+            padding: 14px 16px;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .modal-btn-primary:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+        }
+        .modal-btn-danger {
+            background: #fff5f5;
+            border: 1px solid #fee2e2;
+            color: #dc2626;
+            padding: 14px 16px;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+        }
+        .modal-btn-danger:hover {
+            background: #fee2e2;
+            transform: translateY(-1px);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(24px) scale(0.96); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+    </style>
 </head>
 <body>
 
     <div class="app-layout" id="appLayout">
 
-        <!-- ===== Sidebar (sama dengan dashboard) ===== -->
+        <!-- ===== Sidebar ===== -->
         <div class="sidebar">
             <div class="sidebar-brand">
                 <img src="{% static 'perpustakaan/img/logo.svg' %}" alt="Logo Lentera" class="sidebar-logo">
@@ -37,11 +229,18 @@
                 </li>
                 <li><a href="{% url 'bookmarks' %}"><i class="fas fa-heart"></i> Bookmarks</a></li>
                 <li><a href="{% url 'riwayat' %}"><i class="fas fa-history"></i> Riwayat Peminjaman</a></li>
-                <li><a href="{% url 'leaderboard' %}"{% if request.user != user %} class="active"{% endif %}><i class="fas fa-trophy"></i> Top List Reader</a></li>
-                <li><a href="{% url 'profil' %}"{% if request.user == user %} class="active"{% endif %}><i class="fas fa-user"></i> Profil</a></li>
+                <li>
+                    <a href="{% url 'leaderboard' %}" class="{% if request.user != user %}active{% endif %}">
+                        <i class="fas fa-trophy"></i> Top List Reader
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'profil' %}" class="{% if request.user == user %}active{% endif %}">
+                        <i class="fas fa-user"></i> Profil
+                    </a>
+                </li>
             </ul>
 
-            <!-- Selalu menampilkan akun yang sedang login, bukan pemilik profil yang dilihat -->
             <div class="sidebar-profile">
                 <div class="avatar-circle">
                     {% if request.user.foto_profil %}
@@ -63,17 +262,22 @@
 
             <div class="top-nav">
                 <div class="top-nav-left">
-                    <button id="menuButton"
-                            class="menu-button"
-                            type="button"
-                            aria-label="Buka atau tutup menu">
+                    <button id="menuButton" class="menu-button" type="button" aria-label="Buka atau tutup menu">
                         <i class="fas fa-bars"></i>
                     </button>
                     <div class="top-divider"></div>
                     <div class="greeting">
                         <h4>Lentera / Anggota</h4>
-                        <h1 class="page-title-space">{% if request.user == user %}Profil Saya{% else %}Profil Anggota{% endif %}</h1>
-                        <p>{% if request.user == user %}Atur informasi dan keamanan akun kamu di sini.{% else %}Melihat informasi dan pencapaian pembaca.{% endif %}</p>
+                        <h1 class="page-title-space">
+                            {% if request.user == user %}Profil Saya{% else %}Profil Anggota{% endif %}
+                        </h1>
+                        <p>
+                            {% if request.user == user %}
+                                Atur informasi dan keamanan akun kamu di sini.
+                            {% else %}
+                                Melihat informasi dan pencapaian pembaca.
+                            {% endif %}
+                        </p>
                     </div>
                 </div>
                 <div class="nav-actions">
@@ -87,9 +291,7 @@
                             {% endif %}
                         </div>
                     </a>
-                    <a href="{% url 'logout' %}"
-                       style="margin-left:15px; color:#dc2626; font-size:20px;"
-                       title="Logout">
+                    <a href="{% url 'logout' %}" style="margin-left:15px; color:#dc2626; font-size:20px;" title="Logout">
                         <i class="fas fa-sign-out-alt"></i>
                     </a>
                 </div>
@@ -97,70 +299,76 @@
 
             <div class="profile-container">
 
-                <!-- ===== Kartu profil (pemilik profil yang sedang dilihat) ===== -->
-                <div class="profile-card">
-                    <div class="profile-header-bg"
-                         {% if user.foto_background %}style="background: url('{{ user.foto_background.url }}') center/cover;"{% endif %}>
-                    </div>
+                <!-- ===== Kartu Profil Samping ===== -->
+                <div class="profile-card" style="background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06); height: fit-content;">
+                    
+                    <!-- Background Cover dengan Efek Hover Cond -->
+                    <div id="previewBgContainer" class="profile-header-bg-dynamic {% if request.user == user %}profile-editable{% endif %}" {% if request.user == user %}onclick="openBgMenu()" title="Ketuk untuk ubah background cover"{% endif %} {% if user.foto_background %}style="background-image: url('{{ user.foto_background.url }}');"{% endif %}></div>
 
-                    <div class="profile-info-wrap">
-                        <div style="position: relative;">
+                    <div style="padding: 0 28px 32px 28px; text-align: left;">
+                        
+                        <!-- Foto Profil / Avatar dengan Efek Hover Cond -->
+                        <div id="previewContainer" class="{% if request.user == user %}profile-editable{% endif %}" style="position: relative; z-index: 2; width: 76px; height: 76px; border-radius: 18px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #d4f838; border: 4px solid #ffffff; box-shadow: 0 6px 16px rgba(0,0,0,0.08); margin: -38px 0 14px 0;" {% if request.user == user %}onclick="openAvatarMenu()" title="Ketuk untuk ubah foto profil"{% endif %}>
                             {% if user.foto_profil %}
-                                <img src="{{ user.foto_profil.url }}?v={{ user.last_login|date:'U' }}" alt="Profile" class="profile-avatar-large" style="object-fit: cover; border-radius: 50%; padding: 0;">
+                                <img id="previewImg" src="{{ user.foto_profil.url }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
                             {% else %}
-                                <div class="profile-avatar-large">{{ user.nama_tampilan|default:user.username|slice:1|upper }}</div>
+                                <span id="previewInitial" style="font-size: 26px; font-weight: 800; color: #112222; font-family: 'Space Grotesk', sans-serif;">{{ user.nama_tampilan|default:user.username|slice:2|upper }}</span>
                             {% endif %}
                         </div>
 
-                        <h2 style="margin-top: 10px; font-weight: 700; color: #121824; font-size: 18px;">{{ user.nama_tampilan|default:user.username }}</h2>
-                        <p style="font-weight: 600; color: #52525b; font-size: 13px; margin-top: 2px;">NIM: {{ user.username }}</p>
+                        <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 14px;">
+                            {{ user.nama_tampilan|default:user.username }}
+                        </h2>
 
-                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 12px; margin-bottom: 8px;">
-                            <span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; background: #ecfdf5; color: #059669; border: 1px solid #d1fae5; font-size: 12px;" title="Badge Keaktifan">
-                                <i class="fas fa-award"></i>
-                            </span>
-                            <span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; background: #ecfdf5; color: #059669; border: 1px solid #d1fae5; font-size: 12px;" title="Buku Dibaca">
-                                <i class="fas fa-book-open"></i>
-                            </span>
-                            <span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; background: #ecfdf5; color: #059669; border: 1px solid #d1fae5; font-size: 12px;" title="Total EXP">
-                                <i class="fas fa-star"></i>
-                            </span>
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 10px; background: #d4f838; color: #112222; font-size: 13px;" title="Badge Keaktifan">
+                                    <i class="fas fa-award"></i>
+                                </span>
+                                <span style="display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 10px; background: #d4f838; color: #112222; font-size: 13px;" title="Buku Dibaca">
+                                    <i class="fas fa-book-open"></i>
+                                </span>
+                                <span style="display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 10px; background: #d4f838; color: #112222; font-size: 13px;" title="Total EXP">
+                                    <i class="fas fa-star"></i>
+                                </span>
+                            </div>
 
-                            <div style="display: inline-flex; align-items: center; gap: 6px; background: #fff7ed; color: #c2410c; border: 1px solid #ffedd5; padding: 5px 10px; border-radius: 8px; font-size: 12px; font-weight: 600;">
+                            <div style="display: inline-flex; align-items: center; gap: 6px; background: #fffaed; color: #b45309; border: 1px solid #fef3c7; padding: 7px 12px; border-radius: 14px; font-size: 12px; font-weight: 700;">
                                 <i class="fas fa-fire" style="color: #f97316;"></i>
                                 <span>{{ user.streak_days|default:0 }} hari streak</span>
                             </div>
                         </div>
 
-                        <p style="font-size: 12px; color: #71717a; margin-bottom: 20px;">Anggota sejak {{ user.date_joined|date:"F Y" }}</p>
+                        <p style="font-size: 13px; color: #94a3b8; font-weight: 500; margin-bottom: 24px;">Anggota sejak {{ user.date_joined|date:"F Y" }}</p>
 
-                        <div style="border-top: 1px solid #f4f4f5; padding-top: 15px; margin-top: 15px; width: 100%; text-align: left;">
-                            <h4 style="font-size: 11px; font-weight: 700; letter-spacing: 0.05em; color: #a1a1aa; text-transform: uppercase; margin-bottom: 10px;">Achievement</h4>
+                        <div>
+                            <h4 style="font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #94a3b8; text-transform: uppercase; margin-bottom: 14px;">ACHIEVEMENT</h4>
 
                             {% if achievements %}
-                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <div style="display: flex; flex-direction: column; gap: 12px;">
                                     {% for ach in achievements %}
-                                    <div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; background: #f9fafb; border: 1px solid #f3f4f6;">
-                                        <div style="width: 32px; height: 32px; border-radius: 8px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                            <i class="fas fa-medal"></i>
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div style="width: 40px; height: 40px; border-radius: 10px; background: #d4f838; color: #112222; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 15px;">
+                                            <i class="fas fa-award"></i>
                                         </div>
                                         <div style="overflow: hidden;">
-                                            <h5 style="font-size: 12px; font-weight: 600; color: #1f2937; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ ach.title }}</h5>
-                                            <p style="font-size: 10px; color: #6b7280; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ ach.description }}</p>
+                                            <h5 style="font-size: 13px; font-weight: 700; color: #0f172a; margin: 0 0 2px 0;">{{ ach.title }}</h5>
+                                            <p style="font-size: 11px; color: #64748b; margin: 0; font-weight: 500;">{{ ach.description }}</p>
                                         </div>
                                     </div>
                                     {% endfor %}
                                 </div>
                             {% else %}
-                                <div style="padding: 10px 0; text-align: center;">
-                                    <p style="font-size: 12px; color: #a1a1aa; font-style: italic; margin: 0;">Belum ada achievement</p>
+                                <div style="padding: 10px 0;">
+                                    <p style="font-size: 13px; color: #94a3b8; font-style: italic; margin: 0;">Belum ada achievement</p>
                                 </div>
                             {% endif %}
                         </div>
+
                     </div>
                 </div>
 
-                <!-- ===== Form edit: HANYA tampil di profil sendiri ===== -->
+                <!-- ===== Form Pengaturan Akun ===== -->
                 {% if request.user == user %}
                 <div class="settings-card">
                     <div class="settings-header">
@@ -183,8 +391,16 @@
                         {% endfor %}
                     {% endif %}
 
-                    <form method="POST" class="settings-form" enctype="multipart/form-data">
+                    <form method="POST" class="settings-form" enctype="multipart/form-data" id="profileForm" onsubmit="return validatePassword(event)">
                         {% csrf_token %}
+
+                        <!-- Input File Tersembunyi & Flag Hapus Foto Profil -->
+                        <input type="file" id="inputFotoProfil" name="foto_profil" accept="image/*" style="display: none;" onchange="previewProfileImage(this)">
+                        <input type="hidden" id="hapusFotoProfilInput" name="hapus_foto_profil" value="0">
+
+                        <!-- Input File Tersembunyi & Flag Hapus Background Cover -->
+                        <input type="file" id="inputFotoBg" name="foto_background" accept="image/*" style="display: none;" onchange="previewBgImage(this)">
+                        <input type="hidden" id="hapusFotoBgInput" name="hapus_foto_background" value="0">
 
                         <div class="input-group">
                             <label>NIM (Tidak dapat diubah)</label>
@@ -193,41 +409,44 @@
 
                         <div class="input-group">
                             <label>Nama Tampilan (Display Name)</label>
-                            <input type="text" name="nama_tampilan" value="{{ user.nama_tampilan }}" required>
+                            <input type="text" name="nama_tampilan" value="{{ user.nama_tampilan }}" maxlength="18" title="Maksimal 18 karakter" required>
                         </div>
 
-                        <div class="input-group">
-                            <label>Ubah Foto Profil (Max 2MB)</label>
-                            <input type="file" name="foto_profil" accept="image/*" style="padding: 9px 16px; margin-bottom: 5px;">
-                            {% if user.foto_profil %}
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <input type="checkbox" name="hapus_foto_profil" value="1" id="hapusProfile" style="width: auto; margin: 0;">
-                                <label for="hapusProfile" style="font-weight: normal; font-size: 12px; color: #dc2626; cursor: pointer; margin: 0;">Hapus foto profil saat ini</label>
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <div class="input-group">
-                            <label>Ubah Background Cover (Max 2MB)</label>
-                            <input type="file" name="foto_background" accept="image/*" style="padding: 9px 16px; margin-bottom: 5px;">
-                            {% if user.foto_background %}
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <input type="checkbox" name="hapus_foto_background" value="1" id="hapusBg" style="width: auto; margin: 0;">
-                                <label for="hapusBg" style="font-weight: normal; font-size: 12px; color: #dc2626; cursor: pointer; margin: 0;">Hapus background cover saat ini</label>
-                            </div>
-                            {% endif %}
-                        </div>
-
+                        <!-- Password Lama -->
                         <div class="input-group">
                             <label>Password lama</label>
-                            <input type="password" name="password_lama" id="passLama" placeholder="Kosongkan jika tidak ingin mengubah password">
+                            <input type="password" name="password_lama" id="passLama" maxlength="20" placeholder="Kosongkan jika tidak ingin mengubah password" oninput="clearInputError(this)">
                             <i class="far fa-eye toggle-password" onclick="togglePassword('passLama', this)"></i>
                         </div>
 
+                        <!-- Password Baru dengan Panduan & Pesan Error Inline -->
                         <div class="input-group">
                             <label>Password baru</label>
-                            <input type="password" name="password_baru" id="passBaru" placeholder="Masukkan password baru">
+                            <input type="password" name="password_baru" id="passBaru" maxlength="20" placeholder="Masukkan password baru" oninput="checkPasswordStrength(this.value)">
                             <i class="far fa-eye toggle-password" onclick="togglePassword('passBaru', this)"></i>
+                            
+                            <!-- Kotak Panduan Persyaratan Password -->
+                            <div class="password-policy-box">
+                                <div class="password-policy-title">
+                                    <i class="fas fa-shield-alt" style="color: #0ea5e9;"></i> Syarat Keamanan Password:
+                                </div>
+                                <ul class="password-policy-list">
+                                    <li id="policy-length" class="password-policy-item">
+                                        <i class="fas fa-circle"></i> 8 - 20 Karakter
+                                    </li>
+                                    <li id="policy-special" class="password-policy-item">
+                                        <i class="fas fa-circle"></i> Min. 1 Karakter Unik
+                                    </li>
+                                    <li id="policy-upper" class="password-policy-item">
+                                        <i class="fas fa-circle"></i> Min. 1 Huruf Besar
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <!-- Pesan Error Dinamis di Bawah Kotak Syarat -->
+                            <div id="passwordErrorMsg" class="password-inline-error">
+                                <i class="fas fa-exclamation-triangle"></i> <span id="errorText">Pesan error...</span>
+                            </div>
                         </div>
 
                         <div class="form-actions">
@@ -244,8 +463,244 @@
 
     </div>
 
+    <!-- MODAL / POPUP MENU PILIHAN FOTO PROFIL -->
+    <div id="avatarModal" class="custom-modal-backdrop" onclick="if(event.target === this) closeAvatarMenu();">
+        <div class="custom-modal-box">
+            <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 20px;">Foto Profil</h3>
+            
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <button type="button" onclick="triggerGantiFoto()" class="modal-btn-primary">
+                    <i class="fas fa-camera" style="color: #3b82f6; font-size: 16px;"></i> Ganti Foto Profil
+                </button>
+                
+                {% if user.foto_profil %}
+                <button type="button" onclick="triggerHapusFoto()" class="modal-btn-danger">
+                    <i class="fas fa-trash-alt" style="font-size: 15px;"></i> Hapus Foto Profil
+                </button>
+                {% endif %}
+
+                <button type="button" onclick="closeAvatarMenu()" style="background: transparent; border: none; color: #64748b; padding: 10px; font-weight: 600; font-size: 14px; cursor: pointer; margin-top: 4px; transition: color 0.2s;" onmouseover="this.style.color='#0f172a'" onmouseout="this.style.color='#64748b'">
+                    Batal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL / POPUP MENU PILIHAN BACKGROUND COVER -->
+    <div id="bgModal" class="custom-modal-backdrop" onclick="if(event.target === this) closeBgMenu();">
+        <div class="custom-modal-box">
+            <h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: #0f172a; margin-bottom: 20px;">Background Cover</h3>
+            
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <button type="button" onclick="triggerGantiBg()" class="modal-btn-primary">
+                    <i class="fas fa-image" style="color: #3b82f6; font-size: 16px;"></i> Ganti Background
+                </button>
+                
+                {% if user.foto_background %}
+                <button type="button" onclick="triggerHapusBg()" class="modal-btn-danger">
+                    <i class="fas fa-trash-alt" style="font-size: 15px;"></i> Hapus Background
+                </button>
+                {% endif %}
+
+                <button type="button" onclick="closeBgMenu()" style="background: transparent; border: none; color: #64748b; padding: 10px; font-weight: 600; font-size: 14px; cursor: pointer; margin-top: 4px; transition: color 0.2s;" onmouseover="this.style.color='#0f172a'" onmouseout="this.style.color='#64748b'">
+                    Batal
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Cadangan kalau script.js belum punya fungsi ini
+        // Logika Modal Avatar
+        function openAvatarMenu() {
+            var modal = document.getElementById('avatarModal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeAvatarMenu() {
+            var modal = document.getElementById('avatarModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function triggerGantiFoto() {
+            closeAvatarMenu();
+            document.getElementById('inputFotoProfil').click();
+        }
+
+        function triggerHapusFoto() {
+            closeAvatarMenu();
+            var container = document.getElementById('previewContainer');
+            if (container) {
+                container.innerHTML = '<span id="previewInitial" style="font-size: 26px; font-weight: 800; color: #112222; font-family: \'Space Grotesk\', sans-serif;">{{ user.nama_tampilan|default:user.username|slice:2|upper }}</span>';
+            }
+            var hapusInput = document.getElementById('hapusFotoProfilInput');
+            if (hapusInput) hapusInput.value = "1";
+            
+            var form = document.getElementById('profileForm');
+            if (form) form.submit();
+        }
+
+        function previewProfileImage(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var container = document.getElementById('previewContainer');
+                    if (container) {
+                        container.innerHTML = '<img src="' + e.target.result + '" alt="Profile Preview" style="width: 100%; height: 100%; object-fit: cover;">';
+                    }
+                    var hapusInput = document.getElementById('hapusFotoProfilInput');
+                    if (hapusInput) hapusInput.value = "0";
+
+                    var form = document.getElementById('profileForm');
+                    if (form) form.submit();
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // Logika Modal Background Cover
+        function openBgMenu() {
+            var modal = document.getElementById('bgModal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeBgMenu() {
+            var modal = document.getElementById('bgModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function triggerGantiBg() {
+            closeBgMenu();
+            document.getElementById('inputFotoBg').click();
+        }
+
+        function triggerHapusBg() {
+            closeBgMenu();
+            var bgContainer = document.getElementById('previewBgContainer');
+            if (bgContainer) {
+                bgContainer.style.backgroundImage = 'none';
+                bgContainer.style.backgroundColor = '#112222';
+            }
+            var hapusBgInput = document.getElementById('hapusFotoBgInput');
+            if (hapusBgInput) hapusBgInput.value = "1";
+
+            var form = document.getElementById('profileForm');
+            if (form) form.submit();
+        }
+
+        function previewBgImage(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var bgContainer = document.getElementById('previewBgContainer');
+                    if (bgContainer) {
+                        bgContainer.style.backgroundImage = "url('" + e.target.result + "')";
+                    }
+                    var hapusBgInput = document.getElementById('hapusFotoBgInput');
+                    if (hapusBgInput) hapusBgInput.value = "0";
+
+                    var form = document.getElementById('profileForm');
+                    if (form) form.submit();
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function clearInputError(element) {
+            element.classList.remove('input-error');
+        }
+
+        function checkPasswordStrength(val) {
+            var passBaruInput = document.getElementById('passBaru');
+            passBaruInput.classList.remove('input-error');
+
+            var lenItem = document.getElementById('policy-length');
+            var specialItem = document.getElementById('policy-special');
+            var upperItem = document.getElementById('policy-upper');
+            var errorBox = document.getElementById('passwordErrorMsg');
+
+            if (errorBox) errorBox.style.display = 'none';
+
+            if (val.length >= 8 && val.length <= 20) {
+                lenItem.classList.add('valid');
+                lenItem.classList.remove('error-state');
+                lenItem.innerHTML = '<i class="fas fa-check-circle"></i> 8 - 20 Karakter';
+            } else {
+                lenItem.classList.remove('valid');
+                lenItem.innerHTML = '<i class="fas fa-circle"></i> 8 - 20 Karakter';
+            }
+
+            if (/[^A-Za-z0-9]/.test(val)) {
+                specialItem.classList.add('valid');
+                specialItem.classList.remove('error-state');
+                specialItem.innerHTML = '<i class="fas fa-check-circle"></i> Min. 1 Karakter Unik';
+            } else {
+                specialItem.classList.remove('valid');
+                specialItem.innerHTML = '<i class="fas fa-circle"></i> Min. 1 Karakter Unik';
+            }
+
+            if (/[A-Z]/.test(val)) {
+                upperItem.classList.add('valid');
+                upperItem.classList.remove('error-state');
+                upperItem.innerHTML = '<i class="fas fa-check-circle"></i> Min. 1 Huruf Besar';
+            } else {
+                upperItem.classList.remove('valid');
+                upperItem.innerHTML = '<i class="fas fa-circle"></i> Min. 1 Huruf Besar';
+            }
+        }
+
+        function validatePassword(event) {
+            var passLama = document.getElementById('passLama');
+            var passBaru = document.getElementById('passBaru');
+            var errorBox = document.getElementById('passwordErrorMsg');
+            var errorText = document.getElementById('errorText');
+
+            if (passBaru.value.trim() !== "") {
+                var hasError = false;
+                var errMsg = "";
+
+                if (passLama.value.trim() === "") {
+                    passLama.classList.add('input-error');
+                    hasError = true;
+                    errMsg = "Harap masukkan password lama terlebih dahulu.";
+                }
+
+                var isLengthValid = (passBaru.value.length >= 8 && passBaru.value.length <= 20);
+                var isSpecialValid = /[^A-Za-z0-9]/.test(passBaru.value);
+                var isUpperValid = /[A-Z]/.test(passBaru.value);
+
+                if (!isLengthValid || !isSpecialValid || !isUpperValid) {
+                    passBaru.classList.add('input-error');
+                    hasError = true;
+                    errMsg = "Password baru belum memenuhi semua persyaratan keamanan.";
+
+                    var lenItem = document.getElementById('policy-length');
+                    var specialItem = document.getElementById('policy-special');
+                    var upperItem = document.getElementById('policy-upper');
+
+                    if (!isLengthValid) {
+                        lenItem.classList.add('error-state');
+                        lenItem.innerHTML = '<i class="fas fa-exclamation-circle"></i> 8 - 20 Karakter';
+                    }
+                    if (!isSpecialValid) {
+                        specialItem.classList.add('error-state');
+                        specialItem.innerHTML = '<i class="fas fa-exclamation-circle"></i> Min. 1 Karakter Unik';
+                    }
+                    if (!isUpperValid) {
+                        upperItem.classList.add('error-state');
+                        upperItem.innerHTML = '<i class="fas fa-exclamation-circle"></i> Min. 1 Huruf Besar';
+                    }
+                }
+
+                if (hasError) {
+                    event.preventDefault();
+                    errorText.innerText = errMsg;
+                    errorBox.style.display = "flex";
+                    return false;
+                }
+            }
+            return true;
+        }
+
         window.togglePassword = window.togglePassword || function (id, ikon) {
             var input = document.getElementById(id);
             if (!input) return;
