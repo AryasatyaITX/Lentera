@@ -19,6 +19,7 @@ class ItemKatalog(models.Model):
 
 # id_item diisi OLID dari Open Library (contoh: OL45883W)
 class BukuDigital(ItemKatalog):
+    kategori = models.CharField(max_length=50, default="", blank=True)
     link_unduh = models.URLField(default="https://example.com")
     ukuran_file = models.FloatField(default=2.5, help_text="dalam MB")
     format_file = models.CharField(max_length=10, default="PDF")
@@ -33,6 +34,7 @@ class BukuDigital(ItemKatalog):
 
 # ====================== JURNAL ======================
 class Jurnal(ItemKatalog):
+    kategori = models.CharField(max_length=50, default="", blank=True)
     volume = models.CharField(max_length=50, blank=True)
     bidang_ilmu = models.CharField(max_length=100, blank=True)
     link_akses = models.URLField(default="https://example.com")

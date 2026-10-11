@@ -4,54 +4,590 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <title>Masuk - Perpustakaan Lentera</title>
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=999">
-    <script src="{% static 'perpustakaan/js/script.js' %}" defer></script>
+
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Quicksand:wght@300..700&family=Space+Grotesk:wght@300..700&display=swap');
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body.auth-body {
+            background-color: #0d121c;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        /* CONTAINER FULLSCREEN (100vw x 100vh) */
+        .page-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            border-radius: 0;
+            box-shadow: none;
+            overflow: hidden;
+        }
+
+        /* PANEL KIRI (SLIDER FULLSCREEN) */
+        .left-panel {
+            flex: 1.2;
+            position: relative;
+            margin: 0;
+            border-radius: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 45px;
+        }
+
+        .slider-wrapper {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+        }
+
+        .slide-item {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .slide-item.active {
+            opacity: 1;
+        }
+
+        .slide-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(13, 18, 28, 0.4) 0%, rgba(13, 18, 28, 0.9) 100%);
+        }
+
+        .brand-logo {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 1.3rem;
+            letter-spacing: 1.5px;
+        }
+
+        .brand-logo img {
+            width: 38px;
+            height: 38px;
+            object-fit: contain;
+        }
+
+        .banner-quote {
+            position: relative;
+            z-index: 2;
+            margin-bottom: 20px;
+        }
+
+        .quote-content {
+            display: none;
+            animation: fadeInUp 0.8s ease forwards;
+        }
+
+        .quote-content.active {
+            display: block;
+        }
+
+        .banner-quote h2 {
+            color: #ffffff;
+            font-size: 2.2rem;
+            font-weight: 800;
+            line-height: 1.3;
+            margin-bottom: 10px;
+        }
+
+        .banner-quote p {
+            color: #D4F838;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .slider-dots {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 30px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dot.active {
+            background: #D4F838;
+            width: 45px;
+        }
+
+        /* PANEL KANAN (FORM LOGIN & RESET) */
+        .right-panel {
+            flex: 1;
+            background-color: #161f2e;
+            padding: 60px 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+            overflow-y: auto;
+        }
+
+        .form-box {
+            width: 100%;
+            max-width: 420px;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        .subtitle {
+            color: #8A8A7A;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .title {
+            color: #ffffff;
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 25px;
+        }
+
+        .input-group {
+            margin-bottom: 18px;
+            position: relative;
+        }
+
+        .input-group label {
+            display: block;
+            color: #a0aabf;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .input-group input[type="text"],
+        .input-group input[type="email"],
+        .input-group input[type="password"] {
+            width: 100%;
+            padding: 13px 16px;
+            background-color: #0d121c;
+            border: 1px solid #2a3447;
+            border-radius: 10px;
+            color: #ffffff;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: #D4F838;
+        }
+
+        .input-group input.is-invalid {
+            border-color: #ff5252 !important;
+        }
+
+        .password-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8A8A7A;
+            cursor: pointer;
+            padding: 5px;
+            font-size: 1.1rem;
+            transition: color 0.2s;
+        }
+
+        .toggle-password:hover {
+            color: #D4F838;
+        }
+
+        /* ALERT PESAN ERROR / SUCCESS */
+        .alert-error-below {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #ff5252;
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 10px;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .alert-success-below {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #D4F838;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 18px;
+            padding: 10px 14px;
+            background: rgba(212, 248, 56, 0.1);
+            border: 1px solid rgba(212, 248, 56, 0.3);
+            border-radius: 8px;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        /* REMEMBER ME & LUPA PASSWORD ROW */
+        .form-options {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 8px;
+            margin-bottom: 25px;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .remember-me input[type="checkbox"] {
+            accent-color: #D4F838;
+            width: 17px;
+            height: 17px;
+            cursor: pointer;
+        }
+
+        .remember-me span {
+            color: #a0aabf;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .forgot-password, .back-to-login {
+            color: #D4F838;
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: opacity 0.2s;
+            cursor: pointer;
+        }
+
+        .forgot-password:hover, .back-to-login:hover {
+            opacity: 0.8;
+            text-decoration: underline;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background-color: #D4F838;
+            color: #173C3A;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-submit:hover {
+            background-color: #c0e628;
+            transform: translateY(-2px);
+        }
+
+        .back-to-login-wrapper {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 900px) {
+            .page-container { flex-direction: column; }
+            .left-panel { min-height: 250px; flex: none; padding: 25px; }
+            .right-panel { padding: 40px 25px; flex: 1; }
+            .banner-quote h2 { font-size: 1.5rem; }
+        }
     </style>
 </head>
-
 
 <body class="auth-body"> 
 
     <div class="page-container">
         
+        <!-- PANEL KIRI (SLIDER FULLSCREEN & QUOTE) -->
         <div class="left-panel">
-            <div class="circle-decoration"></div>
+            
+            <div class="slider-wrapper">
+                <div class="slide-item active" style="background-image: url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=1200&auto=format&fit=crop');"></div>
+                <div class="slide-item" style="background-image: url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=1200&auto=format&fit=crop');"></div>
+                <div class="slide-item" style="background-image: url('https://images.unsplash.com/photo-1521587760476-6c12a4b040da?q=80&w=1200&auto=format&fit=crop');"></div>
+                <div class="slide-item" style="background-image: url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?q=80&w=1200&auto=format&fit=crop');"></div>
+                <div class="slide-overlay"></div>
+            </div>
+
+            <!-- BRAND LOGO -->
+            <div class="brand-logo">
+                <img src="{% static 'perpustakaan/img/logo.svg' %}" alt="Logo Lentera" onerror="this.style.display='none'; document.getElementById('fallback-icon').style.display='inline-block';">
+                <i id="fallback-icon" class="fa-solid fa-book-bookmark" style="display:none; color: #D4F838;"></i>
+                <span>LENTERA</span>
+            </div>
+
+            <!-- QUOTES -->
+            <div>
+                <div class="banner-quote">
+                    <div class="quote-content active">
+                        <h2>Membaca Buku,<br>Membuka Jendela<br>Dunia</h2>
+                        <p>— Perpustakaan Lentera</p>
+                    </div>
+                    <div class="quote-content">
+                        <h2>Ilmu Adalah Lentera<br>Jiwa dalam Kegelapan</h2>
+                        <p>— Nurani Literasi</p>
+                    </div>
+                    <div class="quote-content">
+                        <h2>Buku Adalah Sahabat<br>Paling Setia Sepanjang Masa</h2>
+                        <p>— Koleksi Digital</p>
+                    </div>
+                    <div class="quote-content">
+                        <h2>Temukan Inspirasi<br>Tanpa Batas di Setiap Halaman</h2>
+                        <p>— Ruang Baca Lentera</p>
+                    </div>
+                </div>
+
+                <div class="slider-dots">
+                    <div class="dot active" onclick="setSlide(0)"></div>
+                    <div class="dot" onclick="setSlide(1)"></div>
+                    <div class="dot" onclick="setSlide(2)"></div>
+                    <div class="dot" onclick="setSlide(3)"></div>
+                </div>
+            </div>
+
         </div>
 
-        
+        <!-- PANEL KANAN (SWITCHABLE FORMS) -->
         <div class="right-panel">
-            <div class="form-box">
+            
+            <!-- 1. FORM LOGIN UTAMA -->
+            <div class="form-box" id="loginFormBox">
                 <div class="subtitle">SELAMAT DATANG</div>
-                <h1 class="title" class="page-title-space">Masuk ke Perpustakaan</h1>
+                <h1 class="title">Masuk ke Lentera</h1>
 
+                <!-- PESAN NOTIFIKASI SUKSES (jika habis reset password) -->
                 {% if messages %}
                     {% for message in messages %}
-                        <div class="alert-error">{{ message }}</div>
+                        {% if message.tags == 'success' %}
+                            <div class="alert-success-below">
+                                <i class="fa-solid fa-circle-check"></i>
+                                <span>{{ message }}</span>
+                            </div>
+                        {% endif %}
                     {% endfor %}
                 {% endif %}
 
-                <form method="POST">
+                <form method="POST" id="loginForm">
                     {% csrf_token %}
+                    <input type="hidden" name="action" value="login">
+
+                    <!-- Input Username / NIM -->
                     <div class="input-group">
-                        <label>Username / NIM</label>
-                        <input type="text" name="username" placeholder="Masukkan username atau NIM" required autofocus>
+                        <label for="usernameInput">Username / NIM</label>
+                        <input type="text" id="usernameInput" name="username" 
+                               class="{% if messages %}is-invalid{% endif %}"
+                               placeholder="Masukkan username atau NIM" 
+                               value="{{ request.POST.username|default:'' }}" required autofocus>
                     </div>
 
+                    <!-- Input Password -->
                     <div class="input-group">
-                        <label>Password</label>
-                        <input type="password" name="password" placeholder="Masukkan password" required>
+                        <label for="password">Password</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="password" name="password" 
+                                   class="{% if messages %}is-invalid{% endif %}"
+                                   placeholder="Masukkan password" required>
+                            <i class="fa-regular fa-eye toggle-password" onclick="togglePass('password', this)"></i>
+                        </div>
+
+                        <!-- PESAN ERROR LOGIN -->
+                        {% if messages %}
+                            {% for message in messages %}
+                                {% if message.tags != 'success' %}
+                                    <div class="alert-error-below">
+                                        <i class="fa-solid fa-circle-exclamation"></i>
+                                        <span>{{ message }}</span>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <!-- Ingat Saya & Lupa Password Link -->
+                    <div class="form-options">
+                        <label class="remember-me">
+                            <input type="checkbox" id="rememberMeCheckbox" name="remember_me">
+                            <span>Ingat Saya</span>
+                        </label>
+                        <a href="javascript:void(0)" class="forgot-password" onclick="showForgotForm()">Lupa Password?</a>
                     </div>
 
                     <button type="submit" class="btn-submit">Masuk</button>
                 </form>
             </div>
+
+
+            <!-- 2. FORM RESET PASSWORD (HIDDEN DEFAULT) -->
+            <div class="form-box" id="forgotFormBox" style="display: none;">
+                <div class="subtitle">PEMULIHAN AKUN</div>
+                <h1 class="title">Atur Ulang Password</h1>
+
+                <form method="POST" id="forgotForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="reset_password">
+
+                    <div class="input-group">
+                        <label for="resetUsername">Username / NIM</label>
+                        <input type="text" id="resetUsername" name="username" placeholder="Masukkan Username / NIM" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="resetEmail">Email Terdaftar</label>
+                        <input type="email" id="resetEmail" name="email" placeholder="Masukkan Email Terdaftar" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="newPassword">Password Baru</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="newPassword" name="new_password" placeholder="Masukkan password baru" required>
+                            <i class="fa-regular fa-eye toggle-password" onclick="togglePass('newPassword', this)"></i>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="confirmPassword">Konfirmasi Password Baru</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="confirmPassword" name="confirm_password" placeholder="Ulangi password baru" required>
+                            <i class="fa-regular fa-eye toggle-password" onclick="togglePass('confirmPassword', this)"></i>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Ubah Password</button>
+
+                    <div class="back-to-login-wrapper">
+                        <a href="javascript:void(0)" class="back-to-login" onclick="showLoginForm()">
+                            <i class="fa-solid fa-arrow-left"></i> Kembali ke Halaman Login
+                        </a>
+                    </div>
+                </form>
+            </div>
+
         </div>
+
     </div>
 
+    <!-- SCRIPT JAVASCRIPT -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            
+            /* 1. FUNCTION TOGGLE EYE PASSWORD */
+            window.togglePass = function(inputId, icon) {
+                const input = document.getElementById(inputId);
+                if (input) {
+                    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+                    input.setAttribute('type', type);
+                    icon.classList.toggle('fa-eye');
+                    icon.classList.toggle('fa-eye-slash');
+                }
+            };
+
+            /* 2. SWITCH FORM LOGIN & FORGOT PASSWORD */
+            const loginBox = document.getElementById('loginFormBox');
+            const forgotBox = document.getElementById('forgotFormBox');
+
+            window.showForgotForm = function() {
+                loginBox.style.display = 'none';
+                forgotBox.style.display = 'block';
+            };
+
+            window.showLoginForm = function() {
+                forgotBox.style.display = 'none';
+                loginBox.style.display = 'block';
+            };
+
+            /* 3. FITUR REMEMBER ME (LOCAL STORAGE) */
+            const usernameInput = document.getElementById('usernameInput');
+            const rememberMeCheckbox = document.getElementById('rememberMeCheckbox');
+            const loginForm = document.getElementById('loginForm');
+
+            const savedUsername = localStorage.getItem('lentera_remembered_username');
+            if (savedUsername) {
+                usernameInput.value = savedUsername;
+                rememberMeCheckbox.checked = true;
+            }
+
+            loginForm.addEventListener('submit', function () {
+                if (rememberMeCheckbox.checked) {
+                    localStorage.setItem('lentera_remembered_username', usernameInput.value);
+                } else {
+                    localStorage.removeItem('lentera_remembered_username');
+                }
+            });
+
+            /* 4. CAROUSEL AUTOMATIC SLIDER */
+            let currentSlide = 0;
+            const slides = document.querySelectorAll('.slide-item');
+            const quotes = document.querySelectorAll('.quote-content');
+            const dots = document.querySelectorAll('.dot');
+            const totalSlides = slides.length;
+
+            window.setSlide = function(index) {
+                slides[currentSlide].classList.remove('active');
+                quotes[currentSlide].classList.remove('active');
+                dots[currentSlide].classList.remove('active');
+
+                currentSlide = index;
+
+                slides[currentSlide].classList.add('active');
+                quotes[currentSlide].classList.add('active');
+                dots[currentSlide].classList.add('active');
+            };
+
+            setInterval(function() {
+                let next = (currentSlide + 1) % totalSlides;
+                setSlide(next);
+            }, 4500);
+        });
+    </script>
 </body>
 </html>

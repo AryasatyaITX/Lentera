@@ -44,7 +44,7 @@
             </div>
           </div>
         </td>
-        <td>{{ buku.format_file|default:"Novel" }}</td>
+        <td>{{ buku.kategori|default:"-" }}</td>
         <td>{{ buku.tahun_terbit|default:"-" }}</td>
         <td>{{ buku.total_pembaca|default:"0" }}</td>
         <td>
@@ -79,8 +79,17 @@
       <input type="text" name="penulis" required placeholder="Contoh: Nurwina Sari">
 
       <label>Kategori</label>
-      <input type="text" name="kategori" required placeholder="Contoh: Novel / Teknologi / Fiksi">
-
+      <select name="kategori" required>
+        <option value="" disabled selected>Pilih kategori</option>
+        <option value="engineering">Engineering</option>
+        <option value="computer_science">Computer Science</option>
+        <option value="matematika">Matematika</option>
+        <option value="fisika">Fisika</option>
+        <option value="bisnis">Bisnis</option>
+        <option value="fiksi">Fiksi</option>
+        <option value="sejarah">Sejarah</option>
+      </select>
+      
       <label>Tahun Terbit</label>
       <input type="text" name="tahun_terbit" maxlength="4" placeholder="2019">
       
