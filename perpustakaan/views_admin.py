@@ -1,5 +1,8 @@
 from datetime import timedelta
-
+import uuid
+from django.core.files.storage import FileSystemStorage
+from django.db.models import Q
+from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import user_passes_test
 from django.db.models import Count
 from django.db.models.functions import TruncDate
@@ -174,3 +177,133 @@ def dashboard_admin(request):
         "aktivitas": _aktivitas_terbaru(),
     }
     return render(request, "perpustakaan/dashboard_admin.html", context)
+# tambah
+
+
+
+# ==========================================
+# KELOLA BUKU DIGITAL (ADMIN)
+# ==========================================
+@user_passes_test(_boleh_admin, login_url="login")
+def kelola_buku(request):
+    if request.method == "POST":
+        judul = request.POST.get("judul")
+        penulis = request.POST.get("penulis")
+        tahun_terbit = request.POST.get("tahun_terbit", "")
+        cover_url = request.POST.get("cover", "")
+        deskripsi = request.POST.get("deskripsi", "")
+
+        id_item = f"BK-{uuid.uuid4().hex[:8].upper()}"
+
+        link_unduh = "https://example.com"
+        ukuran_mb = 2.5
+
+        # Proses Upload File PDF
+        if "file_pdf" in request.FILES:
+            file_pdf = request.FILES["file_pdf"]
+            fs = FileSystemStorage()
+            filename = fs.save(f"buku_pdf/{file_pdf.name}", file_pdf)
+            link_unduh = fs.url(filename)
+            ukuran_mb = round(file_pdf.size / (1024 * 1024), 2)
+
+        BukuDigital.objects.create(
+            id_item=id_item,
+            judul=judul,
+            penulis=penulis,
+            tahun_terbit=tahun_terbit,
+            cover=cover_url,
+            deskripsi=deskripsi,
+            link_unduh=link_unduh,
+            ukuran_file=ukuran_mb,
+            format_file="PDF",
+        )
+        return redirect("kelola_buku")
+
+    q = request.GET.get("q", "")
+    buku_qs = BukuDigital.objects.all()
+    if q:
+        buku_qs = buku_qs.filter(
+            Q(judul__icontains=q) | Q(penulis__icontains=q)
+        )
+
+    buku_list = list(buku_qs)
+    for b in buku_list:
+        b.total_pembaca = Peminjaman.objects.filter(buku_digital=b).count()
+
+    context = {
+        "buku_list": buku_list,
+        "search_query": q,
+    }
+    return render(request, "perpustakaan/kelola_buku.html", context)
+
+
+@user_passes_test(_boleh_admin, login_url="login")
+def hapus_buku(request, id_item):
+    if request.method == "POST":
+        buku = get_object_or_404(BukuDigital, id_item=id_item)
+        buku.delete()
+    return redirect("kelola_buku")
+
+
+# ==========================================
+# KELOLA JURNAL (ADMIN)
+# ==========================================
+@user_passes_test(_boleh_admin, login_url="login")
+def kelola_jurnal(request):
+    if request.method == "POST":
+        judul = request.POST.get("judul")
+        penulis = request.POST.get("penulis")
+        bidang_ilmu = request.POST.get("bidang_ilmu", "")
+        volume = request.POST.get("volume", "")
+        tahun_terbit = request.POST.get("tahun_terbit", "")
+        cover_url = request.POST.get("cover", "")
+        link_akses = request.POST.get("link_akses", "")
+
+        id_item = f"JR-{uuid.uuid4().hex[:8].upper()}"
+
+        # Proses Upload File PDF Jurnal
+        if "file_pdf" in request.FILES:
+            file_pdf = request.FILES["file_pdf"]
+            fs = FileSystemStorage()
+            filename = fs.save(f"jurnal_pdf/{file_pdf.name}", file_pdf)
+            link_akses = fs.url(filename)
+
+        if not link_akses:
+            link_akses = "https://example.com"
+
+        Jurnal.objects.create(
+            id_item=id_item,
+            judul=judul,
+            penulis=penulis,
+            bidang_ilmu=bidang_ilmu,
+            volume=volume,
+            tahun_terbit=tahun_terbit,
+            cover=cover_url,
+            link_akses=link_akses,
+        )
+        return redirect("kelola_jurnal")
+
+    q = request.GET.get("q", "")
+    jurnal_qs = Jurnal.objects.all()
+    if q:
+        jurnal_qs = jurnal_qs.filter(
+            Q(judul__icontains=q) | Q(penulis__icontains=q)
+        )
+
+    jurnal_list = list(jurnal_qs)
+    for j in jurnal_list:
+        j.total_pembaca = Peminjaman.objects.filter(jurnal=j).count()
+
+    context = {
+        "jurnal_list": jurnal_list,
+        "search_query": q,
+    }
+    return render(request, "perpustakaan/kelola_jurnal.html", context)
+
+
+@user_passes_test(_boleh_admin, login_url="login")
+def hapus_jurnal(request, id_item):
+    if request.method == "POST":
+        jurnal = get_object_or_404(Jurnal, id_item=id_item)
+        jurnal.delete()
+    return redirect("kelola_jurnal")
