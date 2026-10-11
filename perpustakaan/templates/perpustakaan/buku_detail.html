@@ -72,20 +72,24 @@
             <div class="bd-cover-wrap">
                 {% if pinjam_aktif %}
                 <a href="{% url 'baca_buku' olid %}" class="bd-cover-link" title="Klik untuk membaca">
-                    <img src="https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400" alt="" class="bd-cover" id="bd-cover">
+                    <img src="{{ buku_db.cover|default:'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400' }}" alt="" class="bd-cover" id="bd-cover">
                     <span class="bd-cover-hint"><i class="fas fa-book-open"></i> Baca</span>
                 </a>
                 {% else %}
-                <img src="https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400" alt="" class="bd-cover" id="bd-cover">
+                <img src="{{ buku_db.cover|default:'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400' }}" alt="" class="bd-cover" id="bd-cover">
                 {% endif %}
             </div>
 
             <div class="bd-main">
                 <p class="bd-type">Buku Digital</p>
-                <h1 class="bd-title" id="bd-title">Memuat buku...</h1>
-                <p class="bd-author" id="bd-author">&nbsp;</p>
+                <h1 class="bd-title" id="bd-title">{{ buku_db.judul|default:"Memuat buku..." }}</h1>
+                <p class="bd-author" id="bd-author">{{ buku_db.penulis }}{% if buku_db.tahun %}, pertama terbit {{ buku_db.tahun }}{% endif %}</p>
 
-                <div class="bd-stats" id="bd-stats"></div>
+                <div class="bd-stats" id="bd-stats">
+                    {% if buku_db.tahun %}
+                    <span><i class="fas fa-calendar"></i> Tahun {{ buku_db.tahun }}</span>
+                    {% endif %}
+                </div>
 
                 <div class="bd-actions">
                     {% if pinjam_aktif %}
@@ -96,10 +100,13 @@
                     {% else %}
                         <form method="post" action="{% url 'pinjam_buku' olid %}" id="pinjam-form">
                             {% csrf_token %}
-                            <input type="hidden" name="judul"><input type="hidden" name="penulis">
-                            <input type="hidden" name="tahun"><input type="hidden" name="cover">
-                            <input type="hidden" name="ia"><input type="hidden" name="deskripsi">
-                            <button type="submit" class="bd-btn bd-btn-primary" id="pinjam-btn" disabled><i class="fas fa-book-reader"></i> Pinjam buku</button>
+                            <input type="hidden" name="judul" value="{{ buku_db.judul }}">
+                            <input type="hidden" name="penulis" value="{{ buku_db.penulis }}">
+                            <input type="hidden" name="tahun" value="{{ buku_db.tahun }}">
+                            <input type="hidden" name="cover" value="{{ buku_db.cover }}">
+                            <input type="hidden" name="ia" value="{{ buku_db.ia }}">
+                            <input type="hidden" name="deskripsi" value="{{ buku_db.deskripsi }}">
+                            <button type="submit" class="bd-btn bd-btn-primary" id="pinjam-btn"><i class="fas fa-book-reader"></i> Pinjam buku</button>
                         </form>
                     {% endif %}
 
@@ -113,15 +120,20 @@
                     </a>
                 </div>
 
+                <div style="margin-top: 20px; color: #475569; font-size: 14px; line-height: 1.6;">
+                    <p id="bd-desc">{{ buku_db.deskripsi }}</p>
+                </div>
+
                 <section class="bd-related" id="bd-related" hidden>
                     <h2>Buku terkait</h2>
                     <div class="catalog-grid" id="bd-related-grid"></div>
                 </section>
 
             </div>
+        </section>
             {{ buku_db|json_script:"buku-db" }}
 
-            <p class="ol-credit">Data buku dari <a href="https://openlibrary.org" target="_blank" rel="noopener">Open Library</a>.</p>
+            <p class="ol-credit">Data buku dari <a href="https://openlibrary.org" target="_blank" rel="noopener">Open Library</a> & Google Books.</p>
         </div>
 
     </div>
