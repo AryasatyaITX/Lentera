@@ -245,3 +245,67 @@ body.admin-body {
 .a-empty { text-align: center; padding: 50px 0 !important; color: var(--a-muted); font-size: 12px !important; }
 
 .a-hidden { display: none !important; }
+
+/* =========================================================
+   LAPORAN
+========================================================= */
+.a-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; margin-bottom: 20px; }
+
+.a-stat { border-radius: 6px; padding: 14px 16px 16px; min-height: 100px; position: relative; }
+.a-stat.c-green  { background: #DDFBC6; }
+.a-stat.c-blue   { background: #E3F1FC; }
+.a-stat.c-pink   { background: #FFDFE3; }
+.a-stat.c-purple { background: #DDD8FB; }
+
+.a-stat h4 { font-size: 9px; font-weight: 500; color: #777; margin-bottom: 6px; }
+.a-stat h2 { font-size: 30px; font-weight: 500; line-height: 1.1; margin-bottom: 12px; color: var(--a-navy); }
+.a-stat p { font-size: 9px; color: #777; }
+
+.a-stat .ico {
+    position: absolute;
+    top: 10px; right: 12px;
+    width: 20px; height: 20px;
+    background: #fff;
+    border-radius: 4px;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 10px;
+    color: var(--a-navy);
+}
+
+.a-panels { display: grid; grid-template-columns: 1.65fr 1fr; gap: 20px; align-items: start; }
+
+.a-panel { background: #fff; border-radius: 10px; padding: 16px 18px 20px; }
+
+.a-panel-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+.a-panel-head small { display: block; font-size: 9px; color: #888; margin-bottom: 4px; }
+.a-panel-head h3 { font-size: 13px; font-weight: 800; }
+.a-panel-head .eyebrow { font-size: 8px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: #777; margin-bottom: 4px; display: block; }
+
+.a-btn-unduh {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: #D4F838;
+    color: var(--a-navy);
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background-color .2s;
+}
+
+.a-btn-unduh:hover { background: #c0e628; }
+.a-btn-unduh i { font-size: 12px; }
+
+.a-chart-wrap { position: relative; height: 300px; }
+
+/* Buku per kategori */
+.a-cat-list { display: flex; flex-direction: column; gap: 18px; padding-top: 6px; }
+.a-cat-row .top { display: flex; justify-content: space-between; font-size: 9px; color: #777; margin-bottom: 6px; }
+.a-cat-row .top b { color: var(--a-navy); font-weight: 700; }
+.a-cat-bar { height: 8px; background: #F0F0E6; border-radius: 4px; overflow: hidden; }
+.a-cat-bar span { display: block; height: 100%; width: var(--w, 0%); background: var(--a-green-dark); border-radius: 4px; transition: width .4s ease; }
+
+@media (max-width: 1100px) {
+    .a-stats { grid-template-columns: repeat(2, 1fr); }
+    .a-panels { grid-template-columns: 1fr; }
+}
