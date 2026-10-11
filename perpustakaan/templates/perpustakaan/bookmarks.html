@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perpustakaan Digital</title>
+    <title>Bookmarks | Lentera</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
@@ -14,66 +14,12 @@
     <script src="{% static 'perpustakaan/js/buku.js' %}?v=3" defer></script>
 </head>
 <body>
-
     <div class="app-layout" id="appLayout">
-
-<<<<<<< HEAD
-    
-    <div class="main-content">
-        
-        <div class="top-nav" style="margin-bottom: 10px;">
-            <div class="greeting">
-                <h4>{{ user.username }} / ANGGOTA</h4>
-                <h1 class="page-title-space">Bookmarks</h1>
-            </div>
-            <div class="nav-actions">
-                <i class="far fa-bell"></i>
-                <div class="avatar-circle">{{ user.username|make_list|first|upper }}</div>
-                <a href="{% url 'logout' %}" style="margin-left:15px; color:#dc2626; font-size: 20px;" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
-            </div>
-        </div>
-
-        <div class="bookmark-header-info">
-            <p>Koleksi buku yang ingin kamu baca nanti.</p>
-            <div class="bookmark-count"><span id="bookmark-counter">{{ total_tersimpan }}</span> tersimpan</div>
-        </div>
-
-        
-        <div class="catalog-grid">
-            {% for mark in bookmarks %}
-            <div class="book-card"{% if mark.buku_digital %} data-olid="{{ mark.buku_digital.id_item }}" tabindex="0" role="link"{% endif %}>
-                
-                {% if mark.buku_digital %}
-                    <img src="{% if mark.buku_digital.cover %}{{ mark.buku_digital.cover }}{% else %}https://images.unsplash.com/photo-1532012197267-da84d127e765?w=300{% endif %}" alt="Cover" class="book-cover">
-                {% elif mark.jurnal %}
-                    <img src="https://images.unsplash.com/photo-1580536203673-93e150937a54?w=300" alt="Cover" class="book-cover">
-                {% endif %}
-
-                <div class="book-info">
-                    <p class="type">{% if mark.buku_digital %}Buku Digital{% else %}E-Journal{% endif %}</p>
-                    
-                    <h3>{% if mark.buku_digital %}{{ mark.buku_digital.judul }}{% else %}{{ mark.jurnal.judul }}{% endif %}</h3>
-                    
-                    <p class="author">{% if mark.buku_digital %}{{ mark.buku_digital.penulis }}{% else %}{{ mark.jurnal.penulis }}{% endif %}</p>
-                    
-                    {% if mark.buku_digital %}
-                    <span class="book-rating" data-bookmark-stats data-olid="{{ mark.buku_digital.id_item }}">
-                        <i class="fas fa-star"></i> <span data-book-rating>Memuat rating...</span><span data-book-want></span>
-                    </span>
-                    {% endif %}
-                    
-                    
-                    <i class="fas fa-heart heart active" data-id="{{ mark.id }}" onclick="removeBookmark(this)" title="Hapus dari Bookmark"></i>
-=======
         <div class="sidebar">
             <div class="sidebar-brand">
                 <img src="{% static 'perpustakaan/img/logo.svg' %}" alt="Logo Lentera" class="sidebar-logo">
-                <div>
-                    <h2>lentera<span>.</span></h2>
->>>>>>> main
-                </div>
+                <div><h2>lentera<span>.</span></h2></div>
             </div>
-
             <ul class="sidebar-menu">
                 <li><a href="{% url 'dashboard' %}"><i class="fas fa-border-all"></i> Dashboard</a></li>
                 <li><a href="{% url 'katalog' %}"><i class="fas fa-book"></i> Katalog Buku</a></li>
@@ -84,91 +30,47 @@
                 <li><a href="{% url 'leaderboard' %}"><i class="fas fa-trophy"></i> Top List Reader</a></li>
                 <li><a href="{% url 'profil' %}"><i class="fas fa-user"></i> Profil</a></li>
             </ul>
-
             <div class="sidebar-profile">
                 <div class="avatar-circle">
-                    {% if user.foto_profil %}
-                        <img src="{{ user.foto_profil.url }}" alt="Avatar">
-                    {% else %}
-                        {{ user.nama_tampilan|default:user.username|slice:2|upper }}
-                    {% endif %}
+                    {% if user.foto_profil %}<img src="{{ user.foto_profil.url }}" alt="Avatar">
+                    {% else %}{{ user.nama_tampilan|default:user.username|slice:2|upper }}{% endif %}
                 </div>
-                <div>
-                    <h4>{{ user.nama_tampilan|default:user.username }}</h4>
-                    <p>User / Anggota</p>
-                </div>
+                <div><h4>{{ user.nama_tampilan|default:user.username }}</h4><p>User / Anggota</p></div>
             </div>
         </div>
 
-<<<<<<< HEAD
-        {% if page_obj.paginator.num_pages > 1 %}
-        <nav class="pagination" aria-label="Navigasi halaman bookmark">
-            <span class="pagination-status">Halaman {{ page_obj.number }} dari {{ page_obj.paginator.num_pages }}</span>
-            <div class="pagination-actions">
-                {% if page_obj.has_previous %}
-                <a class="pagination-link" href="?page={{ page_obj.previous_page_number }}" rel="prev">Sebelumnya</a>
-                {% endif %}
-                {% if page_obj.has_next %}
-                <a class="pagination-link" href="?page={{ page_obj.next_page_number }}" rel="next">Berikutnya</a>
-                {% endif %}
-            </div>
-        </nav>
-        {% endif %}
-
-=======
-        <div class="main-content">
-
-            <div class="bookmarks-header">
-                <div class="top-nav">
-                    <div class="top-nav-left">
-                        <button id="menuButton" class="menu-button" type="button" aria-label="Buka atau tutup menu">
-                            <i class="fas fa-bars"></i>
-                        </button>
-                        <div class="top-divider"></div>
-                        <div class="greeting">
-                            <h4>Lentera / Anggota</h4>
-                            <h1 class="page-title-space">Bookmarks</h1>
-                            <p>Temukan bacaan terbaikmu di sini.</p>
-                        </div>
-                    </div>
-                    <div class="nav-actions">
-                        <i class="far fa-bell"></i>
-                        <div class="avatar-circle">
-                            {% if user.foto_profil %}
-                                <img src="{{ user.foto_profil.url }}" alt="Avatar">
-                            {% else %}
-                                {{ user.nama_tampilan|default:user.username|slice:2|upper }}
-                            {% endif %}
-                        </div>
-                        <a href="{% url 'logout' %}" style="margin-left:15px; color:#dc2626; font-size: 20px;" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
-                    </div>
+        <main class="main-content">
+            <div class="top-nav" style="margin-bottom: 10px;">
+                <div class="top-nav-left">
+                    <button id="menuButton" class="menu-button" type="button" aria-label="Buka atau tutup menu"><i class="fas fa-bars"></i></button>
+                    <div class="top-divider"></div>
+                    <div class="greeting"><h4>{{ user.username }} / ANGGOTA</h4><h1 class="page-title-space">Bookmarks</h1></div>
+                </div>
+                <div class="nav-actions">
+                    <i class="far fa-bell"></i>
+                    <div class="avatar-circle">{{ user.username|make_list|first|upper }}</div>
+                    <a href="{% url 'logout' %}" style="margin-left:15px; color:#dc2626; font-size: 20px;" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
                 </div>
             </div>
-
             <div class="bookmark-header-info">
                 <p>Koleksi buku yang ingin kamu baca nanti.</p>
                 <div class="bookmark-count"><span id="bookmark-counter">{{ total_tersimpan }}</span> tersimpan</div>
             </div>
-
             <div class="catalog-grid">
                 {% for mark in bookmarks %}
                 <div class="book-card"{% if mark.buku_digital %} data-olid="{{ mark.buku_digital.id_item }}" tabindex="0" role="link"{% endif %}>
-
                     {% if mark.buku_digital %}
                         <img src="{% if mark.buku_digital.cover %}{{ mark.buku_digital.cover }}{% else %}https://images.unsplash.com/photo-1532012197267-da84d127e765?w=300{% endif %}" alt="Cover" class="book-cover">
                     {% elif mark.jurnal %}
                         <img src="https://images.unsplash.com/photo-1580536203673-93e150937a54?w=300" alt="Cover" class="book-cover">
                     {% endif %}
-
                     <div class="book-info">
                         <p class="type">{% if mark.buku_digital %}Buku Digital{% else %}E-Journal{% endif %}</p>
-
                         <h3>{% if mark.buku_digital %}{{ mark.buku_digital.judul }}{% else %}{{ mark.jurnal.judul }}{% endif %}</h3>
-
                         <p class="author">{% if mark.buku_digital %}{{ mark.buku_digital.penulis }}{% else %}{{ mark.jurnal.penulis }}{% endif %}</p>
-
-                        <span class="book-rating"><i class="fas fa-star"></i> 4.8  •  <i class="fas fa-eye"></i> 78</span>
-
+                        {% if mark.buku_digital %}
+                        <span class="book-rating" data-bookmark-stats data-olid="{{ mark.buku_digital.id_item }}"><i class="fas fa-star"></i> <span data-book-rating>Memuat rating...</span><span data-book-want></span></span>
+                        {% endif %}
                         <i class="fas fa-heart heart active" data-id="{{ mark.id }}" onclick="removeBookmark(this)" title="Hapus dari Bookmark"></i>
                     </div>
                 </div>
@@ -180,10 +82,16 @@
                 </div>
                 {% endfor %}
             </div>
-
-        </div>
->>>>>>> main
+            {% if page_obj.paginator.num_pages > 1 %}
+            <nav class="pagination" aria-label="Navigasi halaman bookmark">
+                <span class="pagination-status">Halaman {{ page_obj.number }} dari {{ page_obj.paginator.num_pages }}</span>
+                <div class="pagination-actions">
+                    {% if page_obj.has_previous %}<a class="pagination-link" href="?page={{ page_obj.previous_page_number }}" rel="prev">Sebelumnya</a>{% endif %}
+                    {% if page_obj.has_next %}<a class="pagination-link" href="?page={{ page_obj.next_page_number }}" rel="next">Berikutnya</a>{% endif %}
+                </div>
+            </nav>
+            {% endif %}
+        </main>
     </div>
-
 </body>
 </html>

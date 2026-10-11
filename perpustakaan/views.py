@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 from datetime import timedelta
 from django.core.paginator import Paginator
 from django.utils import timezone
@@ -12,11 +11,9 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import ensure_csrf_cookie
 from .models import CustomUser, BukuDigital, Jurnal, Peminjaman, Bookmark
 from django.contrib.auth import update_session_auth_hash
-=======
 from datetime import date, timedelta
 import os
 import random
->>>>>>> main
 import re
 
 import requests
@@ -39,14 +36,9 @@ from django.views.decorators.http import require_POST
 from .models import Bookmark, BukuDigital, CustomUser, Jurnal, Peminjaman
 
 MASA_PINJAM_HARI = 14
-<<<<<<< HEAD
 PAGINATION_PAGE_SIZE = 10
 ITEM_ID_RE = re.compile(r'^[\w-]+$')
 COVER_PREFIX = 'https://covers.openlibrary.org/'
-=======
-ITEM_ID_RE = re.compile(r"^[\w-]+$")
-COVER_PREFIX = "https://covers.openlibrary.org/"
->>>>>>> main
 
 # (nilai subject di Open Library, label yang tampil)
 KATEGORI = [
@@ -290,23 +282,6 @@ def buku_detail(request, olid):
     ).first()
     jumlah_aktif = Peminjaman.objects.filter(user=user, status="Dibaca").count()
     context = {
-<<<<<<< HEAD
-        'user': user,
-        'olid': olid,
-        # cadangan kalau Open Library tidak terjangkau (hanya ada kalau buku pernah dipinjam/di-bookmark)
-        'buku_db': {
-            'olid': buku_db.id_item, 'judul': buku_db.judul, 'penulis': buku_db.penulis,
-            'tahun': buku_db.tahun_terbit, 'cover': buku_db.cover or '', 'cover_besar': buku_db.cover or '',
-            'ia': buku_db.ia_id, 'deskripsi': buku_db.deskripsi, 'subjek': [], 'rating': None, 'want': None,
-        } if buku_db else None,
-        'bookmarked': Bookmark.objects.filter(user=user, buku_digital_id=olid).exists(),
-        'pinjam_aktif': pinjam_aktif,
-        'jatuh_tempo': pinjam_aktif.tanggal_pinjam + timedelta(days=MASA_PINJAM_HARI) if pinjam_aktif else None,
-        'jumlah_aktif': jumlah_aktif,
-        'max_loans': user.max_loans,
-        'slot_penuh': jumlah_aktif >= user.max_loans,
-        'masa_pinjam': MASA_PINJAM_HARI,
-=======
         "user": user,
         "olid": olid,
         "buku_db": (
@@ -339,7 +314,6 @@ def buku_detail(request, olid):
         "max_loans": user.max_loans,
         "slot_penuh": jumlah_aktif >= user.max_loans,
         "masa_pinjam": MASA_PINJAM_HARI,
->>>>>>> main
     }
     return render(request, "perpustakaan/buku_detail.html", context)
 
@@ -487,7 +461,6 @@ def kembalikan_buku(request, pinjaman_id):
 
 @login_required(login_url="login")
 def bookmarks_view(request):
-<<<<<<< HEAD
     daftar_bookmark = (
         Bookmark.objects.filter(user=request.user)
         .select_related('buku_digital', 'jurnal')
@@ -499,15 +472,6 @@ def bookmarks_view(request):
         'bookmarks': page_obj,
         'page_obj': page_obj,
         'total_tersimpan': page_obj.paginator.count,
-=======
-    daftar_bookmark = Bookmark.objects.filter(user=request.user).order_by(
-        "-tanggal_disimpan"
-    )
-    context = {
-        "user": request.user,
-        "bookmarks": daftar_bookmark,
-        "total_tersimpan": daftar_bookmark.count(),
->>>>>>> main
     }
     return render(request, "perpustakaan/bookmarks.html", context)
 
@@ -524,7 +488,6 @@ def hapus_bookmark_api(request, bookmark_id):
 
 @login_required(login_url="login")
 def riwayat_view(request):
-<<<<<<< HEAD
     riwayat_queryset = (
         Peminjaman.objects.filter(user=request.user)
         .select_related('buku_digital', 'jurnal')
@@ -546,20 +509,6 @@ def riwayat_view(request):
         'riwayat_list': riwayat_list,
         'page_obj': page_obj,
         'total_aktivitas': page_obj.paginator.count,
-=======
-    riwayat_list = Peminjaman.objects.filter(user=request.user).order_by(
-        "-tanggal_pinjam"
-    )
-    for item in riwayat_list:
-        item.tanggal_kembali = item.tanggal_pinjam + timedelta(
-            days=MASA_PINJAM_HARI
-        )
-
-    context = {
-        "user": request.user,
-        "riwayat_list": riwayat_list,
-        "total_aktivitas": riwayat_list.count(),
->>>>>>> main
     }
     return render(request, "perpustakaan/riwayat.html", context)
 

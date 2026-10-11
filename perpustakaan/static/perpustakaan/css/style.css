@@ -1245,16 +1245,10 @@ body.auth-body {
 /* Header tabel */
 .riwayat-thead {
     display: grid;
-<<<<<<< HEAD
     grid-template-columns: minmax(260px, 3fr) minmax(120px, 1.25fr) minmax(150px, 1.5fr) minmax(120px, 1.25fr);
     padding: 18px 30px;
     background: #fafafa;
     border-bottom: 1px solid #eee;
-=======
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
-    align-items: center;
-    padding: 16px 30px;
->>>>>>> main
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.06em;
@@ -1306,11 +1300,7 @@ body.auth-body {
 /* Baris data riwayat */
 .riwayat-row {
     display: grid;
-<<<<<<< HEAD
     grid-template-columns: minmax(260px, 3fr) minmax(120px, 1.25fr) minmax(150px, 1.5fr) minmax(120px, 1.25fr);
-=======
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
->>>>>>> main
     align-items: center;
     padding: 20px 30px;
     border-bottom: 1px solid #f3f4f6;
@@ -1559,8 +1549,6 @@ HALAMAN BACA + COVER YANG BISA DIKLIK
     .reader-back span, .reader-btn-done span { display: none; }
     .reader-title { text-align: left; }
 }
-<<<<<<< HEAD
-=======
 
 /* Layout dashboard dengan sidebar push */
 .app-layout {
@@ -2006,4 +1994,3 @@ body {
     width: 420px;
     max-width: 100%;
 }
->>>>>>> main
