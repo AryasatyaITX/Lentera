@@ -1,0 +1,61 @@
+{% extends 'perpustakaan/admin_base.html' %}
+
+{% block title %}Peminjaman &amp; Pengembalian{% endblock %}
+{% block page_title %}Peminjaman &amp; Pengembalian{% endblock %}
+{% block page_subtitle %}Kelola alur buku keluar dan kembali{% endblock %}
+
+{% block content %}
+<div class="a-toolbar">
+    <div class="a-search">
+        <i class="fas fa-search"></i>
+        <input type="text" id="a-search-input" placeholder="Cari judul atau penulis...">
+    </div>
+    <button type="button" class="a-btn-filter"><i class="fas fa-sliders-h"></i> Filter</button>
+</div>
+
+<div class="a-tabs">
+    <button type="button" class="a-tab active" data-filter="semua">Semua</button>
+    <button type="button" class="a-tab" data-filter="dipinjam">Sedang dipinjam</button>
+    <button type="button" class="a-tab" data-filter="kembali">Sudah dikembalikan</button>
+</div>
+
+<div class="a-card">
+    <h3 class="a-card-title">Daftar peminjaman</h3>
+    <table class="a-table">
+        <thead>
+            <tr>
+                <th style="width:30%">Buku/Jurnal</th>
+                <th>Anggota</th>
+                <th>Dipinjam</th>
+                <th>Jatuh Tempo</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in peminjaman %}
+            <tr data-row data-status="{% if p.sudah_kembali %}kembali{% else %}dipinjam{% endif %}">
+                <td>
+                    <div class="a-item">
+                        <img class="cover" src="{% if p.buku_digital.cover %}{{ p.buku_digital.cover }}{% else %}https://images.unsplash.com/photo-1532012197267-da84d127e765?w=200{% endif %}" alt="Cover">
+                        <div>
+                            <div class="t">{{ p.buku_digital.judul }}</div>
+                            <div class="s">{{ p.buku_digital.penulis }}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>{{ p.user.get_full_name|default:p.user.username }}</td>
+                <td>{{ p.tanggal_pinjam|date:"d F Y" }}</td>
+                <td>{{ p.jatuh_tempo|date:"d F Y" }}</td>
+                <td>
+                    {% if p.sudah_kembali %}<span class="a-badge kembali">Dikembalikan</span>
+                    {% elif p.terlambat %}<span class="a-badge telat">Terlambat</span>
+                    {% else %}<span class="a-badge dipinjam">Dipinjam</span>{% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="a-empty">Belum ada data peminjaman.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
