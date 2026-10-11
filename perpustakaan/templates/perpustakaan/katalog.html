@@ -9,15 +9,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1006">
+    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1050">
     <script src="{% static 'perpustakaan/js/script.js' %}?v=2" defer></script>
-    <script src="{% static 'perpustakaan/js/buku.js' %}?v=3" defer></script>
 </head>
 <body>
 
     <div class="app-layout" id="appLayout">
 
-        <!-- ===== Sidebar (sama persis dengan dashboard) ===== -->
+        <!-- ===== Sidebar ===== -->
         <div class="sidebar">
             <div class="sidebar-brand">
                 <img src="{% static 'perpustakaan/img/logo.svg' %}" alt="Logo Lentera" class="sidebar-logo">
@@ -63,10 +62,7 @@
 
             <div class="top-nav">
                 <div class="top-nav-left">
-                    <button id="menuButton"
-                            class="menu-button"
-                            type="button"
-                            aria-label="Buka atau tutup menu">
+                    <button id="menuButton" class="menu-button" type="button" aria-label="Buka atau tutup menu">
                         <i class="fas fa-bars"></i>
                     </button>
                     <div class="top-divider"></div>
@@ -87,41 +83,19 @@
                             {% endif %}
                         </div>
                     </a>
-                    <a href="{% url 'logout' %}"
-                       style="margin-left:15px; color:#dc2626; font-size:20px;"
-                       title="Logout">
+                    <a href="{% url 'logout' %}" style="margin-left:15px; color:#dc2626; font-size:20px;" title="Logout">
                         <i class="fas fa-sign-out-alt"></i>
                     </a>
                 </div>
             </div>
 
-            <!-- Rekomendasi buku harian -->
-            <div class="mb-4">
-                <h3 style="margin-bottom: 15px; font-family: 'Space Grotesk', sans-serif;"><i class="fas fa-calendar-day" style="color: #D4F838;"></i> Rekomendasi Buku Hari Ini</h3>
-                <div class="row" style="display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px;">
-                    {% for buku in buku_harian %}
-                    <a href="{% url 'buku_detail' buku.id_item %}" class="card" style="min-width: 180px; flex: 0 0 180px; padding: 10px; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-decoration: none; color: inherit;">
-                        {% if buku.cover %}
-                            <img src="{{ buku.cover }}" alt="{{ buku.judul }}" style="width: 100%; height: 140px; object-fit: cover; border-radius: 8px;">
-                        {% else %}
-                            <div style="width: 100%; height: 140px; background: #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #64748b;">No Cover</div>
-                        {% endif %}
-                        <h5 style="font-size: 14px; margin-top: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ buku.judul }}</h5>
-                        <p style="font-size: 12px; color: #64748b; margin-bottom: 5px;">{{ buku.penulis }}</p>
-                    </a>
-                    {% empty %}
-                    <p style="color: #64748b; font-size: 14px;">Belum ada rekomendasi buku harian.</p>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <!-- Pencarian & filter -->
+            <!-- 1. PENCARIAN & FILTER -->
             <div class="search-filter-bar">
                 <div class="search-box">
                     <i class="fas fa-search"></i>
                     <input type="text" id="katalog-search" placeholder="Cari judul atau penulis..." autocomplete="off">
                 </div>
-                <button type="button" class="btn-filter" id="btn-filter-toggle">
+                <button type="button" class="btn-filter" id="btn-filter" aria-expanded="false">
                     <i class="fas fa-sliders-h"></i> Filter
                 </button>
             </div>
@@ -138,59 +112,103 @@
                 </label>
             </div>
 
-            <!-- Chip kategori (hanya satu, id tidak boleh dobel) -->
+            <!-- 2. CHIP KATEGORI -->
             <div class="chip-row" id="chip-row">
                 {% for nilai, label in kategori_list %}
-                <button type="button" class="chip{% if nilai == default_kategori %} active{% endif %}" data-kategori="{{ nilai }}">{{ label }}</button>
+                <a href="?kategori={{ nilai }}" style="text-decoration: none;">
+                    <button type="button" class="chip{% if nilai == default_kategori %} active{% endif %}">{{ label }}</button>
+                </a>
                 {% endfor %}
             </div>
 
-            <!-- Koleksi buku admin -->
-            <div class="my-5">
-                <h3 style="margin-bottom: 20px; font-family: 'Space Grotesk', sans-serif;"><i class="fas fa-layer-group" style="color: #3b82f6;"></i> Koleksi Buku Admin</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
-                    {% for buku in buku_admin %}
-                    <div style="background: white; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; display: flex; flex-direction: column;">
-                        <h5 style="font-size: 15px; margin-bottom: 5px;">{{ buku.judul }}</h5>
-                        <p style="font-size: 13px; color: #64748b; margin-bottom: 3px;">Penulis: {{ buku.penulis }}</p>
-                        <p style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">Tahun: {{ buku.tahun_terbit }}</p>
-                        <a href="{% url 'buku_detail' buku.id_item %}" style="margin-top: auto; text-align: center; background: #0f172a; color: white; padding: 6px; border-radius: 6px; font-size: 13px; text-decoration: none;">Detail Buku</a>
+            <!-- 3. REKOMENDASI BUKU HARI INI (MINIMAL 5 BUKU TERBARU & SESUAI KATEGORI) -->
+            <div style="margin: 30px 0;">
+                <h3 style="margin-bottom: 20px; font-family: 'Space Grotesk', sans-serif; font-size: 18px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                    <span>📅</span> Rekomendasi Buku Hari Ini
+                </h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px;">
+                    {% for buku in buku_harian %}
+                    <div style="background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.06); display: flex; flex-direction: column; height: 100%; transition: transform 0.2s;">
+                        <a href="{% url 'buku_detail' buku.id_item %}" style="text-decoration: none; color: inherit; display: block;">
+                            <div style="width: 100%; height: 210px; background: #0f172a;">
+                                {% if buku.cover %}
+                                    <img src="{{ buku.cover }}" alt="{{ buku.judul }}" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                                {% else %}
+                                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 12px; font-weight: 600;">No Cover</div>
+                                {% endif %}
+                            </div>
+                        </a>
+                        <div style="padding: 14px; display: flex; flex-direction: column; flex: 1;">
+                            <span style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; display: block;">BUKU DIGITAL</span>
+                            <a href="{% url 'buku_detail' buku.id_item %}" style="text-decoration: none; color: inherit;">
+                                <h4 style="font-size: 15px; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;" title="{{ buku.judul }}">
+                                    {{ buku.judul }}
+                                </h4>
+                            </a>
+                            <p style="font-size: 12px; color: #64748b; margin: 0 0 12px 0; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;">
+                                {{ buku.penulis }}{% if buku.tahun_terbit %} • {{ buku.tahun_terbit }}{% endif %}
+                            </p>
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: auto; font-size: 12px;">
+                                <span style="color: #f59e0b; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                                    <i class="fas fa-star" style="font-size: 11px;"></i> 4.4
+                                </span>
+                                <a href="{% url 'buku_detail' buku.id_item %}" style="background: #0f172a; color: white; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; text-decoration: none;">
+                                    Detail & Pinjam
+                                </a>
+                            </div>
+                        </div>
                     </div>
                     {% empty %}
-                    <p style="color: #94a3b8; font-size: 13px; font-style: italic;">Belum ada buku dari admin.</p>
+                    <p style="color: #64748b; font-size: 14px; font-style: italic;">Belum ada rekomendasi buku harian.</p>
                     {% endfor %}
                 </div>
             </div>
 
-            <!-- Buku rilis terbaru (dari Google Books, diambil di views.py) -->
-            <div class="my-5">
-                <h3 style="margin-bottom: 10px; font-family: 'Space Grotesk', sans-serif;"><i class="fas fa-rocket" style="color: #10b981;"></i> Buku Rilis Terbaru</h3>
-                <p style="color: #64748b; font-size: 14px; margin-bottom: 15px;">Rilisan buku paling baru sesuai kategori yang dipilih.</p>
+            <!-- 4. KATEGORI AKTIF & BUKU ADMIN SESUAI PILIHAN CHIP -->
+            <div style="margin: 40px 0;">
+                <div style="margin-bottom: 35px;">
+                    <h3 style="margin-bottom: 20px; font-family: 'Space Grotesk', sans-serif; font-size: 18px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                        <span>📂</span> {{ nama_kategori_aktif }}
+                    </h3>
 
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
-                    {% for buku in buku_rilis_terbaru %}
-                    <div style="background: white; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; display: flex; flex-direction: column;">
-                        {% if buku.cover %}
-                            <img src="{{ buku.cover }}" alt="{{ buku.judul }}" style="width: 100%; height: 160px; object-fit: contain; margin-bottom: 10px; background: #f8fafc; border-radius: 6px;">
-                        {% else %}
-                            <div style="width: 100%; height: 160px; margin-bottom: 10px; background: #f8fafc; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #64748b;">No Cover</div>
-                        {% endif %}
-                        <h5 style="font-size: 14px; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ buku.judul }}">{{ buku.judul }}</h5>
-                        <p style="font-size: 12px; color: #64748b; margin-bottom: 3px;">Penulis: {{ buku.penulis }}</p>
-                        <p style="font-size: 12px; color: #10b981; font-weight: 600; margin-bottom: 12px;">Rilis: {{ buku.tahun_terbit|default:"Terbaru" }}</p>
-                        <a href="{{ buku.link_baca }}" target="_blank" rel="noopener" style="margin-top: auto; text-align: center; background: #2563eb; color: white; padding: 6px; border-radius: 6px; font-size: 13px; text-decoration: none;">Lihat Buku</a>
+                    {% if buku_admin_aktif %}
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px;">
+                        {% for buku in buku_admin_aktif %}
+                        <a href="{% url 'buku_detail' buku.id_item %}" style="text-decoration: none; color: inherit;">
+                            <div style="background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.06); display: flex; flex-direction: column; height: 100%; transition: transform 0.2s;">
+                                <div style="width: 100%; height: 210px; background: #0f172a;">
+                                    {% if buku.cover %}
+                                        <img src="{{ buku.cover }}" alt="{{ buku.judul }}" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                                    {% else %}
+                                        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 12px; font-weight: 600;">No Cover</div>
+                                    {% endif %}
+                                </div>
+                                <div style="padding: 14px; display: flex; flex-direction: column; flex: 1;">
+                                    <span style="font-size: 10px; font-weight: 700; color: #3b82f6; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; display: block;">BUKU DIGITAL</span>
+                                    <h4 style="font-size: 15px; font-weight: 700; color: #0f172a; margin: 0 0 6px 0; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;" title="{{ buku.judul }}">
+                                        {{ buku.judul }}
+                                    </h4>
+                                    <p style="font-size: 12px; color: #64748b; margin: 0 0 12px 0; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;">
+                                        {{ buku.penulis }}{% if buku.tahun_terbit %} • {{ buku.tahun_terbit }}{% endif %}
+                                    </p>
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-top: auto; font-size: 12px;">
+                                        <span style="color: #f59e0b; font-weight: 600; display: flex; align-items: center; gap: 4px;">
+                                            <i class="fas fa-star" style="font-size: 11px;"></i> 4.5
+                                        </span>
+                                        <i class="far fa-heart" style="color: #cbd5e1; font-size: 16px;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
                     </div>
-                    {% empty %}
-                    <p style="grid-column: 1 / -1; color: #64748b; font-size: 14px;">Buku rilis terbaru belum bisa dimuat saat ini.</p>
-                    {% endfor %}
+                    {% else %}
+                    <p style="color: #94a3b8; font-size: 13px; font-style: italic;">Belum ada buku untuk kategori ini.</p>
+                    {% endif %}
                 </div>
             </div>
 
-            <!-- Hasil pencarian / katalog Open Library (diisi buku.js) -->
-            <h2 class="grid-title" id="grid-title"></h2>
-            <div class="catalog-grid" id="katalog-grid" data-default-kategori="{{ default_kategori }}"></div>
             {{ tersimpan_ids|json_script:"tersimpan-ids" }}
-
             <p class="ol-credit">Data buku dan sampul dari <a href="https://openlibrary.org" target="_blank" rel="noopener">Open Library</a>.</p>
 
         </div>
@@ -215,17 +233,5 @@
 
         <p class="ol-credit">Data buku dan sampul dari <a href="https://openlibrary.org" target="_blank" rel="noopener">Open Library</a>.</p>
     </div>
-
-    <script>
-        (function () {
-            var tombol = document.getElementById("btn-filter-toggle");
-            var panel = document.getElementById("filter-panel");
-            if (tombol && panel) {
-                tombol.addEventListener("click", function () {
-                    panel.classList.toggle("open");
-                });
-            }
-        })();
-    </script>
 </body>
 </html>
