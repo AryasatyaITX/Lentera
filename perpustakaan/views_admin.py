@@ -190,6 +190,7 @@ def kelola_buku(request):
     if request.method == "POST":
         judul = request.POST.get("judul")
         penulis = request.POST.get("penulis")
+        kategori = request.POST.get("kategori", "").strip()
         tahun_terbit = request.POST.get("tahun_terbit", "")
         cover_url = request.POST.get("cover", "")
         deskripsi = request.POST.get("deskripsi", "")
@@ -211,6 +212,7 @@ def kelola_buku(request):
             id_item=id_item,
             judul=judul,
             penulis=penulis,
+            kategori=kategori,
             tahun_terbit=tahun_terbit,
             cover=cover_url,
             deskripsi=deskripsi,
@@ -254,7 +256,8 @@ def kelola_jurnal(request):
     if request.method == "POST":
         judul = request.POST.get("judul")
         penulis = request.POST.get("penulis")
-        bidang_ilmu = request.POST.get("bidang_ilmu") or request.POST.get("kategori", "")
+        kategori="", 
+        bidang_ilmu = request.POST.get("bidang_ilmu", "")
         volume = request.POST.get("volume", "")
         tahun_terbit = request.POST.get("tahun_terbit", "")
         cover_url = request.POST.get("cover", "")

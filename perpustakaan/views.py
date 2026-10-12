@@ -58,22 +58,56 @@ BAHASA = [("", "Semua bahasa"), ("ind", "Indonesia"), ("eng", "Inggris")]
 
 def login_view(request):
     if request.user.is_authenticated:
+        if request.user.is_staff or request.user.is_admin:
+            return redirect("dashboard_admin")
         return redirect("dashboard")
 
     if request.method == "POST":
-        username_input = request.POST.get("username")
-        password_input = request.POST.get("password")
-        user = authenticate(
-            request, username=username_input, password=password_input
-        )
+        action = request.POST.get("action")
 
-        if user is not None:
-            login(request, user)
-            if user.is_staff or user.is_admin:
-                return redirect("dashboard_admin")
-            return redirect("dashboard")
+        # LOGIKA 1: RESET PASSWORD MANDIRI
+        if action == "reset_password":
+            username_input = request.POST.get("username")
+            email_input = request.POST.get("email")
+            new_password = request.POST.get("new_password")
+            confirm_password = request.POST.get("confirm_password")
+
+            if new_password != confirm_password:
+                messages.error(request, "Konfirmasi password baru tidak cocok!")
+            else:
+                User = get_user_model()
+                user = User.objects.filter(username=username_input, email=email_input).first()
+                if user:
+                    user.set_password(new_password)
+                    user.save()
+                    messages.success(request, "Password berhasil diubah! Silakan login dengan password baru.")
+                else:
+                    messages.error(request, "Username/NIM atau Email terdaftar tidak ditemukan!")
+
+        # LOGIKA 2: LOGIN biasa
         else:
-            messages.error(request, "Username/Email atau Password salah!")
+            username_input = request.POST.get("username")
+            password_input = request.POST.get("password")
+            remember_me = request.POST.get("remember_me")
+
+            user = authenticate(
+                request, username=username_input, password=password_input
+            )
+
+            if user is not None:
+                login(request, user)
+
+                # Fitur Remember Me
+                if not remember_me:
+                    request.session.set_expiry(0)
+                else:
+                    request.session.set_expiry(1209600)  # 2 Minggu
+
+                if user.is_staff or user.is_admin:
+                    return redirect("dashboard_admin")
+                return redirect("dashboard")
+            else:
+                messages.error(request, "Username atau Password Salah. Silahkan Coba Lagi")
 
     return render(request, "perpustakaan/login.html")
 
