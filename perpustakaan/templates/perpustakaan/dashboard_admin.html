@@ -5,6 +5,15 @@
 {% block page_title %}Pusat Kendali Perpustakaan{% endblock %}
 {% block page_subtitle %}Ringkasan aktivitas hari ini.{% endblock %}
 
+{% block extra_css %}
+<style>
+  .adm-event--buku    .adm-event-icon { background: #E3F9C3; color: #173C3A; }
+  .adm-event--jurnal  .adm-event-icon { background: #E0EEFF; color: #173C3A; }
+  .adm-event--anggota .adm-event-icon { background: #FCE4EC; color: #C2185B; }
+  .adm-event--kembali .adm-event-icon { background: #E4DDFB; color: #4A3AA7; }
+</style>
+{% endblock %}
+
 {% block content %}
 <section class="hero-banner adm-hero">
   <h3>Ringkasan hari ini • {{ tanggal_teks }}</h3>
@@ -87,8 +96,8 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.5"/><path d="M3 20c.6-3.4 3.2-5.5 7-5.5M18 8v6M15 11h6"/></svg>
         {% elif e.jenis == "kembali" %}
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4-4 4M21 7H8M7 21l-4-4 4-4M3 17h13"/></svg>
-        {% elif e.jenis == "bookmark" %}
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+        {% elif e.jenis == "jurnal" %}
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14v16H5z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>
         {% else %}
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/></svg>
         {% endif %}
@@ -102,7 +111,7 @@
     {% endfor %}
   </ul>
   {% else %}
-  <p class="adm-empty">Belum ada aktivitas. Peminjaman dan anggota baru akan muncul di sini.</p>
+  <p class="adm-empty">Belum ada aktivitas. Buku, jurnal, dan anggota baru akan muncul di sini.</p>
   {% endif %}
 </section>
 {% endblock %}

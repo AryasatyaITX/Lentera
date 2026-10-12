@@ -6,11 +6,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Masuk - Perpustakaan Lentera</title>
     <!-- Fonts & Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=999">
 
     <style>
+        /* =====================================================
+           GAMBAR HUTAN (sisi form)
+           Simpan foto hutan (sudut dari bawah, menengadah ke pepohonan)
+           di: static/perpustakaan/img/hutan.jpg
+           Kalau file belum ada, otomatis tampil gradasi hijau tua.
+        ===================================================== */
+        :root {
+            --forest-img: url('{% static "perpustakaan/img/tera.jpg" %}');
+            --hijau-tua: #173C3A;
+            --lime: #D4F838;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -18,11 +30,18 @@
         }
 
         body.auth-body {
-            background-color: #0d121c;
+            background-color: var(--hijau-tua);
             height: 100vh;
             width: 100vw;
             overflow: hidden;
             font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        /* Judul memakai Space Grotesk (style.css memaksa font lain dengan !important) */
+        .left-panel h2,
+        .brand-logo span,
+        .form-box h1.title {
+            font-family: 'Space Grotesk', 'Plus Jakarta Sans', sans-serif !important;
         }
 
         /* CONTAINER FULLSCREEN (100vw x 100vh) */
@@ -35,7 +54,9 @@
             overflow: hidden;
         }
 
-        /* PANEL KIRI (SLIDER FULLSCREEN) */
+        /* =====================================================
+           PANEL KIRI (SLIDER)
+        ===================================================== */
         .left-panel {
             flex: 1.2;
             position: relative;
@@ -44,8 +65,10 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            align-items: stretch;
             justify-content: space-between;
-            padding: 45px;
+            padding: 48px clamp(32px, 7vw, 90px);
+            background-color: var(--hijau-tua);
         }
 
         .slider-wrapper {
@@ -67,10 +90,32 @@
             opacity: 1;
         }
 
+        /* Lapisan hijau tua supaya mirip desain, foto tetap samar terlihat */
         .slide-overlay {
             position: absolute;
             inset: 0;
-            background: linear-gradient(180deg, rgba(13, 18, 28, 0.4) 0%, rgba(13, 18, 28, 0.9) 100%);
+            background: linear-gradient(180deg, rgba(23, 60, 58, 0.78) 0%, rgba(23, 60, 58, 0.93) 100%);
+        }
+
+        /* Dekorasi lingkaran di pojok kanan bawah */
+        .deco-circle {
+            position: absolute;
+            right: -140px;
+            bottom: -170px;
+            width: 520px;
+            height: 520px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .deco-circle::after {
+            content: "";
+            position: absolute;
+            inset: 48px;
+            border-radius: 50%;
+            border: 1px solid rgba(212, 248, 56, 0.28);
         }
 
         .brand-logo {
@@ -78,23 +123,33 @@
             z-index: 2;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             color: #ffffff;
-            font-weight: 800;
-            font-size: 1.3rem;
-            letter-spacing: 1.5px;
         }
 
         .brand-logo img {
-            width: 38px;
-            height: 38px;
+            width: 34px;
+            height: 34px;
             object-fit: contain;
+        }
+
+        .brand-logo span {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .brand-logo .logo-dot {
+            color: var(--lime);
         }
 
         .banner-quote {
             position: relative;
             z-index: 2;
-            margin-bottom: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .quote-content {
@@ -106,18 +161,33 @@
             display: block;
         }
 
+        .quote-kicker {
+            color: var(--lime);
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            margin-bottom: 14px;
+        }
+
         .banner-quote h2 {
             color: #ffffff;
-            font-size: 2.2rem;
-            font-weight: 800;
-            line-height: 1.3;
-            margin-bottom: 10px;
+            font-size: clamp(2rem, 3.6vw, 3.4rem);
+            font-weight: 500;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            margin-bottom: 16px;
+        }
+
+        .banner-quote h2 .accent {
+            color: var(--lime);
         }
 
         .banner-quote p {
-            color: #D4F838;
-            font-size: 0.9rem;
-            font-weight: 600;
+            color: #B7C4C1;
+            font-size: 0.85rem;
+            font-weight: 500;
+            line-height: 1.6;
+            max-width: 340px;
         }
 
         .slider-dots {
@@ -137,31 +207,41 @@
         }
 
         .dot.active {
-            background: #D4F838;
+            background: var(--lime);
             width: 45px;
         }
 
-        /* PANEL KANAN (FORM LOGIN & RESET) */
+        /* =====================================================
+           PANEL KANAN (FORM) - latar hutan dari sudut bawah
+        ===================================================== */
         .right-panel {
             flex: 1;
-            background-color: #161f2e;
             padding: 60px 80px;
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 2;
             overflow-y: auto;
+            background-color: #0f2a24;
+            background-image:
+                linear-gradient(180deg, rgba(8, 28, 22, 0.40) 0%, rgba(8, 28, 22, 0.78) 100%),
+                var(--forest-img),
+                linear-gradient(160deg, #1d5a3f 0%, #0f2a24 100%);
+            background-size: cover, cover, cover;
+            background-position: center, center, center;
+            background-repeat: no-repeat;
         }
 
         .form-box {
             width: 100%;
-            max-width: 420px;
+            max-width: 400px;
             animation: fadeIn 0.4s ease-in-out;
+            text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
         }
 
         .subtitle {
-            color: #8A8A7A;
-            font-size: 12px;
+            color: rgba(255, 255, 255, 0.72);
+            font-size: 11px;
             font-weight: 700;
             letter-spacing: 2px;
             margin-bottom: 8px;
@@ -171,8 +251,9 @@
         .title {
             color: #ffffff;
             font-size: 2rem;
-            font-weight: 800;
-            margin-bottom: 25px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 28px;
         }
 
         .input-group {
@@ -182,32 +263,52 @@
 
         .input-group label {
             display: block;
-            color: #a0aabf;
-            font-size: 13px;
+            color: rgba(255, 255, 255, 0.88);
+            font-size: 12px;
             font-weight: 700;
             margin-bottom: 8px;
         }
 
+        /* INPUT TRANSPARAN (efek kaca di atas gambar hutan) */
         .input-group input[type="text"],
         .input-group input[type="email"],
         .input-group input[type="password"] {
             width: 100%;
             padding: 13px 16px;
-            background-color: #0d121c;
-            border: 1px solid #2a3447;
+            background-color: rgba(255, 255, 255, 0.08);
+            -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
+            border: 1px solid rgba(255, 255, 255, 0.35);
             border-radius: 10px;
             color: #ffffff;
             font-size: 14px;
             outline: none;
-            transition: border-color 0.2s;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.62);
         }
 
         .input-group input:focus {
-            border-color: #D4F838;
+            border-color: var(--lime);
+            background-color: rgba(255, 255, 255, 0.14);
         }
 
         .input-group input.is-invalid {
-            border-color: #ff5252 !important;
+            border-color: #ff6b6b !important;
+        }
+
+        .password-wrapper input {
+            padding-right: 46px !important;
+        }
+
+        /* Autofill browser jangan mengubah latar jadi putih/kuning */
+        .input-group input:-webkit-autofill,
+        .input-group input:-webkit-autofill:focus {
+            -webkit-text-fill-color: #ffffff;
+            caret-color: #ffffff;
+            transition: background-color 9999s ease-in-out 0s;
         }
 
         .password-wrapper {
@@ -220,15 +321,15 @@
             right: 16px;
             top: 50%;
             transform: translateY(-50%);
-            color: #8A8A7A;
+            color: rgba(255, 255, 255, 0.7);
             cursor: pointer;
             padding: 5px;
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             transition: color 0.2s;
         }
 
         .toggle-password:hover {
-            color: #D4F838;
+            color: var(--lime);
         }
 
         /* ALERT PESAN ERROR / SUCCESS */
@@ -236,7 +337,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            color: #ff5252;
+            color: #ff8a8a;
             font-size: 13px;
             font-weight: 600;
             margin-top: 10px;
@@ -247,13 +348,13 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            color: #D4F838;
+            color: var(--lime);
             font-size: 13px;
             font-weight: 600;
             margin-bottom: 18px;
             padding: 10px 14px;
-            background: rgba(212, 248, 56, 0.1);
-            border: 1px solid rgba(212, 248, 56, 0.3);
+            background: rgba(212, 248, 56, 0.12);
+            border: 1px solid rgba(212, 248, 56, 0.35);
             border-radius: 8px;
             animation: fadeIn 0.3s ease-in-out;
         }
@@ -264,7 +365,7 @@
             align-items: center;
             justify-content: space-between;
             margin-top: 8px;
-            margin-bottom: 25px;
+            margin-bottom: 24px;
         }
 
         .remember-me {
@@ -276,20 +377,20 @@
         }
 
         .remember-me input[type="checkbox"] {
-            accent-color: #D4F838;
+            accent-color: var(--lime);
             width: 17px;
             height: 17px;
             cursor: pointer;
         }
 
         .remember-me span {
-            color: #a0aabf;
+            color: rgba(255, 255, 255, 0.85);
             font-size: 13px;
             font-weight: 600;
         }
 
         .forgot-password, .back-to-login {
-            color: #D4F838;
+            color: var(--lime);
             font-size: 13px;
             font-weight: 700;
             text-decoration: none;
@@ -305,19 +406,38 @@
         .btn-submit {
             width: 100%;
             padding: 14px;
-            background-color: #D4F838;
-            color: #173C3A;
+            background-color: var(--lime);
+            color: var(--hijau-tua);
             border: none;
             border-radius: 10px;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 800;
             cursor: pointer;
             transition: all 0.2s ease;
+            text-shadow: none;
         }
 
         .btn-submit:hover {
             background-color: #c0e628;
             transform: translateY(-2px);
+        }
+
+        .register-text {
+            text-align: center;
+            margin-top: 18px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .register-text a {
+            color: var(--lime);
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .register-text a:hover {
+            text-decoration: underline;
         }
 
         .back-to-login-wrapper {
@@ -339,18 +459,20 @@
             .page-container { flex-direction: column; }
             .left-panel { min-height: 250px; flex: none; padding: 25px; }
             .right-panel { padding: 40px 25px; flex: 1; }
-            .banner-quote h2 { font-size: 1.5rem; }
+            .banner-quote h2 { font-size: 1.6rem; }
+            .quote-kicker { display: none; }
+            .deco-circle { display: none; }
         }
     </style>
 </head>
 
-<body class="auth-body"> 
+<body class="auth-body">
 
     <div class="page-container">
-        
-        <!-- PANEL KIRI (SLIDER FULLSCREEN & QUOTE) -->
+
+        <!-- PANEL KIRI (SLIDER & QUOTE) -->
         <div class="left-panel">
-            
+
             <div class="slider-wrapper">
                 <div class="slide-item active" style="background-image: url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=1200&auto=format&fit=crop');"></div>
                 <div class="slide-item" style="background-image: url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=1200&auto=format&fit=crop');"></div>
@@ -359,51 +481,55 @@
                 <div class="slide-overlay"></div>
             </div>
 
+            <div class="deco-circle" aria-hidden="true"></div>
+
             <!-- BRAND LOGO -->
             <div class="brand-logo">
                 <img src="{% static 'perpustakaan/img/logo.svg' %}" alt="Logo Lentera" onerror="this.style.display='none'; document.getElementById('fallback-icon').style.display='inline-block';">
                 <i id="fallback-icon" class="fa-solid fa-book-bookmark" style="display:none; color: #D4F838;"></i>
-                <span>LENTERA</span>
+                <span>lentera<b class="logo-dot">.</b></span>
             </div>
 
             <!-- QUOTES -->
-            <div>
-                <div class="banner-quote">
-                    <div class="quote-content active">
-                        <h2>Membaca Buku,<br>Membuka Jendela<br>Dunia</h2>
-                        <p>— Perpustakaan Lentera</p>
-                    </div>
-                    <div class="quote-content">
-                        <h2>Ilmu Adalah Lentera<br>Jiwa dalam Kegelapan</h2>
-                        <p>— Nurani Literasi</p>
-                    </div>
-                    <div class="quote-content">
-                        <h2>Buku Adalah Sahabat<br>Paling Setia Sepanjang Masa</h2>
-                        <p>— Koleksi Digital</p>
-                    </div>
-                    <div class="quote-content">
-                        <h2>Temukan Inspirasi<br>Tanpa Batas di Setiap Halaman</h2>
-                        <p>— Ruang Baca Lentera</p>
-                    </div>
+            <div class="banner-quote">
+                <div class="quote-content active">
+                    <div class="quote-kicker">Lentera • Literatur Teknik dan Referensi Akademik</div>
+                    <h2>Perpustakaan untuk<br><span class="accent">referensi teknik.</span></h2>
+                    <p>Membaca buku dan jurnal hanya dalam satu perpustakaan digital.</p>
                 </div>
+                <div class="quote-content">
+                    <div class="quote-kicker">Lentera • Literatur Teknik dan Referensi Akademik</div>
+                    <h2>Ilmu Adalah Lentera<br><span class="accent">Jiwa dalam Kegelapan</span></h2>
+                    <p>— Nurani Literasi</p>
+                </div>
+                <div class="quote-content">
+                    <div class="quote-kicker">Lentera • Literatur Teknik dan Referensi Akademik</div>
+                    <h2>Buku Adalah Sahabat<br><span class="accent">Paling Setia Sepanjang Masa</span></h2>
+                    <p>— Koleksi Digital</p>
+                </div>
+                <div class="quote-content">
+                    <div class="quote-kicker">Lentera • Literatur Teknik dan Referensi Akademik</div>
+                    <h2>Temukan Inspirasi<br><span class="accent">Tanpa Batas di Setiap Halaman</span></h2>
+                    <p>— Ruang Baca Lentera</p>
+                </div>
+            </div>
 
-                <div class="slider-dots">
-                    <div class="dot active" onclick="setSlide(0)"></div>
-                    <div class="dot" onclick="setSlide(1)"></div>
-                    <div class="dot" onclick="setSlide(2)"></div>
-                    <div class="dot" onclick="setSlide(3)"></div>
-                </div>
+            <div class="slider-dots">
+                <div class="dot active" onclick="setSlide(0)"></div>
+                <div class="dot" onclick="setSlide(1)"></div>
+                <div class="dot" onclick="setSlide(2)"></div>
+                <div class="dot" onclick="setSlide(3)"></div>
             </div>
 
         </div>
 
         <!-- PANEL KANAN (SWITCHABLE FORMS) -->
         <div class="right-panel">
-            
+
             <!-- 1. FORM LOGIN UTAMA -->
             <div class="form-box" id="loginFormBox">
                 <div class="subtitle">SELAMAT DATANG</div>
-                <h1 class="title">Masuk ke Lentera</h1>
+                <h1 class="title">Masuk ke LENTERA</h1>
 
                 <!-- PESAN NOTIFIKASI SUKSES (jika habis reset password) -->
                 {% if messages %}
@@ -424,9 +550,9 @@
                     <!-- Input Username / NIM -->
                     <div class="input-group">
                         <label for="usernameInput">Username / NIM</label>
-                        <input type="text" id="usernameInput" name="username" 
-                               class="{% if messages %}is-invalid{% endif %}"
-                               placeholder="Masukkan username atau NIM" 
+                        <input type="text" id="usernameInput" name="username"
+                               class="{% for message in messages %}{% if message.tags != 'success' %}is-invalid {% endif %}{% endfor %}"
+                               placeholder="Masukkan username atau NIM"
                                value="{{ request.POST.username|default:'' }}" required autofocus>
                     </div>
 
@@ -434,8 +560,8 @@
                     <div class="input-group">
                         <label for="password">Password</label>
                         <div class="password-wrapper">
-                            <input type="password" id="password" name="password" 
-                                   class="{% if messages %}is-invalid{% endif %}"
+                            <input type="password" id="password" name="password"
+                                   class="{% for message in messages %}{% if message.tags != 'success' %}is-invalid {% endif %}{% endfor %}"
                                    placeholder="Masukkan password" required>
                             <i class="fa-regular fa-eye toggle-password" onclick="togglePass('password', this)"></i>
                         </div>
@@ -463,6 +589,12 @@
                     </div>
 
                     <button type="submit" class="btn-submit">Masuk</button>
+
+                    <!-- Link daftar (hanya tampil jika URL bernama 'register' ada) -->
+                    {% url 'register' as register_url %}
+                    {% if register_url %}
+                    <p class="register-text">Belum punya akun? <a href="{{ register_url }}">Daftar sekarang</a></p>
+                    {% endif %}
                 </form>
             </div>
 
@@ -519,7 +651,7 @@
     <!-- SCRIPT JAVASCRIPT -->
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            
+
             /* 1. FUNCTION TOGGLE EYE PASSWORD */
             window.togglePass = function(inputId, icon) {
                 const input = document.getElementById(inputId);
