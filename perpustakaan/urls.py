@@ -16,6 +16,7 @@ urlpatterns = [
     path('buku/<str:olid>/bookmark/', views.toggle_bookmark, name='toggle_bookmark'),
 
     path('ejournal/', views.ejournal_view, name='ejournal'),
+    path('jurnal/<str:jurnal_id>/baca/', views.baca_jurnal, name='baca_jurnal'),
     path('peminjaman/', views.peminjaman_view, name='peminjaman'),
     path('kembalikan/<int:pinjaman_id>/', views.kembalikan_buku, name='kembalikan_buku'),
     path('bookmarks/', views.bookmarks_view, name='bookmarks'),

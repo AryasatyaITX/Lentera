@@ -7,8 +7,8 @@
     <title>E-Journal</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1006">
-    <script src="{% static 'perpustakaan/js/script.js' %}?v=2" defer></script>
+    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1007">
+    <script src="{% static 'perpustakaan/js/script.js' %}?v=3" defer></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Quicksand:wght@300..700&family=Space+Grotesk:wght@300..700&display=swap');
     </style>
@@ -63,7 +63,7 @@
                         <div class="greeting">
                             <h4>Lentera / Anggota</h4>
                             <h1 class="page-title-space">E-Journal</h1>
-                            <p>Temukan bacaan terbaikmu di sini.</p>
+                            <p>Pilihan jurnal hari ini — koleksi berganti setiap hari.</p>
                         </div>
                     </div>
                     <div class="nav-actions">
@@ -79,22 +79,50 @@
                     </div>
                 </div>
 
-                <div class="search-filter-bar">
+                <form class="search-filter-bar" method="get" action="{% url 'ejournal' %}">
                     <div class="search-box">
                         <i class="fas fa-search"></i>
-                        <input type="text" placeholder="Cari judul atau penulis jurnal...">
+                        <input type="search" name="q" value="{{ search_query }}" placeholder="Cari judul atau penulis jurnal...">
                     </div>
-                    <button class="btn-filter">
-                        <i class="fas fa-filter"></i> Filter
+                    <button class="btn-filter" type="submit">
+                        <i class="fas fa-search"></i> Cari
                     </button>
-                </div>
+                </form>
             </div>
 
             <div class="journal-list" id="journal-list-container">
-                <div style="text-align: center; padding: 40px; color: #8A8A7A;">
-                    <i class="fas fa-spinner fa-spin fa-2x"></i>
-                    <p style="margin-top: 10px; font-size: 13px;">Menarik data Jurnal Engineering dari OpenAlex API...</p>
-                </div>
+                {% for jurnal in jurnal_list %}
+                <article class="journal-card">
+                    {% cycle 'cover-teal' 'cover-olive' 'cover-ink' as cover_palette silent %}
+                    {% if jurnal.cover %}
+                    <img src="{{ jurnal.cover }}" alt="Sampul {{ jurnal.nama_jurnal|default:jurnal.judul }}" class="journal-cover" loading="lazy" onerror="this.onerror=null;this.hidden=true;this.nextElementSibling.hidden=false;">
+                    <div class="journal-cover journal-cover-placeholder {{ cover_palette }}" hidden>
+                        <span class="cover-kicker">LENTERA · E-JOURNAL</span>
+                        <span class="cover-title">{{ jurnal.judul }}</span>
+                        <span class="cover-journal">{{ jurnal.nama_jurnal|default:"Artikel Teknik" }}</span>
+                    </div>
+                    {% else %}
+                    <div class="journal-cover journal-cover-placeholder {{ cover_palette }}">
+                        <span class="cover-kicker">LENTERA · E-JOURNAL</span>
+                        <span class="cover-title">{{ jurnal.judul }}</span>
+                        <span class="cover-journal">{{ jurnal.nama_jurnal|default:"Artikel Teknik" }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="journal-content">
+                        <h3 class="journal-title">{{ jurnal.judul }}</h3>
+                        {% if jurnal.nama_jurnal %}<p>{{ jurnal.nama_jurnal }}</p>{% endif %}
+                        <hr class="journal-divider">
+                        <div class="journal-footer">
+                            <span class="journal-meta">Penulis: {{ jurnal.penulis }} | Tahun: {{ jurnal.tahun|default:"-" }}</span>
+                            <a href="{{ jurnal.baca_url }}" class="btn-baca">Baca Jurnal <i class="fas fa-arrow-right"></i></a>
+                        </div>
+                    </div>
+                </article>
+                {% empty %}
+                <p style="text-align:center;padding:40px;color:#8A8A7A;">
+                    {% if search_query %}Jurnal tidak ditemukan untuk “{{ search_query }}”.{% else %}Belum ada jurnal. Admin dapat menambahkan jurnal melalui menu Kelola Jurnal.{% endif %}
+                </p>
+                {% endfor %}
             </div>
 
         </div>
