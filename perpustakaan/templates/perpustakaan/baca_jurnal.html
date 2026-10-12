@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Membaca: {{ judul }}</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; height: 100vh; display: flex; flex-direction: column; font-family: Arial, sans-serif; color: #173c3a; background: #f4f7f3; }
+        header { min-height: 76px; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; background: #173c3a; color: white; }
+        header h1 { margin: 0 0 5px; font-size: 18px; }
+        header p { margin: 0; color: #d4e2dc; font-size: 13px; }
+        a { color: inherit; }
+        .actions { display: flex; align-items: center; gap: 16px; white-space: nowrap; }
+        .open-link { padding: 10px 14px; border-radius: 8px; background: #d4f838; color: #173c3a; text-decoration: none; font-weight: 700; font-size: 13px; }
+        main { flex: 1; min-height: 0; display: grid; place-items: center; padding: 20px; }
+        iframe { width: min(100%, 1100px); height: 100%; border: 0; background: white; box-shadow: 0 4px 18px #173c3a1a; }
+        .no-pdf { max-width: 560px; padding: 32px; text-align: center; background: white; border-radius: 14px; box-shadow: 0 4px 18px #173c3a1a; }
+        .no-pdf h2 { margin-top: 0; }
+        .no-pdf p { color: #61736c; line-height: 1.6; }
+        @media (max-width: 600px) { header { align-items: flex-start; flex-direction: column; } main { padding: 10px; } }
+    </style>
+</head>
+<body>
+    <header>
+        <div><h1>{{ judul }}</h1><p>Penulis: {{ penulis }}</p></div>
+        <nav class="actions">
+            <a href="{% url 'ejournal' %}">← Kembali</a>
+            {% if sumber_url %}<a class="open-link" href="{{ sumber_url }}" target="_blank" rel="noopener noreferrer">Buka sumber ↗</a>{% endif %}
+        </nav>
+    </header>
+    <main>
+        {% if is_pdf %}
+            <iframe src="{{ reader_url }}" title="PDF jurnal: {{ judul }}"></iframe>
+        {% else %}
+            <section class="no-pdf">
+                <h2>PDF belum tersedia</h2>
+                <p>Jurnal ini baru memiliki tautan ke laman artikel. Admin dapat mengunggah file PDF agar jurnal bisa dibaca langsung di sini.</p>
+                {% if sumber_url %}<a class="open-link" href="{{ sumber_url }}" target="_blank" rel="noopener noreferrer">Buka laman artikel ↗</a>{% endif %}
+            </section>
+        {% endif %}
+    </main>
+</body>
+</html>

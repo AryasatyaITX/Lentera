@@ -5,6 +5,13 @@
 {% block page_subtitle %}Atur koleksi jurnal yang tersedia di perpustakaan{% endblock %}
 
 {% block content %}
+{% if messages %}
+  <div style="margin-bottom:16px;">
+    {% for message in messages %}
+      <p role="alert" style="padding:12px 16px;border-radius:8px;background:#fff3f0;color:#a33224;">{{ message }}</p>
+    {% endfor %}
+  </div>
+{% endif %}
 <div class="kelola-toolbar">
   <form method="GET" action="{% url 'kelola_jurnal' %}" class="search-filter-bar">
     <div class="search-box">

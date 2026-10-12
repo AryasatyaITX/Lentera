@@ -12,9 +12,11 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from .models import CustomUser, BukuDigital, Jurnal, Peminjaman, Bookmark
 from django.contrib.auth import update_session_auth_hash
 from datetime import date, timedelta
+import json
 import os
 import random
 import re
+from urllib.parse import urlparse
 
 import requests
 from django.conf import settings
@@ -412,7 +414,95 @@ def toggle_bookmark(request, olid):
 
 @login_required(login_url="login")
 def ejournal_view(request):
-    return render(request, "perpustakaan/ejournal.html", {"user": request.user})
+    jurnal_harian = []
+
+    # Jurnal pilihan admin dari database, ditambah katalog JSON kurasi awal.
+    for jurnal in Jurnal.objects.order_by("judul", "id_item"):
+        jurnal_harian.append({
+            "id": jurnal.id_item,
+            "judul": jurnal.judul,
+            "penulis": jurnal.penulis,
+            "tahun": jurnal.tahun_terbit,
+            "nama_jurnal": jurnal.bidang_ilmu or "Koleksi Lentera",
+            "cover": jurnal.cover,
+            "baca_url": f"/jurnal/{jurnal.id_item}/baca/",
+        })
+
+    file_json = settings.BASE_DIR / "jurnal_teknik.json"
+    if file_json.exists():
+        try:
+            with file_json.open(encoding="utf-8") as file:
+                jurnal_json = json.load(file)
+            for index, jurnal in enumerate(jurnal_json):
+                jurnal_harian.append({
+                    "id": f"JSON-{index}",
+                    "judul": jurnal.get("judul", "Tanpa judul"),
+                    "penulis": jurnal.get("penulis", "Penulis tidak diketahui"),
+                    "tahun": jurnal.get("tahun", "-"),
+                    "nama_jurnal": jurnal.get("jurnal", ""),
+                    "cover": jurnal.get("cover_url", ""),
+                    "baca_url": f"/jurnal/JSON-{index}/baca/",
+                })
+        except (OSError, json.JSONDecodeError):
+            pass
+
+    query = request.GET.get("q", "").strip()
+    if query:
+        query_lower = query.casefold()
+        jurnal_harian = [
+            jurnal for jurnal in jurnal_harian
+            if query_lower in jurnal["judul"].casefold()
+            or query_lower in jurnal["penulis"].casefold()
+            or query_lower in jurnal["nama_jurnal"].casefold()
+        ]
+
+    # Geser satu posisi per tanggal: daftar konsisten sepanjang hari dan
+    # pasti berubah besok selama koleksinya berisi lebih dari enam jurnal.
+    if jurnal_harian:
+        offset = timezone.localdate().toordinal() % len(jurnal_harian)
+        jurnal_harian = jurnal_harian[offset:] + jurnal_harian[:offset]
+    jurnal_harian = jurnal_harian[:6]
+
+    return render(request, "perpustakaan/ejournal.html", {
+        "user": request.user,
+        "jurnal_list": jurnal_harian,
+        "search_query": query,
+        "tanggal_jurnal": timezone.localdate(),
+    })
+
+
+@login_required(login_url="login")
+def baca_jurnal(request, jurnal_id):
+    if jurnal_id.startswith("JSON-"):
+        try:
+            index = int(jurnal_id[5:])
+            with (settings.BASE_DIR / "jurnal_teknik.json").open(encoding="utf-8") as file:
+                semua_jurnal = json.load(file)
+            if index < 0:
+                raise IndexError
+            jurnal = semua_jurnal[index]
+        except (ValueError, IndexError, OSError, json.JSONDecodeError):
+            raise Http404("Jurnal tidak ditemukan")
+        judul = jurnal.get("judul", "Tanpa judul")
+        penulis = jurnal.get("penulis", "Penulis tidak diketahui")
+        reader_url = jurnal.get("pdf_url") or ""
+        sumber_url = jurnal.get("sumber_url") or jurnal.get("doi_url") or ""
+    else:
+        jurnal = get_object_or_404(Jurnal, pk=jurnal_id)
+        judul = jurnal.judul
+        penulis = jurnal.penulis
+        reader_url = jurnal.link_akses or ""
+        sumber_url = reader_url
+
+    is_pdf = urlparse(reader_url).path.lower().endswith(".pdf")
+    return render(request, "perpustakaan/baca_jurnal.html", {
+        "user": request.user,
+        "judul": judul,
+        "penulis": penulis,
+        "reader_url": reader_url,
+        "sumber_url": sumber_url,
+        "is_pdf": is_pdf,
+    })
 
 
 @login_required(login_url="login")

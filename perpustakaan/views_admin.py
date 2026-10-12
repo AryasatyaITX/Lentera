@@ -1,6 +1,7 @@
 from datetime import timedelta
 import uuid
 from django.core.files.storage import FileSystemStorage
+from django.contrib import messages
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import user_passes_test
@@ -253,7 +254,7 @@ def kelola_jurnal(request):
     if request.method == "POST":
         judul = request.POST.get("judul")
         penulis = request.POST.get("penulis")
-        bidang_ilmu = request.POST.get("bidang_ilmu", "")
+        bidang_ilmu = request.POST.get("bidang_ilmu") or request.POST.get("kategori", "")
         volume = request.POST.get("volume", "")
         tahun_terbit = request.POST.get("tahun_terbit", "")
         cover_url = request.POST.get("cover", "")
@@ -264,12 +265,16 @@ def kelola_jurnal(request):
         # Proses Upload File PDF Jurnal
         if "file_pdf" in request.FILES:
             file_pdf = request.FILES["file_pdf"]
+            if not file_pdf.name.lower().endswith(".pdf"):
+                messages.error(request, "File jurnal harus berformat PDF.")
+                return redirect("kelola_jurnal")
             fs = FileSystemStorage()
             filename = fs.save(f"jurnal_pdf/{file_pdf.name}", file_pdf)
             link_akses = fs.url(filename)
 
         if not link_akses:
-            link_akses = "https://example.com"
+            messages.error(request, "Isi tautan laman jurnal atau unggah file PDF.")
+            return redirect("kelola_jurnal")
 
         Jurnal.objects.create(
             id_item=id_item,
