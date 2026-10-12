@@ -748,6 +748,54 @@ body.auth-body {
     height: 130px;
     object-fit: cover;
     border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.journal-cover-placeholder {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 10px 8px;
+    color: #fff;
+    box-shadow: inset 4px 0 rgba(255, 255, 255, 0.16);
+}
+.journal-cover-placeholder[hidden] { display: none !important; }
+
+.journal-cover-placeholder::after {
+    content: "";
+    position: absolute;
+    width: 66px;
+    height: 66px;
+    right: -24px;
+    top: 37px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 50%;
+    box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.06), 0 0 0 16px rgba(255, 255, 255, 0.04);
+}
+
+.journal-cover-placeholder.cover-teal { background: linear-gradient(150deg, #173c3a, #39766d); }
+.journal-cover-placeholder.cover-olive { background: linear-gradient(150deg, #52642c, #a0a948); }
+.journal-cover-placeholder.cover-ink { background: linear-gradient(150deg, #24344a, #526b83); }
+
+.cover-kicker, .cover-title, .cover-journal { position: relative; z-index: 1; }
+.cover-kicker { font-size: 6px; font-weight: 800; letter-spacing: 0.35px; }
+.cover-title {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 5;
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 1.25;
+}
+.cover-journal {
+    overflow: hidden;
+    font-size: 6px;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .journal-content {
