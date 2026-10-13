@@ -10,34 +10,8 @@
     <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1052">
     <script src="{% static 'perpustakaan/js/script.js' %}?v=2" defer></script>
     <style>
-        /* Kotak Besar Utama */
-        .top-reader-wrapper {
-            background: #112222 !important;
-            border-radius: 24px;
-            padding: 50px 30px 0 30px; 
-            color: #ffffff;
-            margin-top: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-            position: relative;
-            overflow: visible !important;
-        }
-
-        /* Tulisan mendatar, digeser ke kanan dan dinaikkan sedikit posisinya */
-        .top-reader-title {
-            position: absolute;
-            top: 36px;
-            left: 45px; 
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 1.5px;
-            color: #89a3a3;
-            text-transform: uppercase;
-            z-index: 2;
-        }
-
-        /* Area Inner Card Podium */
-        .podium-inner-box {
+        /* CSS Khusus Podium Top 3 & Highlight */
+        .podium-container {
             display: flex;
             justify-content: center;
             align-items: flex-end;
@@ -64,23 +38,15 @@
         /* Tinggi Tiang */
         .podium-1 {
             order: 2;
-            background-color: #c8ff00 !important;
-            color: #112222 !important;
-            min-height: 350px;
+            padding-top: 30px;
         }
 
         .podium-2 {
             order: 1;
-            background-color: #2b3447 !important;
-            color: #ffffff !important;
-            min-height: 280px;
         }
 
         .podium-3 {
             order: 3;
-            background-color: #eab388 !important;
-            color: #112222 !important;
-            min-height: 250px;
         }
 
         /* Kotak Bingkai Putih Avatar (Presisi di Tengah) */
@@ -116,47 +82,14 @@
             bottom: -12px;
             left: 50%;
             transform: translateX(-50%);
-            background: #112222;
-            color: #ffffff !important;
-            font-family: 'Space Grotesk', sans-serif;
-            font-size: 13px;
-            font-weight: 700;
-            width: 36px;
-            height: 28px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid #ffffff; /* Outline Putih Solid */
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            z-index: 5;
+            font-size: 22px;
         }
 
-        .podium-1 .rank-badge {
-            background: #112222 !important;
-            color: #c8ff00 !important;
-            border: 2px solid #ffffff;
-        }
+        .podium-1 .crown-icon { color: #f59e0b; font-size: 28px; }
+        .podium-2 .crown-icon { color: #94a3b8; }
+        .podium-3 .crown-icon { color: #d97706; }
 
-        .podium-3 .rank-badge {
-            background: #112222 !important;
-            color: #eab388 !important;
-            border: 2px solid #ffffff;
-        }
-
-        /* Dekorasi Bintang di atas Juara 1 */
-        .top-star-icon {
-            position: absolute;
-            top: -42px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #c8ff00;
-            font-size: 28px;
-            line-height: 1;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-            z-index: 10;
-        }
-
+        /* Mencegah Teks Username Panjang Merusak Tampilan */
         .podium-name {
             font-size: 15px;
             font-weight: 700;
@@ -287,86 +220,50 @@
             </div>
         </div>
 
-        <!-- ================= KARTU UTAMA TOP 3 ================= -->
-        <div class="top-reader-wrapper">
-            <div class="top-reader-title">TOP 3 BULAN INI</div>
-
-            <div class="podium-inner-box">
-                <!-- Juara 2 (Kiri) -->
-                {% if podium.rank2 %}
-                <div class="podium-card podium-2" style="background-color: #2b3447 !important;">
-                    <div class="podium-avatar-wrap">
-                        {% if podium.rank2.foto_profil %}
-                            <img src="{{ podium.rank2.foto_profil.url }}" class="podium-avatar" alt="Juara 2">
-                        {% else %}
-                            <div style="width: 46px; height: 46px; background: #e2e8f0; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: #2b3447; font-size: 15px;">
-                                {{ podium.rank2.nama_tampilan|default:podium.rank2.username|slice:2|upper }}
-                            </div>
-                        {% endif %}
-                    </div>
-                    <a href="{% url 'profil_user_detail' podium.rank2.username %}" class="podium-name" title="{{ podium.rank2.nama_tampilan|default:podium.rank2.username }}">
-                        {{ podium.rank2.nama_tampilan|default:podium.rank2.username }}
-                    </a>
-                    <p class="podium-meta">
-                        {% with total_buku=podium.rank2.peminjaman_set.all.count %}
-                            {{ total_buku|default:0 }} buku<br>
-                        {% endwith %}
-                        <span style="font-size: 11px; opacity: 0.9;">{{ podium.rank2.exp|default:0 }} EXP</span>
-                    </p>
-                    <div class="rank-badge">2</div>
+    <!-- ================= PODIUM TOP 3 ================= -->
+        <div class="podium-container">
+            <!-- Juara 2 -->
+            {% if podium.rank2 %}
+            <div class="podium-card podium-2">
+                <div class="podium-avatar-wrap">
+                    <i class="fas fa-crown crown-icon"></i>
+                    <img src="{% if podium.rank2.foto_profil %}{{ podium.rank2.foto_profil.url }}{% else %}https://ui-avatars.com/api/?name={{ podium.rank2.username }}&background=94a3b8&color=ffffff{% endif %}" class="podium-avatar" alt="Juara 2">
                 </div>
-                {% endif %}
+                <a href="{% url 'profil_user_detail' podium.rank2.username %}" class="podium-name" title="{{ podium.rank2.nama_tampilan|default:podium.rank2.username }}">
+                    {{ podium.rank2.nama_tampilan|default:podium.rank2.username }}
+                </a>
+                <p style="font-size: 12px; color: #64748b; margin: 0;">NIM: {{ podium.rank2.username }}</p>
+                <span class="podium-exp"><i class="fas fa-star"></i> {{ podium.rank2.exp }} EXP</span>
+            </div>
+            {% endif %}
 
-                <!-- Juara 1 (Tengah - Paling Tinggi dengan Bintang) -->
-                {% if podium.rank1 %}
-                <div class="podium-card podium-1" style="background-color: #c8ff00 !important;">
-                    <i class="fas fa-sparkles top-star-icon">✦</i>
-                    <div class="podium-avatar-wrap">
-                        {% if podium.rank1.foto_profil %}
-                            <img src="{{ podium.rank1.foto_profil.url }}" class="podium-avatar" alt="Juara 1">
-                        {% else %}
-                            <div style="width: 46px; height: 46px; background: #e2e8f0; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: #112222; font-size: 15px;">
-                                {{ podium.rank1.nama_tampilan|default:podium.rank1.username|slice:2|upper }}
-                            </div>
-                        {% endif %}
-                    </div>
-                    <a href="{% url 'profil_user_detail' podium.rank1.username %}" class="podium-name" title="{{ podium.rank1.nama_tampilan|default:podium.rank1.username }}">
-                        {{ podium.rank1.nama_tampilan|default:podium.rank1.username }}
-                    </a>
-                    <p class="podium-meta">
-                        {% with total_buku=podium.rank1.peminjaman_set.all.count %}
-                            {{ total_buku|default:0 }} buku<br>
-                        {% endwith %}
-                        <span style="font-size: 11px; opacity: 0.9;">{{ podium.rank1.exp|default:0 }} EXP</span>
-                    </p>
-                    <div class="rank-badge">1</div>
+            <!-- Juara 1 -->
+            {% if podium.rank1 %}
+            <div class="podium-card podium-1">
+                <div class="podium-avatar-wrap">
+                    <i class="fas fa-crown crown-icon"></i>
+                    <img src="{% if podium.rank1.foto_profil %}{{ podium.rank1.foto_profil.url }}{% else %}https://ui-avatars.com/api/?name={{ podium.rank1.username }}&background=f59e0b&color=ffffff{% endif %}" class="podium-avatar" alt="Juara 1">
                 </div>
-                {% endif %}
+                <a href="{% url 'profil_user_detail' podium.rank1.username %}" class="podium-name" title="{{ podium.rank1.nama_tampilan|default:podium.rank1.username }}">
+                    {{ podium.rank1.nama_tampilan|default:podium.rank1.username }}
+                </a>
+                <p style="font-size: 12px; color: #64748b; margin: 0;">NIM: {{ podium.rank1.username }}</p>
+                <span class="podium-exp"><i class="fas fa-crown" style="color:#f59e0b;"></i> {{ podium.rank1.exp }} EXP</span>
+            </div>
+            {% endif %}
 
-                <!-- Juara 3 (Kanan) -->
-                {% if podium.rank3 %}
-                <div class="podium-card podium-3" style="background-color: #eab388 !important;">
-                    <div class="podium-avatar-wrap">
-                        {% if podium.rank3.foto_profil %}
-                            <img src="{{ podium.rank3.foto_profil.url }}" class="podium-avatar" alt="Juara 3">
-                        {% else %}
-                            <div style="width: 46px; height: 46px; background: #e2e8f0; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: #112222; font-size: 15px;">
-                                {{ podium.rank3.nama_tampilan|default:podium.rank3.username|slice:2|upper }}
-                            </div>
-                        {% endif %}
-                    </div>
-                    <a href="{% url 'profil_user_detail' podium.rank3.username %}" class="podium-name" title="{{ podium.rank3.nama_tampilan|default:podium.rank3.username }}">
-                        {{ podium.rank3.nama_tampilan|default:podium.rank3.username }}
-                    </a>
-                    <p class="podium-meta">
-                        {% with total_buku=podium.rank3.peminjaman_set.all.count %}
-                            {{ total_buku|default:0 }} buku<br>
-                        {% endwith %}
-                        <span style="font-size: 11px; opacity: 0.9;">{{ podium.rank3.exp|default:0 }} EXP</span>
-                    </p>
-                    <div class="rank-badge">3</div>
+            <!-- Juara 3 -->
+            {% if podium.rank3 %}
+            <div class="podium-card podium-3">
+                <div class="podium-avatar-wrap">
+                    <i class="fas fa-crown crown-icon"></i>
+                    <img src="{% if podium.rank3.foto_profil %}{{ podium.rank3.foto_profil.url }}{% else %}https://ui-avatars.com/api/?name={{ podium.rank3.username }}&background=d97706&color=ffffff{% endif %}" class="podium-avatar" alt="Juara 3">
                 </div>
-                {% endif %}
+                <a href="{% url 'profil_user_detail' podium.rank3.username %}" class="podium-name" title="{{ podium.rank3.nama_tampilan|default:podium.rank3.username }}">
+                    {{ podium.rank3.nama_tampilan|default:podium.rank3.username }}
+                </a>
+                <p style="font-size: 12px; color: #64748b; margin: 0;">NIM: {{ podium.rank3.username }}</p>
+                <span class="podium-exp"><i class="fas fa-star"></i> {{ podium.rank3.exp }} EXP</span>
             </div>
         </div>
 

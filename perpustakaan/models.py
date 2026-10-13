@@ -80,6 +80,7 @@ class Peminjaman(models.Model):
         max_length=20, default="Dibaca"
     )  # Dibaca / Selesai
     progress_baca = models.IntegerField(default=0)  # 0 - 100%
+    waktu_baca_detik = models.IntegerField(default=0)  # BARU: detik membaca untuk peminjaman ini
 
     def __str__(self):
         # Pemanggilan str(item) menggunakan __str__ milik class object item
@@ -120,6 +121,7 @@ class CustomUser(AbstractUser):
     )
 
     exp = models.IntegerField(default=0)
+    waktu_baca_detik = models.IntegerField(default=0)
     streak_days = models.IntegerField(default=0)
     last_read_date = models.DateField(null=True, blank=True)
     max_loans = models.IntegerField(default=5)

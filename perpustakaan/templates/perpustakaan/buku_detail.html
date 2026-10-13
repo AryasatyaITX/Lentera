@@ -82,107 +82,86 @@
 
             <div class="alert-msg warning" id="bd-error" role="status" hidden></div>
 
-            <div id="bd-page" data-olid="{{ olid }}" data-in-db="{% if buku_db %}1{% endif %}">
+                        <div id="bd-page" data-olid="{{ olid }}" data-in-db="{% if buku_db %}1{% endif %}">
 
-        <section class="bd-hero">
-            <div class="bd-cover-wrap">
-                {% if pinjam_aktif %}
-                <a href="{% url 'baca_buku' olid %}" class="bd-cover-link" title="Klik untuk membaca">
-                    <img src="{{ buku_db.cover|default:'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400' }}" alt="" class="bd-cover" id="bd-cover">
-                    <span class="bd-cover-hint"><i class="fas fa-book-open"></i> Baca</span>
-                </a>
-                {% else %}
-                <img src="{{ buku_db.cover|default:'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400' }}" alt="" class="bd-cover" id="bd-cover">
-                {% endif %}
-            </div>
-
-            <div class="bd-main">
-                <p class="bd-type">Buku Digital</p>
-                <h1 class="bd-title" id="bd-title">{{ buku_db.judul|default:"Memuat buku..." }}</h1>
-                <p class="bd-author" id="bd-author">{{ buku_db.penulis }}{% if buku_db.tahun %}, pertama terbit {{ buku_db.tahun }}{% endif %}</p>
-
-                <div class="bd-stats" id="bd-stats">
-                    {% if buku_db.tahun %}
-                    <span><i class="fas fa-calendar"></i> Tahun {{ buku_db.tahun }}</span>
-                    {% endif %}
-                </div>
-
-                <div class="bd-actions">
+            <section class="bd-hero">
+                <div class="bd-cover-wrap">
                     {% if pinjam_aktif %}
                     <a href="{% url 'baca_buku' olid %}" class="bd-cover-link" title="Klik untuk membaca">
                         <img src="https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400" alt="" class="bd-cover" id="bd-cover">
                         <span class="bd-cover-hint"><i class="fas fa-book-open"></i> Baca</span>
                     </a>
                     {% else %}
-                        <form method="post" action="{% url 'pinjam_buku' olid %}" id="pinjam-form">
-                            {% csrf_token %}
-                            <input type="hidden" name="judul" value="{{ buku_db.judul }}">
-                            <input type="hidden" name="penulis" value="{{ buku_db.penulis }}">
-                            <input type="hidden" name="tahun" value="{{ buku_db.tahun }}">
-                            <input type="hidden" name="cover" value="{{ buku_db.cover }}">
-                            <input type="hidden" name="ia" value="{{ buku_db.ia }}">
-                            <input type="hidden" name="deskripsi" value="{{ buku_db.deskripsi }}">
-                            <button type="submit" class="bd-btn bd-btn-primary" id="pinjam-btn"><i class="fas fa-book-reader"></i> Pinjam buku</button>
-                        </form>
                     <img src="https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400" alt="" class="bd-cover" id="bd-cover">
                     {% endif %}
                 </div>
 
-                <div class="bd-main">
-                    <p class="bd-type">Buku Digital</p>
-                    <h1 class="bd-title" id="bd-title">Memuat buku...</h1>
-                    <p class="bd-author" id="bd-author">&nbsp;</p>
+                    <div class="bd-main">
+                        <p class="bd-type">Buku Digital</p>
+                        <h1 class="bd-title" id="bd-title">{{ buku_db.judul|default:"Memuat buku..." }}</h1>
+                        <p class="bd-author" id="bd-author">{% if buku_db %}{{ buku_db.penulis }}{% if buku_db.tahun %}, pertama terbit {{ buku_db.tahun }}{% endif %}{% else %}&nbsp;{% endif %}</p>
 
-                    <div class="bd-stats" id="bd-stats"></div>
+                        <div class="bd-stats" id="bd-stats">
+                            {% if buku_db.tahun %}
+                            <span><i class="fas fa-calendar"></i> Tahun {{ buku_db.tahun }}</span>
+                            {% endif %}
+                        </div>
 
-                    <div class="bd-actions">
-                        {% if pinjam_aktif %}
-                            <a href="{% url 'baca_buku' olid %}" class="bd-btn bd-btn-primary"><i class="fas fa-book-open"></i> Baca sekarang</a>
-                            <a href="{% url 'peminjaman' %}" class="bd-btn bd-btn-done"><i class="fas fa-check"></i> Sedang dipinjam</a>
-                        {% elif slot_penuh %}
-                            <button type="button" class="bd-btn bd-btn-disabled" disabled><i class="fas fa-ban"></i> Batas pinjam tercapai</button>
-                        {% else %}
-                            <form method="post" action="{% url 'pinjam_buku' olid %}" id="pinjam-form">
-                                {% csrf_token %}
-                                <input type="hidden" name="judul"><input type="hidden" name="penulis">
-                                <input type="hidden" name="tahun"><input type="hidden" name="cover">
-                                <input type="hidden" name="ia"><input type="hidden" name="deskripsi">
-                                <button type="submit" class="bd-btn bd-btn-primary" id="pinjam-btn" disabled><i class="fas fa-book-reader"></i> Pinjam buku</button>
-                            </form>
-                        {% endif %}
+                        <div class="bd-actions">
+                            {% if pinjam_aktif %}
+                                <a href="{% url 'baca_buku' olid %}" class="bd-btn bd-btn-primary"><i class="fas fa-book-open"></i> Baca sekarang</a>
+                                <a href="{% url 'peminjaman' %}" class="bd-btn bd-btn-done"><i class="fas fa-check"></i> Sedang dipinjam</a>
+                            {% elif slot_penuh %}
+                                <button type="button" class="bd-btn bd-btn-disabled" disabled><i class="fas fa-ban"></i> Batas pinjam tercapai</button>
+                            {% else %}
+                                <form method="post" action="{% url 'pinjam_buku' olid %}" id="pinjam-form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="judul" value="{{ buku_db.judul }}">
+                                    <input type="hidden" name="penulis" value="{{ buku_db.penulis }}">
+                                    <input type="hidden" name="tahun" value="{{ buku_db.tahun }}">
+                                    <input type="hidden" name="cover" value="{{ buku_db.cover }}">
+                                    <input type="hidden" name="ia" value="{{ buku_db.ia }}">
+                                    <input type="hidden" name="deskripsi" value="{{ buku_db.deskripsi }}">
+                                    <button type="submit" class="bd-btn bd-btn-primary" id="pinjam-btn" {% if not buku_db %}disabled{% endif %}><i class="fas fa-book-reader"></i> Pinjam buku</button>
+                                </form>
+                            {% endif %}
 
-                        <button type="button" id="bm-btn" data-olid="{{ olid }}" class="bd-btn bd-btn-outline{% if bookmarked %} active{% endif %}">
-                            <i class="{% if bookmarked %}fas{% else %}far{% endif %} fa-heart"></i>
-                            <span>{% if bookmarked %}Tersimpan{% else %}Simpan{% endif %}</span>
-                        </button>
+                            <button type="button" id="bm-btn" data-olid="{{ olid }}" class="bd-btn bd-btn-outline{% if bookmarked %} active{% endif %}">
+                                <i class="{% if bookmarked %}fas{% else %}far{% endif %} fa-heart"></i>
+                                <span>{% if bookmarked %}Tersimpan{% else %}Simpan{% endif %}</span>
+                            </button>
 
-                        <a href="#" target="_blank" rel="noopener" class="bd-btn bd-btn-ghost" id="bd-ia" hidden>
-                            <i class="fas fa-up-right-from-square"></i> Lihat di Internet Archive
-                        </a>
+                            <a href="#" target="_blank" rel="noopener" class="bd-btn bd-btn-ghost" id="bd-ia" hidden>
+                                <i class="fas fa-up-right-from-square"></i> Lihat di Internet Archive
+                            </a>
+                        </div>
+
+                        <div style="margin-top: 20px; font-size: 14px; line-height: 1.6; color: rgba(255,255,255,.8);">
+                            <p id="bd-desc">{{ buku_db.deskripsi }}</p>
+                        </div>
+
+                        <dl class="bd-details" style="margin-top: 16px; color: rgba(255,255,255,.8); font-size: 14px;">
+                            <div><dt style="display:inline; font-weight:700;">Penulis:</dt> <dd style="display:inline; margin:0;" id="bd-dl-author">{{ buku_db.penulis }}</dd></div>
+                            <div><dt style="display:inline; font-weight:700;">Tahun terbit:</dt> <dd style="display:inline; margin:0;" id="bd-dl-year">{{ buku_db.tahun|default:"-" }}</dd></div>
+                        </dl>
+
+                        <div id="bd-subjects-wrap" hidden style="margin-top: 12px;">
+                            <h3 style="font-size: 14px; margin-bottom: 6px;">Subjek</h3>
+                            <div class="bd-tags" id="bd-tags"></div>
+                        </div>
+
+                        <section class="bd-related" id="bd-related" hidden>
+                            <h2>Buku terkait</h2>
+                            <div class="catalog-grid" id="bd-related-grid"></div>
+                        </section>
                     </div>
-
-                    <section class="bd-related" id="bd-related" hidden>
-                        <h2>Buku terkait</h2>
-                        <div class="catalog-grid" id="bd-related-grid"></div>
-                    </section>
-
-                </div>
-                {{ buku_db|json_script:"buku-db" }}
-
-                <div style="margin-top: 20px; color: #475569; font-size: 14px; line-height: 1.6;">
-                    <p id="bd-desc">{{ buku_db.deskripsi }}</p>
-                </div>
-
-                <section class="bd-related" id="bd-related" hidden>
-                    <h2>Buku terkait</h2>
-                    <div class="catalog-grid" id="bd-related-grid"></div>
                 </section>
 
-            </div>
-        </section>
-            {{ buku_db|json_script:"buku-db" }}
+                {{ buku_db|json_script:"buku-db" }}
 
-            <p class="ol-credit">Data buku dari <a href="https://openlibrary.org" target="_blank" rel="noopener">Open Library</a> & Google Books.</p>
+                <p class="ol-credit">Data buku dari <a href="https://openlibrary.org" target="_blank" rel="noopener">Open Library</a>.</p>
+            </div>
+
         </div>
     </div>
 </body>

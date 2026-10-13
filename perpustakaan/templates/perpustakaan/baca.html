@@ -11,33 +11,36 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        /* Styling khusus halaman baca agar full screen */
-        body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; background: #121824; font-family: 'Plus Jakarta Sans', sans-serif; }
-        
-        .header-baca { background: #161f2e; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2A3447; }
+        /* Layout halaman baca: header di atas, area baca mengisi sisa layar */
+        html, body { height: 100%; }
+        body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: #121824; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        .header-baca { background: #173C3A; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2A3447; flex: none; }
         .header-info h3 { margin: 0; font-size: 18px; color: white; font-weight: 700; }
         .header-info p { margin: 5px 0 0 0; font-size: 12px; color: #A0AABF; }
-        
+
         .header-actions { display: flex; gap: 20px; align-items: center; }
         .btn-selesai { background: #D4F838; color: #121824; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 13px; transition: 0.2s; }
         .btn-selesai:hover { background: #c0e628; }
         .btn-kembali { color: #A0AABF; text-decoration: none; font-size: 13px; font-weight: 600; transition: 0.2s; }
         .btn-kembali:hover { color: white; }
 
-        /* Wadah pembaca buku */
-        .reader-stage { flex-grow: 1; width: 100%; display: flex; justify-content: center; align-items: center; background: #FAFAEE; position: relative; }
+        /* Wadah pembaca buku (tampilan toolbar PDF dipasang otomatis oleh buku.js) */
+        .reader-stage { flex: 1 1 0; min-height: 0; width: 100%; display: flex; justify-content: center; align-items: center; background: #FAFAEE; position: relative; overflow: hidden; }
         .reader-msg { text-align: center; color: #121824; font-size: 16px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 15px; }
-        
+
         /* Animasi Loading */
         .spinner { border: 4px solid rgba(0,0,0,0.1); width: 40px; height: 40px; border-radius: 50%; border-left-color: #D4F838; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        /* Iframe untuk nampilin PDF/Buku dari Internet Archive */
+
+        /* Iframe untuk Internet Archive */
         iframe { width: 100%; height: 100%; border: none; }
     </style>
 
-    <!-- Panggil Javascript Utama -->
+    <!-- PDF.js harus dimuat SEBELUM buku.js. Masing-masing script hanya SATU kali. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="{% static 'perpustakaan/js/script.js' %}" defer></script>
+    <script src="{% static 'perpustakaan/js/buku.js' %}?v=7" defer></script>
 </head>
 <body>
 
@@ -52,19 +55,25 @@
         </div>
     </header>
 
-    <main class="reader-stage" 
-        id="reader-stage" 
-        data-olid="{{ buku.id_item }}" 
+    <main class="reader-stage"
+        id="reader-stage"
+        data-olid="{{ buku.id_item }}"
         data-ia="{{ buku.ia_id }}"
         data-judul="{{ buku.judul }}"
         data-penulis="{{ buku.penulis }}"
-        data-link="{{ buku.link_unduh }}">
-        
+        data-link="{{ buku.link_unduh }}"
+        data-progress="{{ pinjam.progress_baca }}">
+
         <div class="reader-msg">
-            <span class="spinner"></span> 
+            <span class="spinner"></span>
             Menyiapkan buku...
         </div>
     </main>
-
+    <div id="read-ring"
+        data-url="{% url 'waktu_baca' %}"
+        data-pinjam="{{ pinjam.id }}"
+        data-detik="{{ pinjam.waktu_baca_detik }}"
+        data-total="120"></div>
+    <script src="{% static 'perpustakaan/js/baca-ring.js' %}?v=2" defer></script>
 </body>
 </html>
