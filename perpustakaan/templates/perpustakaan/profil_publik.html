@@ -155,7 +155,7 @@
                         <p class="pp-compare">
                             {% if selisih > 0 %}
                                 Kamu {{ selisih_abs }} EXP di bawah {{ profile_user.nama_tampilan|default:profile_user.username }}.
-                            {% elif selisih < 0 %}
+                            {% elif selisih == 0 %}
                                 Kamu {{ selisih_abs }} EXP di atas {{ profile_user.nama_tampilan|default:profile_user.username }}.
                             {% else %}
                                 EXP kalian sama.
