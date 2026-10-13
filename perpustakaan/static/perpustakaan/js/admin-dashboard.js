@@ -1,14 +1,6 @@
 (function () {
-  // ---------- Sidebar: memakai class .sidebar-open dari style.css ----------
-  var layout = document.getElementById("app-layout");
-  var btn = document.getElementById("menu-button");
-
-  if (layout && btn) {
-    btn.addEventListener("click", function () {
-      var open = layout.classList.toggle("sidebar-open");
-      btn.setAttribute("aria-expanded", String(open));
-    });
-  }
+  // Toggle sidebar sudah diurus oleh script di base_admin.html,
+  // jadi tidak ditangani lagi di sini (supaya tidak ter-toggle dua kali).
 
   // ---------- Grafik 7 hari ----------
   var canvas = document.getElementById("chart-aktivitas");

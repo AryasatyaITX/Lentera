@@ -1,0 +1,120 @@
+{% extends 'perpustakaan/admin_base.html' %}
+
+{% block title %}Laporan{% endblock %}
+{% block page_title %}Laporan Perpustakaan{% endblock %}
+{% block page_subtitle %}Baca data penting untuk keputusan berikutnya{% endblock %}
+
+{% block content %}
+{% url 'unduh_laporan' as unduh_url %}
+
+<!-- KARTU STATISTIK -->
+<div class="a-stats">
+    <div class="a-stat c-green">
+        <h4>Peminjaman bulan ini</h4>
+        <h2>{{ peminjaman_bulan_ini|default:0 }}</h2>
+        <p>transaksi tercatat</p>
+    </div>
+    <div class="a-stat c-blue">
+        <h4>Jurnal tersedia</h4>
+        <h2>{{ jurnal_tersedia|default:0 }}</h2>
+        <p>saat ini</p>
+    </div>
+    <div class="a-stat c-pink">
+        <span class="ico"><i class="fas fa-user"></i></span>
+        <h4>Anggota Aktif</h4>
+        <h2>{{ anggota_aktif|default:0 }}</h2>
+        <p>dari {{ total_pembaca|default:0 }} pembaca</p>
+    </div>
+    <div class="a-stat c-purple">
+        <h4>Buku tersedia</h4>
+        <h2>{{ buku_tersedia|default:0 }}</h2>
+        <p>saat ini</p>
+    </div>
+</div>
+
+<!-- GRAFIK + KATEGORI -->
+<div class="a-panels">
+
+    <div class="a-panel">
+        <div class="a-panel-head">
+            <div>
+                <small>Volume transaksi</small>
+                <h3>Peminjaman &amp; Pengembalian</h3>
+            </div>
+            <a href="{{ unduh_url|default:'#' }}" class="a-btn-unduh"><i class="fas fa-download"></i> Unduh laporan</a>
+        </div>
+        <div class="a-chart-wrap">
+            <canvas id="chart-volume"></canvas>
+        </div>
+    </div>
+
+    <div class="a-panel">
+        <div class="a-panel-head">
+            <div>
+                <span class="eyebrow">Aktivitas peminjaman</span>
+                <h3>Buku per kategori</h3>
+            </div>
+        </div>
+        <div class="a-cat-list">
+            {% for k in kategori_list %}
+            <div class="a-cat-row">
+                <div class="top"><span>{{ k.nama }}</span><b>{{ k.jumlah }}</b></div>
+                <div class="a-cat-bar"><span style="--w: {{ k.persen }}%"></span></div>
+            </div>
+            {% empty %}
+            <p style="font-size:11px; color:#8A8A7A;">Belum ada data kategori.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+
+<!-- Data grafik dari view (volume_labels, volume_pinjam, volume_kembali) -->
+{{ volume_labels|json_script:"volume-labels" }}
+{{ volume_pinjam|json_script:"volume-pinjam" }}
+{{ volume_kembali|json_script:"volume-kembali" }}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    function read(id) {
+        var el = document.getElementById(id);
+        try { return JSON.parse(el.textContent) || []; } catch (e) { return []; }
+    }
+
+    var labels  = read('volume-labels');
+    var pinjam  = read('volume-pinjam');
+    var kembali = read('volume-kembali');
+
+    // Data contoh kalau view belum mengirim data
+    if (!labels.length) {
+        labels  = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun'];
+        pinjam  = [0, 0, 0, 0, 0, 0];
+        kembali = [0, 0, 0, 0, 0, 0];
+    }
+
+    Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+    Chart.defaults.font.size = 10;
+
+    new Chart(document.getElementById('chart-volume'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'Peminjaman',  data: pinjam,  backgroundColor: '#17372F', borderRadius: 4, maxBarThickness: 22 },
+                { label: 'Pengembalian', data: kembali, backgroundColor: '#D4F838', borderRadius: 4, maxBarThickness: 22 }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true } } },
+            scales: {
+                x: { grid: { display: false } },
+                y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#F0F0E6' } }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

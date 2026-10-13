@@ -1,7 +1,22 @@
+from datetime import timedelta
+from django.core.paginator import Paginator
+from django.utils import timezone
+import requests
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.http import JsonResponse, Http404
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import ensure_csrf_cookie
+from .models import CustomUser, BukuDigital, Jurnal, Peminjaman, Bookmark
+from django.contrib.auth import update_session_auth_hash
 from datetime import date, timedelta
+import json
 import os
 import random
 import re
+from urllib.parse import urlparse
 
 import requests
 from django.conf import settings
@@ -23,8 +38,9 @@ from django.views.decorators.http import require_POST
 from .models import Bookmark, BukuDigital, CustomUser, Jurnal, Peminjaman
 
 MASA_PINJAM_HARI = 14
-ITEM_ID_RE = re.compile(r"^[\w-]+$")
-COVER_PREFIX = "https://covers.openlibrary.org/"
+PAGINATION_PAGE_SIZE = 10
+ITEM_ID_RE = re.compile(r'^[\w-]+$')
+COVER_PREFIX = 'https://covers.openlibrary.org/'
 
 # (nilai subject di Open Library, label yang tampil)
 KATEGORI = [
@@ -42,22 +58,56 @@ BAHASA = [("", "Semua bahasa"), ("ind", "Indonesia"), ("eng", "Inggris")]
 
 def login_view(request):
     if request.user.is_authenticated:
+        if request.user.is_staff or request.user.is_admin:
+            return redirect("dashboard_admin")
         return redirect("dashboard")
 
     if request.method == "POST":
-        username_input = request.POST.get("username")
-        password_input = request.POST.get("password")
-        user = authenticate(
-            request, username=username_input, password=password_input
-        )
+        action = request.POST.get("action")
 
-        if user is not None:
-            login(request, user)
-            if user.is_staff or user.is_admin:
-                return redirect("dashboard_admin")
-            return redirect("dashboard")
+        # LOGIKA 1: RESET PASSWORD MANDIRI
+        if action == "reset_password":
+            username_input = request.POST.get("username")
+            email_input = request.POST.get("email")
+            new_password = request.POST.get("new_password")
+            confirm_password = request.POST.get("confirm_password")
+
+            if new_password != confirm_password:
+                messages.error(request, "Konfirmasi password baru tidak cocok!")
+            else:
+                User = get_user_model()
+                user = User.objects.filter(username=username_input, email=email_input).first()
+                if user:
+                    user.set_password(new_password)
+                    user.save()
+                    messages.success(request, "Password berhasil diubah! Silakan login dengan password baru.")
+                else:
+                    messages.error(request, "Username/NIM atau Email terdaftar tidak ditemukan!")
+
+        # LOGIKA 2: LOGIN biasa
         else:
-            messages.error(request, "Username/Email atau Password salah!")
+            username_input = request.POST.get("username")
+            password_input = request.POST.get("password")
+            remember_me = request.POST.get("remember_me")
+
+            user = authenticate(
+                request, username=username_input, password=password_input
+            )
+
+            if user is not None:
+                login(request, user)
+
+                # Fitur Remember Me
+                if not remember_me:
+                    request.session.set_expiry(0)
+                else:
+                    request.session.set_expiry(1209600)  # 2 Minggu
+
+                if user.is_staff or user.is_admin:
+                    return redirect("dashboard_admin")
+                return redirect("dashboard")
+            else:
+                messages.error(request, "Username atau Password Salah. Silahkan Coba Lagi")
 
     return render(request, "perpustakaan/login.html")
 
@@ -189,6 +239,24 @@ def katalog_view(request):
                 user=request.user, buku_digital__isnull=False
             ).values_list("buku_digital_id", flat=True)
         ),
+        'buku_lokal': [
+            {
+                'olid': buku.id_item,
+                'judul': buku.judul,
+                'penulis': buku.penulis,
+                'tahun': buku.tahun_terbit,
+                'cover': buku.cover or '',
+                'cover_besar': buku.cover or '',
+                'rating': None,
+                'want': None,
+                'ia': buku.ia_id,
+                'ia_semua': [],
+                'akses': '',
+                'deskripsi': buku.deskripsi,
+                'subjek': [],
+            }
+            for buku in BukuDigital.objects.order_by('judul')
+        ],
     }
     return render(request, "perpustakaan/katalog.html", context)
 
@@ -380,7 +448,95 @@ def toggle_bookmark(request, olid):
 
 @login_required(login_url="login")
 def ejournal_view(request):
-    return render(request, "perpustakaan/ejournal.html", {"user": request.user})
+    jurnal_harian = []
+
+    # Jurnal pilihan admin dari database, ditambah katalog JSON kurasi awal.
+    for jurnal in Jurnal.objects.order_by("judul", "id_item"):
+        jurnal_harian.append({
+            "id": jurnal.id_item,
+            "judul": jurnal.judul,
+            "penulis": jurnal.penulis,
+            "tahun": jurnal.tahun_terbit,
+            "nama_jurnal": jurnal.bidang_ilmu or "Koleksi Lentera",
+            "cover": jurnal.cover,
+            "baca_url": f"/jurnal/{jurnal.id_item}/baca/",
+        })
+
+    file_json = settings.BASE_DIR / "jurnal_teknik.json"
+    if file_json.exists():
+        try:
+            with file_json.open(encoding="utf-8") as file:
+                jurnal_json = json.load(file)
+            for index, jurnal in enumerate(jurnal_json):
+                jurnal_harian.append({
+                    "id": f"JSON-{index}",
+                    "judul": jurnal.get("judul", "Tanpa judul"),
+                    "penulis": jurnal.get("penulis", "Penulis tidak diketahui"),
+                    "tahun": jurnal.get("tahun", "-"),
+                    "nama_jurnal": jurnal.get("jurnal", ""),
+                    "cover": jurnal.get("cover_url", ""),
+                    "baca_url": f"/jurnal/JSON-{index}/baca/",
+                })
+        except (OSError, json.JSONDecodeError):
+            pass
+
+    query = request.GET.get("q", "").strip()
+    if query:
+        query_lower = query.casefold()
+        jurnal_harian = [
+            jurnal for jurnal in jurnal_harian
+            if query_lower in jurnal["judul"].casefold()
+            or query_lower in jurnal["penulis"].casefold()
+            or query_lower in jurnal["nama_jurnal"].casefold()
+        ]
+
+    # Geser satu posisi per tanggal: daftar konsisten sepanjang hari dan
+    # pasti berubah besok selama koleksinya berisi lebih dari enam jurnal.
+    if jurnal_harian:
+        offset = timezone.localdate().toordinal() % len(jurnal_harian)
+        jurnal_harian = jurnal_harian[offset:] + jurnal_harian[:offset]
+    jurnal_harian = jurnal_harian[:6]
+
+    return render(request, "perpustakaan/ejournal.html", {
+        "user": request.user,
+        "jurnal_list": jurnal_harian,
+        "search_query": query,
+        "tanggal_jurnal": timezone.localdate(),
+    })
+
+
+@login_required(login_url="login")
+def baca_jurnal(request, jurnal_id):
+    if jurnal_id.startswith("JSON-"):
+        try:
+            index = int(jurnal_id[5:])
+            with (settings.BASE_DIR / "jurnal_teknik.json").open(encoding="utf-8") as file:
+                semua_jurnal = json.load(file)
+            if index < 0:
+                raise IndexError
+            jurnal = semua_jurnal[index]
+        except (ValueError, IndexError, OSError, json.JSONDecodeError):
+            raise Http404("Jurnal tidak ditemukan")
+        judul = jurnal.get("judul", "Tanpa judul")
+        penulis = jurnal.get("penulis", "Penulis tidak diketahui")
+        reader_url = jurnal.get("pdf_url") or ""
+        sumber_url = jurnal.get("sumber_url") or jurnal.get("doi_url") or ""
+    else:
+        jurnal = get_object_or_404(Jurnal, pk=jurnal_id)
+        judul = jurnal.judul
+        penulis = jurnal.penulis
+        reader_url = jurnal.link_akses or ""
+        sumber_url = reader_url
+
+    is_pdf = urlparse(reader_url).path.lower().endswith(".pdf")
+    return render(request, "perpustakaan/baca_jurnal.html", {
+        "user": request.user,
+        "judul": judul,
+        "penulis": penulis,
+        "reader_url": reader_url,
+        "sumber_url": sumber_url,
+        "is_pdf": is_pdf,
+    })
 
 
 @login_required(login_url="login")
@@ -429,13 +585,17 @@ def kembalikan_buku(request, pinjaman_id):
 
 @login_required(login_url="login")
 def bookmarks_view(request):
-    daftar_bookmark = Bookmark.objects.filter(user=request.user).order_by(
-        "-tanggal_disimpan"
+    daftar_bookmark = (
+        Bookmark.objects.filter(user=request.user)
+        .select_related('buku_digital', 'jurnal')
+        .order_by('-tanggal_disimpan', '-pk')
     )
+    page_obj = Paginator(daftar_bookmark, PAGINATION_PAGE_SIZE).get_page(request.GET.get('page'))
     context = {
-        "user": request.user,
-        "bookmarks": daftar_bookmark,
-        "total_tersimpan": daftar_bookmark.count(),
+        'user': request.user,
+        'bookmarks': page_obj,
+        'page_obj': page_obj,
+        'total_tersimpan': page_obj.paginator.count,
     }
     return render(request, "perpustakaan/bookmarks.html", context)
 
@@ -452,18 +612,27 @@ def hapus_bookmark_api(request, bookmark_id):
 
 @login_required(login_url="login")
 def riwayat_view(request):
-    riwayat_list = Peminjaman.objects.filter(user=request.user).order_by(
-        "-tanggal_pinjam"
+    riwayat_queryset = (
+        Peminjaman.objects.filter(user=request.user)
+        .select_related('buku_digital', 'jurnal')
+        .order_by('-tanggal_pinjam', '-pk')
     )
+    page_obj = Paginator(riwayat_queryset, PAGINATION_PAGE_SIZE).get_page(request.GET.get('page'))
+    riwayat_list = page_obj.object_list
+    
     for item in riwayat_list:
-        item.tanggal_kembali = item.tanggal_pinjam + timedelta(
-            days=MASA_PINJAM_HARI
-        )
+        if not item.tanggal_kembali:
+            if item.status == 'Selesai':
+                # Fallback untuk data lama yang dikembalikan sebelum perbaikan ini
+                item.tanggal_kembali = item.tanggal_pinjam + timedelta(days=MASA_PINJAM_HARI)
+            else:
+                item.jatuh_tempo = item.tanggal_pinjam + timedelta(days=MASA_PINJAM_HARI)
 
     context = {
-        "user": request.user,
-        "riwayat_list": riwayat_list,
-        "total_aktivitas": riwayat_list.count(),
+        'user': request.user,
+        'riwayat_list': riwayat_list,
+        'page_obj': page_obj,
+        'total_aktivitas': page_obj.paginator.count,
     }
     return render(request, "perpustakaan/riwayat.html", context)
 

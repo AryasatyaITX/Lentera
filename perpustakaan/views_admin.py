@@ -1,5 +1,9 @@
 from datetime import timedelta
-
+import uuid
+from django.core.files.storage import FileSystemStorage
+from django.contrib import messages
+from django.db.models import Q
+from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import user_passes_test
 from django.db.models import Count
 from django.db.models.functions import TruncDate
@@ -39,64 +43,51 @@ def _judul_item(obj):
     return item.judul if item else "Item sudah dihapus"
 
 
-def _aktivitas_terbaru(batas=4):
-    """Gabungkan beberapa jenis aktivitas, urutkan dari yang terbaru."""
+def _aktivitas_terbaru():
+    """Selalu empat kartu: buku, jurnal, anggota, dikembalikan."""
     events = []
 
-    for u in CustomUser.objects.filter(is_member=True).order_by(
-        "-date_joined"
-    )[:batas]:
-        events.append(
-            {
-                "jenis": "anggota",
-                "judul": "Anggota baru bergabung",
-                "deskripsi": u.nama_tampilan or u.username,
-                "waktu": u.date_joined,
-            }
-        )
+    b = BukuDigital.objects.order_by("-tanggal_ditambahkan").first()
+    events.append({
+        "jenis": "buku",
+        "judul": "Buku baru ditambahkan",
+        "deskripsi": b.judul if b else "Belum ada buku",
+        "waktu_lalu": _waktu_lalu(b.tanggal_ditambahkan) if b else "-",
+    })
 
-    pinjam_qs = Peminjaman.objects.select_related(
-        "user", "buku_digital", "jurnal"
+    j = Jurnal.objects.order_by("-tanggal_ditambahkan").first()
+    events.append({
+        "jenis": "jurnal",
+        "judul": "E-journal baru terbit",
+        "deskripsi": j.judul if j else "Belum ada jurnal",
+        "waktu_lalu": _waktu_lalu(j.tanggal_ditambahkan) if j else "-",
+    })
+
+    u = (
+        CustomUser.objects.filter(is_member=True)
+        .order_by("-date_joined")
+        .first()
     )
-    for p in pinjam_qs.order_by("-tanggal_pinjam")[:batas]:
-        events.append(
-            {
-                "jenis": "pinjam",
-                "judul": "Buku dipinjam",
-                "deskripsi": _judul_item(p),
-                "waktu": p.tanggal_pinjam,
-            }
-        )
+    events.append({
+        "jenis": "anggota",
+        "judul": "Anggota baru bergabung",
+        "deskripsi": (u.nama_tampilan or u.username) if u else "Belum ada anggota",
+        "waktu_lalu": _waktu_lalu(u.date_joined) if u else "-",
+    })
 
-    kembali_qs = pinjam_qs.filter(
-        status="Selesai", tanggal_kembali__isnull=False
+    p = (
+        Peminjaman.objects.select_related("buku_digital", "jurnal")
+        .filter(status="Selesai", tanggal_kembali__isnull=False)
+        .order_by("-tanggal_kembali")
+        .first()
     )
-    for p in kembali_qs.order_by("-tanggal_kembali")[:batas]:
-        events.append(
-            {
-                "jenis": "kembali",
-                "judul": "Buku dikembalikan",
-                "deskripsi": _judul_item(p),
-                "waktu": p.tanggal_kembali,
-            }
-        )
+    events.append({
+        "jenis": "kembali",
+        "judul": "Buku dikembalikan",
+        "deskripsi": _judul_item(p) if p else "Belum ada pengembalian",
+        "waktu_lalu": _waktu_lalu(p.tanggal_kembali) if p else "-",
+    })
 
-    bm_qs = Bookmark.objects.select_related("buku_digital", "jurnal")
-    for b in bm_qs.order_by("-tanggal_disimpan")[:batas]:
-        item = b.buku_digital or b.jurnal
-        events.append(
-            {
-                "jenis": "bookmark",
-                "judul": "Item disimpan",
-                "deskripsi": item.judul if item else "Item sudah dihapus",
-                "waktu": b.tanggal_disimpan,
-            }
-        )
-
-    events.sort(key=lambda e: e["waktu"], reverse=True)
-    events = events[:batas]
-    for e in events:
-        e["waktu_lalu"] = _waktu_lalu(e["waktu"])
     return events
 
 
@@ -174,3 +165,140 @@ def dashboard_admin(request):
         "aktivitas": _aktivitas_terbaru(),
     }
     return render(request, "perpustakaan/dashboard_admin.html", context)
+# tambah
+
+
+
+# ==========================================
+# KELOLA BUKU DIGITAL (ADMIN)
+# ==========================================
+@user_passes_test(_boleh_admin, login_url="login")
+def kelola_buku(request):
+    if request.method == "POST":
+        judul = request.POST.get("judul")
+        penulis = request.POST.get("penulis")
+        kategori = request.POST.get("kategori", "").strip()
+        tahun_terbit = request.POST.get("tahun_terbit", "")
+        cover_url = request.POST.get("cover", "")
+        deskripsi = request.POST.get("deskripsi", "")
+
+        id_item = f"BK-{uuid.uuid4().hex[:8].upper()}"
+
+        link_unduh = "https://example.com"
+        ukuran_mb = 2.5
+
+        # Proses Upload File PDF
+        if "file_pdf" in request.FILES:
+            file_pdf = request.FILES["file_pdf"]
+            fs = FileSystemStorage()
+            filename = fs.save(f"buku_pdf/{file_pdf.name}", file_pdf)
+            link_unduh = fs.url(filename)
+            ukuran_mb = round(file_pdf.size / (1024 * 1024), 2)
+
+        BukuDigital.objects.create(
+            id_item=id_item,
+            judul=judul,
+            penulis=penulis,
+            kategori=kategori,
+            tahun_terbit=tahun_terbit,
+            cover=cover_url,
+            deskripsi=deskripsi,
+            link_unduh=link_unduh,
+            ukuran_file=ukuran_mb,
+            format_file="PDF",
+        )
+        return redirect("kelola_buku")
+
+    q = request.GET.get("q", "")
+    buku_qs = BukuDigital.objects.all()
+    if q:
+        buku_qs = buku_qs.filter(
+            Q(judul__icontains=q) | Q(penulis__icontains=q)
+        )
+
+    buku_list = list(buku_qs)
+    for b in buku_list:
+        b.total_pembaca = Peminjaman.objects.filter(buku_digital=b).count()
+
+    context = {
+        "buku_list": buku_list,
+        "search_query": q,
+    }
+    return render(request, "perpustakaan/kelola_buku.html", context)
+
+
+@user_passes_test(_boleh_admin, login_url="login")
+def hapus_buku(request, id_item):
+    if request.method == "POST":
+        buku = get_object_or_404(BukuDigital, id_item=id_item)
+        buku.delete()
+    return redirect("kelola_buku")
+
+
+# ==========================================
+# KELOLA JURNAL (ADMIN)
+# ==========================================
+@user_passes_test(_boleh_admin, login_url="login")
+def kelola_jurnal(request):
+    if request.method == "POST":
+        judul = request.POST.get("judul")
+        penulis = request.POST.get("penulis")
+        kategori="", 
+        bidang_ilmu = request.POST.get("bidang_ilmu", "")
+        volume = request.POST.get("volume", "")
+        tahun_terbit = request.POST.get("tahun_terbit", "")
+        cover_url = request.POST.get("cover", "")
+        link_akses = request.POST.get("link_akses", "")
+
+        id_item = f"JR-{uuid.uuid4().hex[:8].upper()}"
+
+        # Proses Upload File PDF Jurnal
+        if "file_pdf" in request.FILES:
+            file_pdf = request.FILES["file_pdf"]
+            if not file_pdf.name.lower().endswith(".pdf"):
+                messages.error(request, "File jurnal harus berformat PDF.")
+                return redirect("kelola_jurnal")
+            fs = FileSystemStorage()
+            filename = fs.save(f"jurnal_pdf/{file_pdf.name}", file_pdf)
+            link_akses = fs.url(filename)
+
+        if not link_akses:
+            messages.error(request, "Isi tautan laman jurnal atau unggah file PDF.")
+            return redirect("kelola_jurnal")
+
+        Jurnal.objects.create(
+            id_item=id_item,
+            judul=judul,
+            penulis=penulis,
+            bidang_ilmu=bidang_ilmu,
+            volume=volume,
+            tahun_terbit=tahun_terbit,
+            cover=cover_url,
+            link_akses=link_akses,
+        )
+        return redirect("kelola_jurnal")
+
+    q = request.GET.get("q", "")
+    jurnal_qs = Jurnal.objects.all()
+    if q:
+        jurnal_qs = jurnal_qs.filter(
+            Q(judul__icontains=q) | Q(penulis__icontains=q)
+        )
+
+    jurnal_list = list(jurnal_qs)
+    for j in jurnal_list:
+        j.total_pembaca = Peminjaman.objects.filter(jurnal=j).count()
+
+    context = {
+        "jurnal_list": jurnal_list,
+        "search_query": q,
+    }
+    return render(request, "perpustakaan/kelola_jurnal.html", context)
+
+
+@user_passes_test(_boleh_admin, login_url="login")
+def hapus_jurnal(request, id_item):
+    if request.method == "POST":
+        jurnal = get_object_or_404(Jurnal, id_item=id_item)
+        jurnal.delete()
+    return redirect("kelola_jurnal")

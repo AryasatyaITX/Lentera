@@ -1,0 +1,55 @@
+{% extends 'perpustakaan/admin_base.html' %}
+
+{% block title %}Kelola Anggota{% endblock %}
+{% block page_title %}Kelola Anggota{% endblock %}
+{% block page_subtitle %}Pantau anggota dan aktivitas pinjaman anggota{% endblock %}
+
+{% block content %}
+<div class="a-toolbar" style="margin-bottom:40px;">
+    <div class="a-search">
+        <i class="fas fa-search"></i>
+        <input type="text" id="a-search-input" placeholder="Cari nama atau email...">
+    </div>
+</div>
+
+<div class="a-tabs">
+    <button type="button" class="a-tab active" data-filter="semua">Semua</button>
+    <button type="button" class="a-tab" data-filter="aktif">Aktif</button>
+    <button type="button" class="a-tab" data-filter="nonaktif">Nonaktif</button>
+</div>
+
+<div class="a-card" style="padding-top:6px;">
+    <table class="a-table">
+        <thead>
+            <tr>
+                <th style="width:28%">Anggota</th>
+                <th>Email</th>
+                <th>Bergabung</th>
+                <th>Status</th>
+                <th>Total Pinjaman</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in anggota %}
+            <tr data-row data-status="{% if a.is_active %}aktif{% else %}nonaktif{% endif %}">
+                <td>
+                    <div class="a-user">
+                        <img src="https://ui-avatars.com/api/?name={{ a.username }}&background=D4F838&color=121824" alt="">
+                        <span class="n">{{ a.get_full_name|default:a.username }}</span>
+                    </div>
+                </td>
+                <td>{{ a.email|default:"-" }}</td>
+                <td>{{ a.date_joined|date:"Y" }}</td>
+                <td>
+                    {% if a.is_active %}<span class="a-badge aktif">Aktif</span>
+                    {% else %}<span class="a-badge nonaktif">Nonaktif</span>{% endif %}
+                </td>
+                <td>{{ a.total_pinjaman|default:0 }} buku</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="a-empty">Belum ada anggota.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
