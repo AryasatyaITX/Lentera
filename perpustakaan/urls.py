@@ -33,4 +33,9 @@ urlpatterns = [
     path("dashboard-admin/buku/hapus/<str:id_item>/", views_admin.hapus_buku, name="hapus_buku",),
     path("dashboard-admin/jurnal/", views_admin.kelola_jurnal, name="kelola_jurnal",),
     path("dashboard-admin/jurnal/hapus/<str:id_item>/", views_admin.hapus_jurnal, name="hapus_jurnal",),
+    #tambah punya yoga
+    path("dashboard-admin/anggota/", views_admin.kelola_anggota, name="kelola_anggota"),
+    path("dashboard-admin/peminjaman/", views_admin.peminjaman_admin, name="peminjaman_admin"),
+    path("dashboard-admin/laporan/", views_admin.laporan_peminjaman, name="laporan_peminjaman"),
+    path("dashboard-admin/laporan/unduh/", views_admin.unduh_laporan, name="unduh_laporan"),
 ]

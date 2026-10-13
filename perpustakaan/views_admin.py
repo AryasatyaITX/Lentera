@@ -1,5 +1,8 @@
 from datetime import timedelta
 import uuid
+import csv
+from django.http import HttpResponse
+from django.db.models import Count, Q
 from django.core.files.storage import FileSystemStorage
 from django.contrib import messages
 from django.db.models import Q
@@ -11,6 +14,7 @@ from django.shortcuts import render
 from django.utils import timezone
 
 from .models import Bookmark, BukuDigital, CustomUser, Jurnal, Peminjaman
+LAMA_PINJAM_HARI = 7  # sesuaikan dengan aturan perpustakaanmu(punya yoga)
 
 BULAN = [
     "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli",
@@ -302,3 +306,101 @@ def hapus_jurnal(request, id_item):
         jurnal = get_object_or_404(Jurnal, id_item=id_item)
         jurnal.delete()
     return redirect("kelola_jurnal")
+
+
+# ==========================================
+# KELOLA ANGGOTA (ADMIN)
+# ==========================================
+@user_passes_test(_boleh_admin, login_url="login")
+def kelola_anggota(request):
+    anggota = (
+        CustomUser.objects.filter(is_member=True)
+        .annotate(total_pinjaman=Count("peminjaman"))
+        .order_by("-date_joined")
+    )
+    return render(request, "perpustakaan/kelola_anggota.html", {"anggota": anggota})
+
+
+# ==========================================
+# PEMINJAMAN & PENGEMBALIAN (ADMIN)
+# ==========================================
+@user_passes_test(_boleh_admin, login_url="login")
+def peminjaman_admin(request):
+    daftar = list(
+        Peminjaman.objects.select_related("user", "buku_digital", "jurnal")
+        .order_by("-tanggal_pinjam")
+    )
+    sekarang = timezone.now()
+    for p in daftar:
+        # hanya diisi kalau model belum punya properti dengan nama yang sama
+        if not hasattr(p, "sudah_kembali"):
+            p.sudah_kembali = p.status == "Selesai"
+        if not hasattr(p, "jatuh_tempo"):
+            p.jatuh_tempo = p.tanggal_pinjam + timedelta(days=LAMA_PINJAM_HARI)
+        if not hasattr(p, "terlambat"):
+            p.terlambat = (not p.sudah_kembali) and sekarang > p.jatuh_tempo
+    return render(request, "perpustakaan/peminjaman_admin.html", {"peminjaman": daftar})
+
+
+# ==========================================
+# LAPORAN (ADMIN)
+# ==========================================
+@user_passes_test(_boleh_admin, login_url="login")
+def laporan_peminjaman(request):
+    sekarang = timezone.now()
+    awal_bulan = sekarang.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    bulan_ini = Peminjaman.objects.filter(tanggal_pinjam__gte=awal_bulan)
+    anggota_aktif = bulan_ini.values("user").distinct().count()
+    total_pembaca = CustomUser.objects.filter(is_member=True).count()
+
+    # buku per kategori
+    rows = (
+        Peminjaman.objects.filter(buku_digital__isnull=False)
+        .values("buku_digital__kategori")
+        .annotate(jumlah=Count("id"))
+        .order_by("-jumlah")[:6]
+    )
+    maks = rows[0]["jumlah"] if rows else 1
+    kategori_list = [
+        {
+            "nama": r["buku_digital__kategori"] or "Tanpa kategori",
+            "jumlah": r["jumlah"],
+            "persen": round(r["jumlah"] / maks * 100),
+        }
+        for r in rows
+    ]
+
+    grafik = _data_grafik_7_hari()
+
+    context = {
+        "peminjaman_bulan_ini": bulan_ini.count(),
+        "jurnal_tersedia": Jurnal.objects.count(),
+        "anggota_aktif": anggota_aktif,
+        "total_pembaca": total_pembaca,
+        "buku_tersedia": BukuDigital.objects.count(),
+        "kategori_list": kategori_list,
+        "volume_labels": grafik["labels"],
+        "volume_pinjam": grafik["pinjam"],
+        "volume_kembali": grafik["kembali"],
+    }
+    return render(request, "perpustakaan/laporan_peminjaman.html", context)
+
+
+@user_passes_test(_boleh_admin, login_url="login")
+def unduh_laporan(request):
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="laporan_peminjaman.csv"'
+    response.write("\ufeff")  # supaya terbaca benar di Excel
+    w = csv.writer(response)
+    w.writerow(["Judul", "Anggota", "Tanggal Pinjam", "Tanggal Kembali", "Status"])
+    qs = Peminjaman.objects.select_related("user", "buku_digital", "jurnal").order_by("-tanggal_pinjam")
+    for p in qs:
+        w.writerow([
+            _judul_item(p),
+            p.user.username,
+            p.tanggal_pinjam.strftime("%Y-%m-%d"),
+            p.tanggal_kembali.strftime("%Y-%m-%d") if p.tanggal_kembali else "-",
+            p.status,
+        ])
+    return response
