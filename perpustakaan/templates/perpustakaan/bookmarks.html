@@ -44,11 +44,11 @@
                 <div class="top-nav-left">
                     <button id="menuButton" class="menu-button" type="button" aria-label="Buka atau tutup menu"><i class="fas fa-bars"></i></button>
                     <div class="top-divider"></div>
-                    <div class="greeting"><h4>{{ user.username }} / ANGGOTA</h4><h1 class="page-title-space">Bookmarks</h1></div>
+                    <div class="greeting"><h4> Lentera / ANGGOTA</h4><h1 class="page-title-space">Bookmarks</h1></div>
                 </div>
                 <div class="nav-actions">
                     <i class="far fa-bell"></i>
-                    <div class="avatar-circle">{{ user.username|make_list|first|upper }}</div>
+                    <div class="avatar-circle">{{ user.nama_tampilan|default:user.username|slice:2|upper }}</div>
                     <a href="{% url 'logout' %}" style="margin-left:15px; color:#dc2626; font-size: 20px;" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
                 </div>
             </div>

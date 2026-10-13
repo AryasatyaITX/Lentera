@@ -786,6 +786,7 @@ body.auth-body {
     overflow: hidden;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 5;
+    line-clamp: 5;
     font-size: 9px;
     font-weight: 800;
     line-height: 1.25;
