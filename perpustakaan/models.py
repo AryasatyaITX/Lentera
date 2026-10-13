@@ -21,6 +21,7 @@ class ItemKatalog(models.Model):
     penulis = models.CharField(max_length=255)
     tahun_terbit = models.CharField(max_length=4, blank=True)
     cover = models.URLField(blank=True, null=True)  # URL gambar sampul
+    tanggal_ditambahkan = models.DateTimeField(default=timezone.now) 
 
     class Meta:
         abstract = True

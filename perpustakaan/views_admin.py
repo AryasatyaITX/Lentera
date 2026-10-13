@@ -43,64 +43,51 @@ def _judul_item(obj):
     return item.judul if item else "Item sudah dihapus"
 
 
-def _aktivitas_terbaru(batas=4):
-    """Gabungkan beberapa jenis aktivitas, urutkan dari yang terbaru."""
+def _aktivitas_terbaru():
+    """Selalu empat kartu: buku, jurnal, anggota, dikembalikan."""
     events = []
 
-    for u in CustomUser.objects.filter(is_member=True).order_by(
-        "-date_joined"
-    )[:batas]:
-        events.append(
-            {
-                "jenis": "anggota",
-                "judul": "Anggota baru bergabung",
-                "deskripsi": u.nama_tampilan or u.username,
-                "waktu": u.date_joined,
-            }
-        )
+    b = BukuDigital.objects.order_by("-tanggal_ditambahkan").first()
+    events.append({
+        "jenis": "buku",
+        "judul": "Buku baru ditambahkan",
+        "deskripsi": b.judul if b else "Belum ada buku",
+        "waktu_lalu": _waktu_lalu(b.tanggal_ditambahkan) if b else "-",
+    })
 
-    pinjam_qs = Peminjaman.objects.select_related(
-        "user", "buku_digital", "jurnal"
+    j = Jurnal.objects.order_by("-tanggal_ditambahkan").first()
+    events.append({
+        "jenis": "jurnal",
+        "judul": "E-journal baru terbit",
+        "deskripsi": j.judul if j else "Belum ada jurnal",
+        "waktu_lalu": _waktu_lalu(j.tanggal_ditambahkan) if j else "-",
+    })
+
+    u = (
+        CustomUser.objects.filter(is_member=True)
+        .order_by("-date_joined")
+        .first()
     )
-    for p in pinjam_qs.order_by("-tanggal_pinjam")[:batas]:
-        events.append(
-            {
-                "jenis": "pinjam",
-                "judul": "Buku dipinjam",
-                "deskripsi": _judul_item(p),
-                "waktu": p.tanggal_pinjam,
-            }
-        )
+    events.append({
+        "jenis": "anggota",
+        "judul": "Anggota baru bergabung",
+        "deskripsi": (u.nama_tampilan or u.username) if u else "Belum ada anggota",
+        "waktu_lalu": _waktu_lalu(u.date_joined) if u else "-",
+    })
 
-    kembali_qs = pinjam_qs.filter(
-        status="Selesai", tanggal_kembali__isnull=False
+    p = (
+        Peminjaman.objects.select_related("buku_digital", "jurnal")
+        .filter(status="Selesai", tanggal_kembali__isnull=False)
+        .order_by("-tanggal_kembali")
+        .first()
     )
-    for p in kembali_qs.order_by("-tanggal_kembali")[:batas]:
-        events.append(
-            {
-                "jenis": "kembali",
-                "judul": "Buku dikembalikan",
-                "deskripsi": _judul_item(p),
-                "waktu": p.tanggal_kembali,
-            }
-        )
+    events.append({
+        "jenis": "kembali",
+        "judul": "Buku dikembalikan",
+        "deskripsi": _judul_item(p) if p else "Belum ada pengembalian",
+        "waktu_lalu": _waktu_lalu(p.tanggal_kembali) if p else "-",
+    })
 
-    bm_qs = Bookmark.objects.select_related("buku_digital", "jurnal")
-    for b in bm_qs.order_by("-tanggal_disimpan")[:batas]:
-        item = b.buku_digital or b.jurnal
-        events.append(
-            {
-                "jenis": "bookmark",
-                "judul": "Item disimpan",
-                "deskripsi": item.judul if item else "Item sudah dihapus",
-                "waktu": b.tanggal_disimpan,
-            }
-        )
-
-    events.sort(key=lambda e: e["waktu"], reverse=True)
-    events = events[:batas]
-    for e in events:
-        e["waktu_lalu"] = _waktu_lalu(e["waktu"])
     return events
 
 
