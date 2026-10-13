@@ -1005,7 +1005,7 @@ body.auth-body {
     padding: 9px 14px;
     border: 1px solid #E5E5D8;
     border-radius: 8px;
-    color: #121824;
+    color: #173C3A;
     font-size: 12px;
     font-weight: 700;
     text-decoration: none;
@@ -2183,3 +2183,6 @@ body {
     background: rgba(255, 255, 255, 0.06);
     color: #D4F838;
 }
+
+/* Buat style baca web */
+.reader-stage.pdf-mode { flex-direction: column; align-items: stretch; justify-content: flex-start; background: #F3F4EE; overflow: hidden; }
