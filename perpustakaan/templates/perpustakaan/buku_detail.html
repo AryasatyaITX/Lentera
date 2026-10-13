@@ -84,17 +84,17 @@
 
                         <div id="bd-page" data-olid="{{ olid }}" data-in-db="{% if buku_db %}1{% endif %}">
 
-            <section class="bd-hero">
-                <div class="bd-cover-wrap">
-                    {% if pinjam_aktif %}
-                    <a href="{% url 'baca_buku' olid %}" class="bd-cover-link" title="Klik untuk membaca">
-                        <img src="https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400" alt="" class="bd-cover" id="bd-cover">
-                        <span class="bd-cover-hint"><i class="fas fa-book-open"></i> Baca</span>
-                    </a>
-                    {% else %}
-                    <img src="https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400" alt="" class="bd-cover" id="bd-cover">
-                    {% endif %}
-                </div>
+                <section class="bd-hero">
+                    <div class="bd-cover-wrap">
+                        {% if pinjam_aktif %}
+                        <a href="{% url 'baca_buku' olid %}" class="bd-cover-link" title="Klik untuk membaca">
+                            <img src="{{ buku_db.cover|default:'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400' }}" alt="" class="bd-cover" id="bd-cover">
+                            <span class="bd-cover-hint"><i class="fas fa-book-open"></i> Baca</span>
+                        </a>
+                        {% else %}
+                        <img src="{{ buku_db.cover|default:'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400' }}" alt="" class="bd-cover" id="bd-cover">
+                        {% endif %}
+                    </div>
 
                     <div class="bd-main">
                         <p class="bd-type">Buku Digital</p>
@@ -159,9 +159,8 @@
 
                 {{ buku_db|json_script:"buku-db" }}
 
-                <p class="ol-credit">Data buku dari <a href="https://openlibrary.org" target="_blank" rel="noopener">Open Library</a>.</p>
+                <p class="ol-credit">Data buku dari <a href="https://openlibrary.org" target="_blank" rel="noopener">Open Library</a> &amp; Google Books.</p>
             </div>
-
         </div>
     </div>
 </body>
