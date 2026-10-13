@@ -9,72 +9,13 @@ function esc(s) {
         ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-// 2. FUNGSI UNTUK E-JOURNAL (Artikel dari OpenAlex API)
-async function fetchJournals() {
-    const container = document.getElementById('journal-list-container');
-    if (!container) return; // Hanya jalan di halaman E-Journal
-
-    // API OpenAlex khusus artikel jurnal Engineering & Technology (Limit 5)
-    const apiUrl = 'https://api.openalex.org/works?search=engineering+technology&filter=type:article&per-page=5';
-
-    try {
-        const response = await fetch(apiUrl);
-        if (!response.ok) throw new Error('Gagal fetch API OpenAlex');
-        const data = await response.json();
-        const journals = data.results || [];
-
-        if (journals.length === 0) {
-            container.innerHTML = '<p>Tidak ada jurnal ditemukan.</p>';
-            return;
-        }
-
-        container.innerHTML = ''; // Hapus Loading spinner
-
-        journals.forEach(journal => {
-            const title = journal.title ? journal.title : 'Jurnal Engineering Tanpa Judul';
-            // Cari nama penulis pertama
-            let author = "Unknown Author";
-            if (journal.authorships && journal.authorships.length > 0) {
-                author = journal.authorships[0].author.display_name;
-            }
-            const year = journal.publication_year || '2024';
-            const link = journal.doi || journal.id || '#';
-
-            // Jurnal asli jarang punya cover, kita beri gambar ilustrasi jurnal yang estetis
-            const coverUrl = 'https://images.unsplash.com/photo-1580536203673-93e150937a54?w=300';
-
-            container.innerHTML += `
-                <div class="journal-card">
-                    <img src="${coverUrl}" alt="Cover Jurnal" class="journal-cover">
-                    <div class="journal-content">
-                        <h3 class="journal-title">${title}</h3>
-                        <hr class="journal-divider">
-                        <div class="journal-footer">
-                            <span class="journal-meta">Penulis: ${author} | Tahun: ${year}</span>
-                            <a href="${link}" target="_blank" class="btn-baca">Baca Jurnal <i class="fas fa-arrow-right"></i></a>
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-    } catch (error) {
-        console.error(error);
-        container.innerHTML = `<div style="color:#dc2626; padding:20px;">Gagal memuat jurnal dari API OpenAlex. Periksa koneksi internet Anda.</div>`;
-    }
-}
-
-// 3. JALANKAN SEMUA FUNGSI SAAT HALAMAN DIMUAT
-document.addEventListener('DOMContentLoaded', () => {
-    fetchJournals();
-});
-
-// 4. FUNGSI KONFIRMASI PENGEMBALIAN BUKU
+// 2. FUNGSI KONFIRMASI PENGEMBALIAN BUKU
 function confirmReturn(event, bookTitle) {
     event.preventDefault(); // Hentikan aksi klik sementara
     const url = event.currentTarget.getAttribute('href'); // Ambil link tujuan
     
     // Tampilkan Pop Up Konfirmasi bawaan browser
-    if (confirm(`Apakah Anda yakin ingin menyelesaikan dan mengembalikan buku "${bookTitle}"?\n\nAnda akan mendapatkan +50 EXP jika dikembalikan.`)) {
+    if (confirm(`Apakah Anda yakin ingin mengembalikan buku "${bookTitle}"?`)) {
         window.location.href = url; // Lanjutkan jika pilih OK
     }
 }
@@ -256,7 +197,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     
     try {
-        if (localStorage.getItem("sidebarOpen") === "1") {
+        if (localStorage.getItem("sidebarOpenV2") !== "0") {
             appLayout.classList.add("sidebar-open");
         }
     } catch (e) {}
@@ -264,7 +205,7 @@ document.addEventListener("DOMContentLoaded", function () {
     menuButton.addEventListener("click", function () {
         appLayout.classList.toggle("sidebar-open");
         try {
-            localStorage.setItem("sidebarOpen", appLayout.classList.contains("sidebar-open") ? "1" : "0");
+            localStorage.setItem("sidebarOpenV2", appLayout.classList.contains("sidebar-open") ? "1" : "0");
         } catch (e) {}
     });
 });
