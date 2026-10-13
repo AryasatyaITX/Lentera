@@ -1,0 +1,147 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semua Achievement</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1052">
+    <script src="{% static 'perpustakaan/js/script.js' %}?v=2" defer></script>
+    <style>
+        .acv-back { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 18px; color: #4A4A3F; text-decoration: none; font-size: 13px; font-weight: 700; }
+        .acv-back:hover { color: #173C3A; }
+
+        .acv-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+        .acv-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; color: #8A8A7A; text-transform: uppercase; margin-bottom: 6px; }
+        .acv-desc { font-size: 14px; color: #4A4A3F; max-width: 60ch; line-height: 1.6; }
+        .acv-count { font-size: 12px; font-weight: 700; color: #8A8A7A; }
+
+        .acv-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px; }
+        .acv-chip { border: 1px solid #E5E5D8; background: #fff; color: #4A4A3F; padding: 8px 16px; border-radius: 999px; font-size: 12px; font-weight: 700; cursor: pointer; transition: background .2s, color .2s, border-color .2s; }
+        .acv-chip:hover { border-color: #173C3A; }
+        .acv-chip.active { background: #173C3A; border-color: #173C3A; color: #D4F838; }
+
+        .acv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; padding-bottom: 40px; }
+        .acv-card { position: relative; background: #fff; border: 1px solid #E5E5D8; border-radius: 16px; padding: 18px; }
+        .acv-card.terbuka { border-color: #D4F838; background: #FBFFE8; }
+
+        .acv-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: #ECEFE4; color: #A0A89A; font-size: 15px; margin-bottom: 14px; }
+        .acv-card.terbuka .acv-icon { background: #D4F838; color: #112222; }
+
+        .acv-status { position: absolute; top: 16px; right: 16px; font-size: 11px; font-weight: 600; color: #A0A89A; }
+        .acv-card.terbuka .acv-status { color: #435E00; }
+
+        .acv-name { font-size: 14px; font-weight: 700; color: #173C3A; margin-bottom: 4px; }
+        .acv-need { font-size: 12px; color: #6A6A5C; line-height: 1.5; }
+
+        .acv-bar { height: 6px; background: #ECEFE4; border-radius: 999px; overflow: hidden; margin-top: 14px; }
+        .acv-bar span { display: block; height: 100%; width: var(--persen, 0%); background: #D4F838; border-radius: 999px; }
+        .acv-progress { font-size: 11px; color: #8A8A7A; margin-top: 6px; }
+
+        .acv-empty { grid-column: 1 / -1; text-align: center; color: #8A8A7A; padding: 40px 0; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div class="app-layout" id="appLayout">
+
+        <div class="sidebar">
+            <div class="sidebar-brand">
+                <img src="{% static 'perpustakaan/img/logo.svg' %}" alt="Logo Lentera" class="sidebar-logo">
+                <div>
+                    <h2>lentera<span>.</span></h2>
+                </div>
+            </div>
+
+            <ul class="sidebar-menu">
+                <li><a href="{% url 'dashboard' %}"><i class="fas fa-border-all"></i> Dashboard</a></li>
+                <li><a href="{% url 'katalog' %}"><i class="fas fa-book"></i> Katalog Buku</a></li>
+                <li><a href="{% url 'ejournal' %}"><i class="fas fa-file-alt"></i> E-journal</a></li>
+                <li><a href="{% url 'peminjaman' %}"><i class="fas fa-book-reader"></i> Peminjaman</a></li>
+                <li><a href="{% url 'bookmarks' %}"><i class="fas fa-heart"></i> Bookmarks</a></li>
+                <li><a href="{% url 'riwayat' %}"><i class="fas fa-history"></i> Riwayat Peminjaman</a></li>
+                <li><a href="{% url 'leaderboard' %}"><i class="fas fa-trophy"></i> Top List Reader</a></li>
+                <li><a href="{% url 'profil' %}" class="active"><i class="fas fa-user"></i> Profil</a></li>
+            </ul>
+
+            <div class="sidebar-profile">
+                <div class="avatar-circle">
+                    {% if user.foto_profil %}
+                        <img src="{{ user.foto_profil.url }}" alt="Avatar">
+                    {% else %}
+                        {{ user.nama_tampilan|default:user.username|slice:2|upper }}
+                    {% endif %}
+                </div>
+                <div>
+                    <h4>{{ user.nama_tampilan|default:user.username }}</h4>
+                    <p>User / Anggota</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+
+            <a href="{% url 'profil' %}" class="acv-back"><i class="fas fa-arrow-left"></i> Kembali ke profil</a>
+
+            <div class="acv-head">
+                <div>
+                    <p class="acv-eyebrow">Lencana perjalanan</p>
+                    <p class="acv-desc">Setiap ikon menjelaskan capaian yang akan terbuka saat kamu membaca dan menjelajahi Lentera.</p>
+                </div>
+                <p class="acv-count">{{ terbuka }} dari {{ total }} terbuka</p>
+            </div>
+
+            <div class="acv-filters">
+                <button type="button" class="acv-chip active" data-filter="semua">Semua</button>
+                <button type="button" class="acv-chip" data-filter="terbuka">Terbuka</button>
+                <button type="button" class="acv-chip" data-filter="terkunci">Terkunci</button>
+            </div>
+
+            <div class="acv-grid">
+                {% for a in achievements %}
+                <div class="acv-card {% if a.didapat %}terbuka{% else %}terkunci{% endif %}" data-status="{% if a.didapat %}terbuka{% else %}terkunci{% endif %}">
+                    <span class="acv-status">{% if a.didapat %}Terbuka{% else %}Terkunci{% endif %}</span>
+                    <div class="acv-icon"><i class="fas {{ a.ikon }}"></i></div>
+                    <h3 class="acv-name">{{ a.nama }}</h3>
+                    <p class="acv-need">{{ a.syarat }}</p>
+                    {% if a.target %}
+                    <div class="acv-bar"><span style="--persen: {{ a.persen }}%;"></span></div>
+                    <p class="acv-progress">{{ a.nilai }} / {{ a.target }} progres</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                <p class="acv-empty" id="acvEmpty" hidden>Belum ada achievement di kategori ini.</p>
+            </div>
+
+        </div>
+    </div>
+
+<script>
+    (function () {
+        var chips = document.querySelectorAll('.acv-chip');
+        var cards = document.querySelectorAll('.acv-card');
+        var empty = document.getElementById('acvEmpty');
+
+        chips.forEach(function (chip) {
+            chip.addEventListener('click', function () {
+                chips.forEach(function (c) { c.classList.remove('active'); });
+                chip.classList.add('active');
+
+                var filter = chip.getAttribute('data-filter');
+                var tampil = 0;
+                cards.forEach(function (card) {
+                    var cocok = filter === 'semua' || card.getAttribute('data-status') === filter;
+                    card.style.display = cocok ? '' : 'none';
+                    if (cocok) tampil++;
+                });
+                empty.hidden = tampil !== 0;
+            });
+        });
+    })();
+</script>
+</body>
+</html>
