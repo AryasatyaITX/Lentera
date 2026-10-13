@@ -11,11 +11,13 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import ensure_csrf_cookie
 from .models import CustomUser, BukuDigital, Jurnal, Peminjaman, Bookmark
 from django.contrib.auth import update_session_auth_hash
+from django.db.models import Count
 from datetime import date, timedelta
 import json
 import os
 import random
 import re
+import time
 from urllib.parse import urlparse
 
 import requests
@@ -38,6 +40,9 @@ from django.views.decorators.http import require_POST
 from .models import Bookmark, BukuDigital, CustomUser, Jurnal, Peminjaman
 
 MASA_PINJAM_HARI = 14
+RING_DETIK_PENUH = 120   # 2 menit membaca aktif
+RING_EXP = 10            # EXP tiap cincin penuh
+RING_BEAT_MAKS = 15      # batas detik yang boleh dilaporkan per kiriman
 PAGINATION_PAGE_SIZE = 10
 ITEM_ID_RE = re.compile(r'^[\w-]+$')
 COVER_PREFIX = 'https://covers.openlibrary.org/'
@@ -75,8 +80,7 @@ def login_view(request):
             if new_password != confirm_password:
                 messages.error(request, "Konfirmasi password baru tidak cocok!")
             else:
-                User = get_user_model()
-                user = User.objects.filter(username=username_input, email=email_input).first()
+                peringkat = CustomUser.objects.filter(is_member=True, exp__gt=user.exp).count() + 1
                 if user:
                     user.set_password(new_password)
                     user.save()
@@ -524,6 +528,7 @@ def ejournal_view(request):
 
 
 @login_required(login_url="login")
+@ensure_csrf_cookie
 def baca_jurnal(request, jurnal_id):
     if jurnal_id.startswith("JSON-"):
         try:
@@ -921,4 +926,45 @@ def profil_user_detail_view(request, username):
         "selisih": selisih,
         "selisih_abs": abs(selisih),
     }
-    return render(request, "perpustakaan/profil.html", context)
+    return render(request, "perpustakaan/profil_publik.html", context)
+
+@login_required(login_url="login")
+@require_POST
+def waktu_baca(request):
+    try:
+        klaim = int(request.POST.get("detik", 0))
+    except ValueError:
+        return JsonResponse({"error": "Nilai tidak valid."}, status=400)
+    klaim = max(0, min(klaim, RING_BEAT_MAKS))
+
+    # Kredit tidak boleh melebihi waktu nyata sejak laporan terakhir
+    sekarang = time.time()
+    terakhir = request.session.get("ring_terakhir")
+    request.session["ring_terakhir"] = sekarang
+    if terakhir is not None:
+        klaim = min(klaim, int(sekarang - terakhir) + 1)
+
+    user = request.user
+    pool = user.waktu_baca_detik + klaim
+    exp_gain = 0
+    while pool >= RING_DETIK_PENUH:
+        pool -= RING_DETIK_PENUH
+        exp_gain += RING_EXP
+
+    user.waktu_baca_detik = pool
+    if exp_gain:
+        user.exp += exp_gain
+    user.save(update_fields=["waktu_baca_detik", "exp"])
+
+    return JsonResponse({"detik": pool, "exp_gain": exp_gain, "exp": user.exp})
+
+@login_required(login_url="login")
+def achievement_view(request):
+    daftar = _achievements(request.user)
+    context = {
+        "user": request.user,
+        "achievements": daftar,
+        "terbuka": sum(1 for a in daftar if a["didapat"]),
+        "total": len(daftar),
+    }
+    return render(request, "perpustakaan/achievement.html", context)
