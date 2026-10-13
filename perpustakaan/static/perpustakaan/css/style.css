@@ -748,6 +748,54 @@ body.auth-body {
     height: 130px;
     object-fit: cover;
     border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.journal-cover-placeholder {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 10px 8px;
+    color: #fff;
+    box-shadow: inset 4px 0 rgba(255, 255, 255, 0.16);
+}
+.journal-cover-placeholder[hidden] { display: none !important; }
+
+.journal-cover-placeholder::after {
+    content: "";
+    position: absolute;
+    width: 66px;
+    height: 66px;
+    right: -24px;
+    top: 37px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 50%;
+    box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.06), 0 0 0 16px rgba(255, 255, 255, 0.04);
+}
+
+.journal-cover-placeholder.cover-teal { background: linear-gradient(150deg, #173c3a, #39766d); }
+.journal-cover-placeholder.cover-olive { background: linear-gradient(150deg, #52642c, #a0a948); }
+.journal-cover-placeholder.cover-ink { background: linear-gradient(150deg, #24344a, #526b83); }
+
+.cover-kicker, .cover-title, .cover-journal { position: relative; z-index: 1; }
+.cover-kicker { font-size: 6px; font-weight: 800; letter-spacing: 0.35px; }
+.cover-title {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 5;
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 1.25;
+}
+.cover-journal {
+    overflow: hidden;
+    font-size: 6px;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .journal-content {
@@ -941,6 +989,28 @@ body.auth-body {
 
 .bookmark-header-info p { font-size: 14px; color: #8A8A7A; }
 .bookmark-count { font-size: 12px; color: #A0AABF; font-weight: 600; }
+
+.pagination {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin: 20px 0 30px;
+}
+
+.pagination-status { font-size: 12px; color: #8A8A7A; }
+.pagination-actions { display: flex; gap: 8px; }
+.pagination-link {
+    padding: 9px 14px;
+    border: 1px solid #E5E5D8;
+    border-radius: 8px;
+    color: #173C3A;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+}
+.pagination-link:hover { background: #f5f7ec; }
 
 .heart.active {
     color: #D4F838 !important;
@@ -1223,9 +1293,10 @@ body.auth-body {
 /* Header tabel */
 .riwayat-thead {
     display: grid;
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
-    align-items: center;
-    padding: 16px 30px;
+    grid-template-columns: minmax(260px, 3fr) minmax(120px, 1.25fr) minmax(150px, 1.5fr) minmax(120px, 1.25fr);
+    padding: 18px 30px;
+    background: #fafafa;
+    border-bottom: 1px solid #eee;
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.06em;
@@ -1277,11 +1348,27 @@ body.auth-body {
 /* Baris data riwayat */
 .riwayat-row {
     display: grid;
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(260px, 3fr) minmax(120px, 1.25fr) minmax(150px, 1.5fr) minmax(120px, 1.25fr);
     align-items: center;
     padding: 20px 30px;
     border-bottom: 1px solid #f3f4f6;
     transition: background 0.2s;
+}
+
+.history-due-date {
+    color: #8A8A7A;
+    font-size: 12px;
+}
+
+@media (max-width: 900px) {
+    .riwayat-container {
+        overflow-x: auto;
+    }
+
+    .riwayat-header,
+    .riwayat-row {
+        min-width: 760px;
+    }
 }
 
 .riwayat-row:hover {
@@ -1955,3 +2042,147 @@ body {
     width: 420px;
     max-width: 100%;
 }
+
+/* =========================================================
+   SIDEBAR ADMIN (desain baru) — khusus .adm-sidebar
+.app-layout .sidebar.adm-sidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 28px 16px 20px;
+    background-color: #173C3A;
+    overflow-y: auto;
+}*/
+
+/* Logo */
+.adm-sidebar .sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 10px;
+    margin-bottom: 40px;
+    text-decoration: none;
+}
+
+.adm-sidebar .sidebar-logo {
+    width: 34px;
+    height: 34px;
+}
+
+.adm-sidebar .sidebar-brand h2 {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.3px;
+}
+
+.adm-sidebar .sidebar-brand h2 span {
+    color: #D4F838;
+}
+
+/* Menu */
+.adm-sidebar .sidebar-menu {
+    flex: 1;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.adm-sidebar .sidebar-menu li {
+    margin: 0;
+}
+
+.adm-sidebar .sidebar-menu a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    color: #B7C4C1;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.35;
+}
+
+.adm-sidebar .sidebar-menu a i {
+    margin: 0;
+    width: 18px;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+}
+
+.adm-sidebar .sidebar-menu a:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+.adm-sidebar .sidebar-menu a.active {
+    background: rgba(212, 248, 56, 0.12);
+    color: #D4F838;
+    font-weight: 700;
+}
+
+/* Profil di bawah */
+.adm-sidebar .sidebar-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 24px;
+    padding: 16px 6px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.adm-sidebar .sidebar-profile .avatar-circle {
+    width: 40px;
+    height: 40px;
+    margin: 0;
+    font-size: 13px;
+}
+
+.adm-sidebar .sidebar-profile .avatar-circle img {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    object-fit: cover;
+}
+
+.adm-sidebar .profile-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.adm-sidebar .profile-text h4 {
+    color: #9DB5B0;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.adm-sidebar .profile-text p {
+    color: #fff;
+    font-size: 13px;
+    margin-top: 2px;
+}
+
+.adm-logout {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    color: #9DB5B0;
+    transition: 0.2s;
+}
+
+.adm-logout:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #D4F838;
+}
+
+/* Buat style baca web */
+.reader-stage.pdf-mode { flex-direction: column; align-items: stretch; justify-content: flex-start; background: #F3F4EE; overflow: hidden; }
