@@ -158,6 +158,7 @@ def dashboard_admin(request):
         "total_buku": BukuDigital.objects.count(),
         "total_jurnal": Jurnal.objects.count(),
         "total_anggota": anggota.count(),
+        "buku_bulan_ini": BukuDigital.objects.filter(tanggal_ditambahkan__gte=awal_bulan).count(),
         "anggota_baru": anggota.filter(date_joined__gte=awal_bulan).count(),
         "sedang_dipinjam": Peminjaman.objects.filter(status="Dibaca").count(),
         "dikembalikan_minggu": Peminjaman.objects.filter(
