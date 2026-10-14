@@ -121,3 +121,8 @@ MAILERS = {
 }
 
 AUTH_USER_MODEL = 'perpustakaan.CustomUser'
+
+# Mengizinkan iframe dan atur media 
+X_FRAME_OPTIONS = 'SAMEORIGIN'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'

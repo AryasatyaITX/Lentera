@@ -15,7 +15,7 @@ function confirmReturn(event, bookTitle) {
     const url = event.currentTarget.getAttribute('href'); // Ambil link tujuan
     
     // Tampilkan Pop Up Konfirmasi bawaan browser
-    if (confirm(`Apakah Anda yakin ingin menyelesaikan dan mengembalikan buku "${bookTitle}"?\n\nAnda akan mendapatkan +50 EXP jika dikembalikan.`)) {
+    if (confirm(`Apakah Anda yakin ingin mengembalikan buku "${bookTitle}"?`)) {
         window.location.href = url; // Lanjutkan jika pilih OK
     }
 }

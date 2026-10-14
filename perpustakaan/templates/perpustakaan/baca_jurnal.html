@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -40,5 +41,10 @@
             </section>
         {% endif %}
     </main>
+    <div id="read-ring"
+        data-url="{% url 'waktu_baca' %}"
+        data-detik="{{ user.waktu_baca_detik }}"
+        data-total="120"></div>
+    <script src="{% static 'perpustakaan/js/baca-ring.js' %}?v=1" defer></script>
 </body>
 </html>

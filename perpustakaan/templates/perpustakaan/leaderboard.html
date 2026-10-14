@@ -12,7 +12,9 @@
     <style>
         /* Kotak Besar Utama */
         .top-reader-wrapper {
-            background: #112222 !important;
+            background:
+                radial-gradient(circle at 50% 100%, rgba(212, 248, 56, 0.22), transparent 60%),
+                linear-gradient(160deg, #1F504C 0%, #173C3A 55%, #122F2D 100%) !important;
             border-radius: 24px;
             padding: 50px 30px 0 30px; 
             color: #ffffff;
@@ -20,6 +22,24 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
             position: relative;
             overflow: visible !important;
+        }
+
+        /* Hiasan: dua lingkaran garis tipis di pojok kanan atas + titik halus */
+        .top-reader-wrapper::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 24px;
+            pointer-events: none;
+            background-image:
+                radial-gradient(circle at calc(100% - 20px) 0,
+                    transparent 0, transparent 109px,
+                    rgba(255, 255, 255, 0.12) 109px, rgba(255, 255, 255, 0.12) 110px,
+                    transparent 110px, transparent 146px,
+                    rgba(255, 255, 255, 0.08) 146px, rgba(255, 255, 255, 0.08) 147px,
+                    transparent 147px),
+                radial-gradient(rgba(255, 255, 255, 0.1) 1.2px, transparent 1.2px);
+            background-size: 100% 100%, 24px 24px;
         }
 
         /* Tulisan mendatar, digeser ke kanan dan dinaikkan sedikit posisinya */
@@ -67,18 +87,19 @@
             background-color: #c8ff00 !important;
             color: #112222 !important;
             min-height: 350px;
+            box-shadow: 0 0 60px rgba(200, 255, 0, 0.35);
         }
 
         .podium-2 {
             order: 1;
-            background-color: #2b3447 !important;
+            background-color: #5E8F88 !important;
             color: #ffffff !important;
             min-height: 280px;
         }
 
         .podium-3 {
             order: 3;
-            background-color: #eab388 !important;
+            background-color: #FF9F85 !important;
             color: #112222 !important;
             min-height: 250px;
         }
@@ -140,14 +161,14 @@
 
         .podium-3 .rank-badge {
             background: #112222 !important;
-            color: #eab388 !important;
+            color: #FF9F85 !important;
             border: 2px solid #ffffff;
         }
 
         /* Dekorasi Bintang di atas Juara 1 */
         .top-star-icon {
             position: absolute;
-            top: -42px;
+            top: -48px;
             left: 50%;
             transform: translateX(-50%);
             color: #c8ff00;
@@ -294,7 +315,7 @@
             <div class="podium-inner-box">
                 <!-- Juara 2 (Kiri) -->
                 {% if podium.rank2 %}
-                <div class="podium-card podium-2" style="background-color: #2b3447 !important;">
+                <div class="podium-card podium-2" style="background-color: #5E8F88 !important;">
                     <div class="podium-avatar-wrap">
                         {% if podium.rank2.foto_profil %}
                             <img src="{{ podium.rank2.foto_profil.url }}" class="podium-avatar" alt="Juara 2">
@@ -320,7 +341,9 @@
                 <!-- Juara 1 (Tengah - Paling Tinggi dengan Bintang) -->
                 {% if podium.rank1 %}
                 <div class="podium-card podium-1" style="background-color: #c8ff00 !important;">
-                    <i class="fas fa-sparkles top-star-icon">✦</i>
+                    <svg class="top-star-icon" viewBox="0 0 40 40" width="36" height="36" aria-hidden="true">
+                        <path d="M20 0L24 16L40 20L24 24L20 40L16 24L0 20L16 16Z" fill="#c8ff00"/>
+                    </svg>
                     <div class="podium-avatar-wrap">
                         {% if podium.rank1.foto_profil %}
                             <img src="{{ podium.rank1.foto_profil.url }}" class="podium-avatar" alt="Juara 1">
@@ -345,7 +368,7 @@
 
                 <!-- Juara 3 (Kanan) -->
                 {% if podium.rank3 %}
-                <div class="podium-card podium-3" style="background-color: #eab388 !important;">
+                <div class="podium-card podium-3" style="background-color: #FF9F85 !important;">
                     <div class="podium-avatar-wrap">
                         {% if podium.rank3.foto_profil %}
                             <img src="{{ podium.rank3.foto_profil.url }}" class="podium-avatar" alt="Juara 3">
