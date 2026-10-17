@@ -3,7 +3,6 @@
 // - Berhenti kalau user diam terlalu lama atau tab disembunyikan.
 // - Penuh = 2 menit membaca aktif -> +10 EXP. Server yang menghitung dan memvalidasi.
 // Cara pakai: taruh <div id="read-ring" data-url=".." data-detik=".." data-total="120"></div>
-// di halaman baca, lalu muat file ini. Komponen menggambar dirinya sendiri.
 (function () {
     'use strict';
 
@@ -12,7 +11,7 @@
 
     const URL_BEAT = host.dataset.url;
     const TOTAL = parseInt(host.dataset.total || '120', 10);
-    const IDLE_MS = 30000;      // diam lebih dari 30 detik -> lingkaran berhenti
+    const IDLE_MS = 20000;      // diam lebih dari 30 detik -> lingkaran berhenti
     const BEAT_EVERY = 10;      // kirim ke server tiap 10 detik aktif
 
     let pool = Math.min(TOTAL, Math.max(0, parseInt(host.dataset.detik || '0', 10) || 0));
@@ -131,7 +130,7 @@
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: { 'X-CSRFToken': getCookie('csrftoken') },
-                body: new URLSearchParams({ detik: send }),
+                body: new URLSearchParams({ detik: send, pinjam: host.dataset.pinjam || '' }),
             });
             if (!res.ok) throw new Error('HTTP ' + res.status);
             const r = await res.json();
@@ -154,7 +153,7 @@
     function flush() {
         // Dipanggil saat tab disembunyikan/ditutup agar sisa detik tidak hilang.
         if (pending <= 0 || !navigator.sendBeacon) return;
-        const body = new URLSearchParams({ detik: pending, csrfmiddlewaretoken: getCookie('csrftoken') });
+        const body = new URLSearchParams({ detik: pending, pinjam: host.dataset.pinjam || '', csrfmiddlewaretoken: getCookie('csrftoken') });
         if (navigator.sendBeacon(URL_BEAT, body)) pending = 0;
     }
     document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
