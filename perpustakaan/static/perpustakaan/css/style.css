@@ -268,7 +268,7 @@ body.auth-body {
    3. HALAMAN DASHBOARD
 ========================================================= */
 .hero-banner {
-    background-color: #173C3A;
+    background: linear-gradient(135deg, #1A4D33 0%, #0F3A24 55%, #0A2A19 100%);
     border-radius: 20px;
     padding: 40px;
     padding-bottom: 100px; /* Ruang ekstra untuk search bar */
@@ -293,7 +293,11 @@ body.auth-body {
 }
 
 .hero-banner h2 span {
-    color: #D4F838;
+    background: linear-gradient(90deg, #84CC16, #4ADE80);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
 }
 
 .hero-banner p {
@@ -373,11 +377,6 @@ body.auth-body {
     position: relative;
 }
 
-.stat-card.c-green { background: #E8F5E9; }
-.stat-card.c-blue { background: #E3F2FD; }
-.stat-card.c-pink { background: #FCE4EC; }
-.stat-card.c-purple { background: #F3E5F5; }
-
 .stat-card h4 {
     font-size: 12px;
     color: #666;
@@ -396,12 +395,33 @@ body.auth-body {
     color: #666;
 }
 
-.stat-card i {
+.stat-card i,
+.stat-card svg.stat-icon {
     position: absolute;
-    top: 20px;
-    right: 20px;
-    font-size: 20px;
+    top: 18px !important;
+    right: 18px !important;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    padding: 10px;
+    box-sizing: border-box;
 }
+
+.stat-card.c-green i,
+.stat-card.c-green svg.stat-icon  { background: #E8F5E9; color: #2E7D32 !important; }
+
+.stat-card.c-blue i,
+.stat-card.c-blue svg.stat-icon   { background: #E3F2FD; color: #1976D2 !important; }
+
+.stat-card.c-pink i,
+.stat-card.c-pink svg.stat-icon   { background: #FCE4EC; color: #C2185B !important; }
+
+.stat-card.c-purple i,
+.stat-card.c-purple svg.stat-icon { background: #F3E5F5; color: #7B1FA2 !important; }
 
 .bottom-layout {
     display: flex;
@@ -2187,3 +2207,108 @@ body {
 
 /* Buat style baca web */
 .reader-stage.pdf-mode { flex-direction: column; align-items: stretch; justify-content: flex-start; background: #F3F4EE; overflow: hidden; }
+
+/* ============================================
+   CARD "LANJUTKAN BACAAN" — FINAL
+   ============================================ */
+.cc-card {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 24px rgba(15, 23, 42, .08);
+    max-width: 420px;
+}
+.cc-top { display: flex; gap: 14px; align-items: flex-start; }
+
+.cc-cover { width: 96px; height: 128px; border-radius: 10px; overflow: hidden; flex-shrink: 0; }
+.cc-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.cc-info { flex: 1; min-width: 0; }
+.cc-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.cc-chip { font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 8px; }
+.cc-chip-kat { background: #d7f3ec; color: #0d9488; }
+.cc-chip-waktu { background: #fde8e8; color: #e02424; }
+
+.cc-info h3 { font-size: 17px; font-weight: 700; line-height: 1.35; margin: 0; }
+.cc-subtitle { font-size: 13px; color: #718096; margin: 4px 0 0; }
+
+.cc-progress { margin-top: 18px !important;}
+.cc-progress-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.cc-progress-head span:first-child { font-size: 13px; font-weight: 600; color: #718096; }
+.cc-percent { font-size: 13px; font-weight: 700; color: #16a34a; }
+
+.progress-bar { height: 8px; background: #e8edf3; border-radius: 999px; overflow: hidden; }
+.progress-fill { height: 100%; width: var(--progress, 0%); background: #22c55e; border-radius: 999px; }
+
+.cc-bottom { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
+.cc-bottom { margin-top: 18px !important;}
+.cc-last { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #718096; }
+
+.cc-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #0f172a;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 12px 22px;
+    border-radius: 12px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.cc-btn:hover { color: #fff; }
+
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+.stat-card { background: #fff; border-radius: 14px; padding: 18px 20px; box-shadow: 0 2px 12px rgba(15,23,42,.06); }
+.stat-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.stat-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #8a94a6; }
+.stat-icon { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.si-green  { background: #e3f7ee; color: #16a34a; }
+.si-blue   { background: #e7f0fe; color: #2563eb; }
+.si-pink   { background: #fde8ee; color: #e0447c; }
+.si-purple { background: #f1e9fe; color: #8b5cf6; }
+.stat-number { font-size: 30px; font-weight: 800; color: #10182b; margin: 0; }
+.stat-sub { font-size: 12.5px; color: #8a94a6; margin: 6px 0 0; }
+.stat-bar { height: 6px; background: #edf1f7; border-radius: 999px; margin-top: 14px; }
+.stat-bar-fill { height: 100%; background: #16a34a; border-radius: 999px; }
+.stat-badge { font-size: 11px; font-weight: 700; background: #efe9ff; color: #7c3aed; padding: 4px 8px; border-radius: 6px; }
+
+/* ===== Banner Streak ===== */
+.streak-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    background: #FEF6E3;
+    border: 1px solid #F3E3B8;
+    border-radius: 14px;
+    padding: 16px 22px;
+    margin: 16px 0 24px;
+}
+.streak-left { display: flex; align-items: center; gap: 14px; }
+.streak-fire {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: #FFEDD5;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+}
+.streak-title { margin: 0; font-weight: 800; font-size: 15px; color: #1a202c; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.streak-badge { font-size: 10px; font-weight: 800; letter-spacing: .5px; background: #D9F99D; color: #3F6212; padding: 3px 8px; border-radius: 999px; }
+.streak-badge.off { background: #E5E7EB; color: #6B7280; }
+.streak-sub { margin: 4px 0 0; font-size: 13px; color: #78716C; }
+.streak-right { display: flex; align-items: center; gap: 14px; flex: 1; max-width: 340px; }
+.streak-bar { flex: 1; height: 8px; background: #F1E9CF; border-radius: 999px; overflow: hidden; }
+.streak-bar-fill { height: 100%; background: linear-gradient(90deg, #F59E0B, #F97316); border-radius: 999px; transition: width .5s; }
+.streak-pct {
+    width: 44px; height: 44px; border-radius: 50%;
+    border: 2px solid #F3C969; background: #FFFDF6;
+    color: #B45309; font-size: 11px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+@media (max-width: 700px) { .streak-banner { flex-direction: column; align-items: stretch; } }
