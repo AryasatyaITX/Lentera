@@ -9,13 +9,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1015">
-    <script src="{% static 'perpustakaan/js/script.js' %}?v=2" defer></script>
+    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1020">
+    <script src="{% static 'perpustakaan/js/script.js' %}?v=5" defer></script>
     <script src="{% static 'perpustakaan/js/buku.js' %}?v=3" defer></script>
 </head>
 <body>
 
-    <div class="app-layout" id="appLayout">
+    <div class="app-layout" id="appLayout"> 
         <div class="sidebar">
             <div class="sidebar-brand">
             <img src="{% static 'perpustakaan/img/logo.svg' %}" alt="Logo Lentera" class="sidebar-logo">
@@ -83,6 +83,7 @@
                     {% endif %}
                 </div>
                 <a href="{% url 'logout' %}"
+                        onclick="try{sessionStorage.removeItem('sidebarOpen')}catch(e){}"
                         style="margin-left:15px; color:#dc2626; font-size:20px;"
                         title="Logout">
                     <i class="fas fa-sign-out-alt"></i>
@@ -109,6 +110,27 @@
             </div>
         </div>
 
+        <div class="streak-banner">
+            <div class="streak-left">
+                <span class="streak-fire">🔥</span>
+                <div>
+                    <p class="streak-title">
+                        {% if streak_hari > 0 %}{{ streak_hari }} Hari Streak Membaca!
+                        {% else %}Yuk mulai streak membacamu!
+                            <span class="streak-badge off">BELUM AKTIF</span>
+                        {% endif %}
+                    </p>
+                    <p class="streak-sub">Target harian: {{ menit_hari_ini }} / {{ target_menit }} menit ({{ persen_target }}% tercapai)</p>
+                </div>
+            </div>
+            <div class="streak-right">
+                <div class="streak-bar">
+                    <div class="streak-bar-fill" style="width: {{ persen_target }}%;"></div>
+                </div>
+                <span class="streak-pct">{{ persen_target }}%</span>
+            </div>
+        </div>
+
         <div class="stats-grid">
             <div class="stat-card c-green">
                 <h4>Sedang dipinjam</h4>
@@ -116,6 +138,7 @@
                 <p>buku aktif</p>
                 <i class="far fa-bookmark"></i>
             </div>
+            
             <div class="stat-card c-blue">
                 <h4>Total Dibaca</h4>
                 <h2>{{ total_dibaca }}</h2>
@@ -129,12 +152,14 @@
                     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
                 </svg>
             </div>
+
             <div class="stat-card c-pink">
                 <h4>Bookmarks</h4>
                 <h2>{{ bookmarks }}</h2>
                 <p>koleksi tersimpan</p>
                 <i class="far fa-heart"></i>
             </div>
+
             <div class="stat-card c-purple">
                 <h4>Peringkat & EXP</h4>
                 <h2>#{{ peringkat }}</h2>
@@ -167,9 +192,6 @@
             <div class="book-grid" id="book-grid-container">
                 <p>Loading...</p>
             </div>
-            <p style="font-size:11px;color:#8A8A7A;margin-top:12px;">
-                Data buku dari <a href="https://openlibrary.org" target="_blank">Open Library</a>
-            </p>
         </div>
 
             <div class="continue-reading">
@@ -188,14 +210,37 @@
                             </a>
 
                             <div class="cc-info">
-                                <h3>{{ bacaan_terakhir.buku_digital.judul }}</h3>
-                                <p class="cc-label">Progress Membaca</p>
-                                <div class="progress-bar">
-                                    <div class="progress-fill" style="--progress: {{ bacaan_terakhir.progress_baca|default:0 }}%;"></div>
+                                <div class="cc-chips">
+                                    <span class="cc-chip cc-chip-kat">{{ bacaan_terakhir.kategori_label }}</span>
+                                    <span class="cc-chip cc-chip-waktu{% if bacaan_terakhir.sisa_hari <= 3 %} urgent{% endif %}">
+                                        {% if bacaan_terakhir.sisa_hari == 0 %}Jatuh tempo hari ini{% else %}Batas: {{ bacaan_terakhir.sisa_hari }} hari lagi{% endif %}
+                                    </span>
                                 </div>
-                                <p class="cc-meta">{{ bacaan_terakhir.progress_baca|default:0 }}%</p>
+                                <h3>{{ bacaan_terakhir.buku_digital.judul }}</h3>
+                                <p class="cc-subtitle">{{ bacaan_terakhir.buku_digital.penulis }}</p>
                             </div>
                         </div>
+
+                        <div class="cc-progress">
+                            <div class="cc-progress-head">
+                                <span>Progress Membaca</span>
+                                <span class="cc-percent">{{ bacaan_terakhir.progress_baca|default:0 }}%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="--progress: {{ bacaan_terakhir.progress_baca|default:0 }}%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="cc-bottom">
+                            <div class="cc-last">
+                                <i class="far fa-clock"></i>
+                                <span>{{ bacaan_terakhir.terakhir_teks }}</span>
+                            </div>
+                            <a href="{% url 'baca_buku' bacaan_terakhir.buku_digital.id_item %}" class="cc-btn">
+                                Lanjut Baca <i class="fas fa-play"></i>
+                            </a>
+                        </div>
+
                         <a href="{% url 'peminjaman' %}" class="cc-footer">
                             Lihat peminjaman <i class="fas fa-arrow-right"></i>
                         </a>

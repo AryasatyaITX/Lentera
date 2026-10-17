@@ -220,7 +220,7 @@
         return `
         <div class="book-card" data-olid="${escHtml(b.olid)}" tabindex="0" role="link" aria-label="${escHtml(b.judul)}">
             <img src="${escHtml(b.cover || NO_COVER)}" alt="Sampul ${escHtml(b.judul)}" class="book-cover" loading="lazy"
-                 onerror="this.onerror=null;this.src='${NO_COVER}'">
+                onerror="this.onerror=null;this.src='${NO_COVER}'">
             <div class="book-info">
                 <p class="type">Buku Digital${b.akses === 'public' ? ' <span class="badge-free">Bisa dibaca</span>' : ''}</p>
                 <h3>${escHtml(b.judul)}</h3>
@@ -570,7 +570,7 @@
             const pct = Math.round(cur / total * 100);
             $('pv-bar').style.width = pct + '%';
             $('pv-read').textContent = pct + '% dibaca';
-            if (pct > bestPct) { bestPct = pct; scheduleSave(pct); }
+            if (pct !== bestPct) { bestPct = pct; scheduleSave(pct); }
         }
         scroller.addEventListener('scroll', () => {
             if (mode !== 'scroll' || ticking) return;

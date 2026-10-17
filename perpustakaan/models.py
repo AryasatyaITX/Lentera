@@ -122,6 +122,8 @@ class CustomUser(AbstractUser):
 
     exp = models.IntegerField(default=0)
     waktu_baca_detik = models.IntegerField(default=0)
+    detik_baca_hari_ini = models.PositiveIntegerField(default=0)
+    tanggal_baca_harian = models.DateField(null=True, blank=True)
     streak_days = models.IntegerField(default=0)
     last_read_date = models.DateField(null=True, blank=True)
     max_loans = models.IntegerField(default=5)
@@ -162,3 +164,21 @@ class CustomUser(AbstractUser):
     # berbeda dari representasi bawaan AbstractUser.
     def __str__(self):
         return self.username
+
+class Pengaturan(models.Model):
+    masa_pinjam_hari = models.PositiveIntegerField(default=14)
+
+    class Meta:
+        verbose_name_plural = "Pengaturan"
+
+    def __str__(self):
+        return f"Masa pinjam: {self.masa_pinjam_hari} hari"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def muat(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
