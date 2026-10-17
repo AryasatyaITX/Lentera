@@ -1,6 +1,7 @@
 from datetime import timedelta
 from django.core.paginator import Paginator
 from django.utils import timezone
+from django.utils.timesince import timesince
 import requests
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
@@ -9,7 +10,7 @@ from django.contrib import messages
 from django.http import JsonResponse, Http404
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import ensure_csrf_cookie
-from .models import CustomUser, BukuDigital, Jurnal, Peminjaman, Bookmark
+from .models import CustomUser, BukuDigital, Jurnal, Peminjaman, Bookmark, Pengaturan
 from django.contrib.auth import update_session_auth_hash
 from django.db.models import Count
 from datetime import date, timedelta
@@ -156,17 +157,62 @@ def logout_view(request):
 @login_required(login_url="login")
 def dashboard(request):
     user = request.user
-    sedang_dipinjam = Peminjaman.objects.filter(
-        user=user, status="Dibaca"
-    ).count()
-    total_dibaca = Peminjaman.objects.filter(
-        user=user, status="Selesai"
-    ).count()
-    bacaan_terakhir = Peminjaman.objects.filter(
-        user=user, status="Dibaca"
-    ).last()
+
+    sedang_dipinjam = Peminjaman.objects.filter(user=user, status="Dibaca").count()
+    total_dibaca = Peminjaman.objects.filter(user=user, status="Selesai").count()
+
     User = get_user_model()
     peringkat = User.objects.filter(exp__gt=user.exp).count() + 1
+
+    peminjaman_terakhir = (
+        Peminjaman.objects
+        .filter(user=user, status="Dibaca", buku_digital__isnull=False)
+        .select_related("buku_digital")
+        .order_by("-tanggal_pinjam", "-id")
+        .first()
+    )
+
+    def teks_terakhir(dttm):
+        """Versi Indonesia (timesince bawaan masih English)."""
+        if not dttm:
+            return ""
+        menit = int((timezone.now() - dttm).total_seconds() // 60)
+        if menit < 1:
+            return "Terakhir dibaca baru saja"
+        if menit < 60:
+            return f"Terakhir dibaca {menit} menit lalu"
+        if menit < 1440:
+            return f"Terakhir dibaca {menit // 60} jam lalu"
+        return f"Terakhir dibaca {menit // 1440} hari lalu"
+
+    bacaan_terakhir = None
+    if peminjaman_terakhir:
+        p = peminjaman_terakhir
+        buku = p.buku_digital
+
+        # Data lama yang belum punya tanggal_kembali -> isi otomatis, agar tidak "None"
+        if not p.tanggal_kembali:
+            p.tanggal_kembali = timezone.now() + timedelta(days=MASA_PINJAM_HARI)
+            p.save(update_fields=["tanggal_kembali"])
+
+        sisa_hari = (timezone.localtime(p.tanggal_kembali).date() - timezone.localdate()).days
+        if sisa_hari < 0:
+            sisa_hari = 0
+
+        bacaan_terakhir = {
+            "buku_digital": buku,
+            "progress_baca": p.progress_baca,
+            "kategori_label": str(buku.kategori) if buku.kategori else "",
+            "sisa_hari": sisa_hari,
+            "terakhir_teks": teks_terakhir(p.tanggal_pinjam),
+        }
+
+    TARGET_HARIAN_DETIK = 1800   # 30 menit/hari
+
+    detik_hari_ini = user.detik_baca_hari_ini if user.tanggal_baca_harian == timezone.localdate() else 0
+    menit_hari_ini = detik_hari_ini // 60
+    target_menit = TARGET_HARIAN_DETIK // 60
+    persen_target = min(100, round(detik_hari_ini / TARGET_HARIAN_DETIK * 100)) if detik_hari_ini else 0
 
     context = {
         "user": user,
@@ -175,9 +221,12 @@ def dashboard(request):
         "bookmarks": Bookmark.objects.filter(user=user).count(),
         "bacaan_terakhir": bacaan_terakhir,
         "peringkat": peringkat,
+        "streak_hari": user.streak_days, 
+        "menit_hari_ini": menit_hari_ini,
+        "target_menit": target_menit,
+        "persen_target": persen_target,
     }
     return render(request, "perpustakaan/dashboard.html", context)
-
 
 @login_required(login_url="login")
 @ensure_csrf_cookie
@@ -359,35 +408,29 @@ def buku_detail(request, olid):
 
 
 @login_required(login_url="login")
-@ensure_csrf_cookie
-def baca_buku(request, olid):
-    if not ITEM_ID_RE.match(olid):
-        raise Http404
-    pinjam = (
-        Peminjaman.objects.filter(
-            user=request.user, buku_digital_id=olid, status="Dibaca"
-        )
-        .select_related("buku_digital")
-        .first()
-    )
-    if not pinjam:
-        messages.info(request, "Pinjam buku ini dulu supaya bisa dibaca.")
-        return redirect("buku_detail", olid=olid)
+def baca_buku(request, olid):          # ← dulu: id_item
+    buku = get_object_or_404(BukuDigital, id_item=olid)   # ← field tetap id_item, nilainya dari olid
 
-    # Logika Streak & Progress Otomatis
-    request.user.update_streak()
-
-    return render(
-        request,
-        "perpustakaan/baca.html",
-        {
-            "user": request.user,
-            "pinjam": pinjam,
-            "buku": pinjam.buku_digital,
-            "jatuh_tempo": pinjam.tanggal_pinjam
-            + timedelta(days=MASA_PINJAM_HARI),
+    peminjaman, baru_dibuat = Peminjaman.objects.get_or_create(
+        user=request.user,
+        buku_digital=buku,
+        status="Dibaca",
+        defaults={
+            "tanggal_kembali": timezone.now() + timedelta(days=MASA_PINJAM_HARI),
         },
     )
+
+    peminjaman.tanggal_pinjam = timezone.now()
+    peminjaman.save(update_fields=["tanggal_pinjam"])
+
+    request.user.update_streak()
+
+    context = {
+        "buku": buku,
+        "pinjam": peminjaman,
+        "user": request.user,
+    }
+    return render(request, "perpustakaan/baca.html", context)
 
 @login_required(login_url="login")
 @require_POST
@@ -404,9 +447,9 @@ def simpan_progress(request, olid):
     except ValueError:
         return JsonResponse({"error": "Nilai tidak valid."}, status=400)
     persen = max(0, min(persen, 100))
-    if persen > pinjam.progress_baca:
-        pinjam.progress_baca = persen
-        pinjam.save(update_fields=["progress_baca"])
+    pinjam.progress_baca = persen
+    pinjam.save(update_fields=["progress_baca"])
+        
     return JsonResponse({"progress": pinjam.progress_baca})
 
 
@@ -631,33 +674,23 @@ def hapus_bookmark_api(request, bookmark_id):
     except Bookmark.DoesNotExist:
         return JsonResponse({"status": "error"}, status=404)
 
-
 @login_required(login_url="login")
 def riwayat_view(request):
-    riwayat_queryset = (
-        Peminjaman.objects.filter(user=request.user)
-        .select_related('buku_digital', 'jurnal')
-        .order_by('-tanggal_pinjam', '-pk')
+    riwayat_list = (
+        Peminjaman.objects
+        .filter(user=request.user)
+        .order_by("-tanggal_pinjam")
     )
-    page_obj = Paginator(riwayat_queryset, PAGINATION_PAGE_SIZE).get_page(request.GET.get('page'))
-    riwayat_list = page_obj.object_list
-    
-    for item in riwayat_list:
-        if not item.tanggal_kembali:
-            if item.status == 'Selesai':
-                # Fallback untuk data lama yang dikembalikan sebelum perbaikan ini
-                item.tanggal_kembali = item.tanggal_pinjam + timedelta(days=MASA_PINJAM_HARI)
-            else:
-                item.jatuh_tempo = item.tanggal_pinjam + timedelta(days=MASA_PINJAM_HARI)
+
+    masa = Pengaturan.muat().masa_pinjam_hari
+    for p in riwayat_list:
+        # jatuh tempo = tanggal_kembali (sudah tersimpan); kalau NULL, hitung dari Pengaturan
+        p.jatuh_tempo = p.tanggal_kembali or (p.tanggal_pinjam + timedelta(days=masa))
 
     context = {
-        'user': request.user,
-        'riwayat_list': riwayat_list,
-        'page_obj': page_obj,
-        'total_aktivitas': page_obj.paginator.count,
+        "daftar_riwayat": riwayat_list,
     }
     return render(request, "perpustakaan/riwayat.html", context)
-
 
 @login_required(login_url="login")
 def leaderboard_view(request):
@@ -932,17 +965,27 @@ def profil_user_detail_view(request, username):
 @require_POST
 def waktu_baca(request):
     try:
-        klaim = int(request.POST.get("detik", 0))
+        klaim = int(request.POST.get('detik', 0) or 0)
     except ValueError:
-        return JsonResponse({"error": "Nilai tidak valid."}, status=400)
-    klaim = max(0, min(klaim, RING_BEAT_MAKS))
+        klaim = 0
+    klaim = max(0, klaim)
 
-    # Kredit tidak boleh melebihi waktu nyata sejak laporan terakhir
     sekarang = time.time()
     terakhir = request.session.get("ring_terakhir")
     request.session["ring_terakhir"] = sekarang
     if terakhir is not None:
         klaim = min(klaim, int(sekarang - terakhir) + 1)
+
+    if klaim <= 0:
+        user = request.user
+        return JsonResponse({"detik": user.waktu_baca_detik, "exp_gain": 0, "exp": user.exp})
+
+    pinjam_id = request.POST.get('pinjam')
+    if pinjam_id:
+        p = Peminjaman.objects.filter(id=pinjam_id, user=request.user).first()
+        if p:
+            p.waktu_baca_detik += klaim
+            p.save(update_fields=['waktu_baca_detik'])
 
     user = request.user
     pool = user.waktu_baca_detik + klaim
@@ -954,7 +997,15 @@ def waktu_baca(request):
     user.waktu_baca_detik = pool
     if exp_gain:
         user.exp += exp_gain
-    user.save(update_fields=["waktu_baca_detik", "exp"])
+
+    # 5) Rekap harian (untuk banner streak)
+    hari_ini = timezone.localdate()
+    if user.tanggal_baca_harian != hari_ini:
+        user.detik_baca_hari_ini = 0
+        user.tanggal_baca_harian = hari_ini
+    user.detik_baca_hari_ini += klaim
+
+    user.save(update_fields=["waktu_baca_detik", "exp", "detik_baca_hari_ini", "tanggal_baca_harian"])
 
     return JsonResponse({"detik": pool, "exp_gain": exp_gain, "exp": user.exp})
 
