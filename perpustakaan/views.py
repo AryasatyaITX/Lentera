@@ -408,8 +408,8 @@ def buku_detail(request, olid):
 
 
 @login_required(login_url="login")
-def baca_buku(request, olid):          # ← dulu: id_item
-    buku = get_object_or_404(BukuDigital, id_item=olid)   # ← field tetap id_item, nilainya dari olid
+def baca_buku(request, olid):
+    buku = get_object_or_404(BukuDigital, id_item=olid)
 
     peminjaman, baru_dibuat = Peminjaman.objects.get_or_create(
         user=request.user,
@@ -945,8 +945,8 @@ def profil_user_detail_view(request, username):
     selisih = target.exp - request.user.exp
 
     context = {
-        "user": request.user,          # untuk sidebar dan navbar (akun kamu sendiri)
-        "profile_user": target,        # akun yang sedang dilihat
+        "user": request.user,
+        "profile_user": target,
         "total_buku": total_buku,
         "peringkat": peringkat,
         "level": level,
@@ -998,7 +998,7 @@ def waktu_baca(request):
     if exp_gain:
         user.exp += exp_gain
 
-    # 5) Rekap harian (untuk banner streak)
+    # Rekap harian (untuk banner streak)
     hari_ini = timezone.localdate()
     if user.tanggal_baca_harian != hari_ini:
         user.detik_baca_hari_ini = 0
