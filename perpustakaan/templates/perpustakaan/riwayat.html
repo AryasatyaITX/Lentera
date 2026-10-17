@@ -58,7 +58,7 @@
                 <div class="riwayat-thead">
                     <div>Buku</div><div>Tanggal Pinjam</div><div>Tanggal Kembali</div><div>Status</div>
                 </div>
-                {% for item in riwayat_list %}
+                {% for item in daftar_riwayat %}
                 <div class="riwayat-row">
                     <div class="history-book-info">
                         {% if item.buku_digital %}
@@ -71,8 +71,8 @@
                     </div>
                     <div class="history-date">{{ item.tanggal_pinjam|date:"d M Y" }}</div>
                     <div class="history-date">
-                        {% if item.tanggal_kembali %}{{ item.tanggal_kembali|date:"d M Y" }}
-                        {% else %}<span class="history-due-date">Tenggat: {{ item.jatuh_tempo|date:"d M Y" }}</span>{% endif %}
+                        {% if item.tanggal_kembali == "Selesai" %}{{ item.tanggal_kembali|date:"d M Y" }}
+                        {% else %} {{ item.jatuh_tempo|date:"d M Y" }}</span>{% endif %}
                     </div>
                     <div>
                         {% if item.status == 'Selesai' %}<span class="badge-status selesai">Dikembalikan</span>
