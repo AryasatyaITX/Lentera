@@ -2469,28 +2469,3 @@ body {
     flex-shrink: 0;
 }
 @media (max-width: 700px) { .streak-banner { flex-direction: column; align-items: stretch; } }
-
-/* ===== Header hasil pencarian & empty state ===== */
-.hasil-header {
-    background: #fff; border-radius: 16px; padding: 20px 24px;
-    box-shadow: 0 2px 12px rgba(15,23,42,.06); margin-bottom: 20px;
-}
-.hasil-badge {
-    display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 1px;
-    color: #2563eb; background: #e7f0fe; padding: 5px 12px;
-    border-radius: 999px; margin-bottom: 10px;
-}
-.hasil-header h2 { margin: 0; font-size: 26px; font-weight: 800; color: #10182b; }
-.hasil-header p { margin: 6px 0 0; font-size: 14px; color: #8a94a6; }
-
-.kosong-card {
-    grid-column: 1 / -1;   /* span penuh 1 baris grid */
-    background: #fff; border-radius: 16px; padding: 60px 24px;
-    text-align: center; box-shadow: 0 2px 12px rgba(15,23,42,.06);
-}
-.kosong-card h3 { margin: 14px 0 6px; color: #10182b; }
-.kosong-card p { margin: 0 0 20px; color: #8a94a6; line-height: 1.5; }
-.kosong-btn {
-    background: #D4F838; color: #121824; border: none;
-    padding: 10px 22px; border-radius: 10px; font-weight: 700; cursor: pointer;
-}
