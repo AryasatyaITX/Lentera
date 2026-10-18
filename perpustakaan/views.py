@@ -19,7 +19,7 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import ensure_csrf_cookie
 from .models import CustomUser, BukuDigital, Jurnal, Peminjaman, Bookmark, Pengaturan
 from django.contrib.auth import update_session_auth_hash
-from django.db.models import Count, Q
+from django.db.models import Count
 from datetime import date, timedelta
 import json
 import os
@@ -194,7 +194,7 @@ def _proses_reset(request, action):
         request.session[RESET_KEY] = state
         sisa = OTP_MAKS_SALAH - state["salah"]
         return _render_login(request, 2, error=f"Kode OTP salah. Sisa percobaan: {sisa}.",
-                             email=state["email"], jeda=sisa_jeda)
+            email=state["email"], jeda=sisa_jeda)
 
     # ---- Langkah 3: simpan password baru ----
     if action == "reset_password":
@@ -476,12 +476,6 @@ def katalog_view(request):
             for buku in BukuDigital.objects.order_by('judul')
         ],
     }
-    q = request.GET.get('q', '').strip()
-    context['q'] = q
-    if q:
-        context['hasil_cari'] = BukuDigital.objects.filter(
-            Q(judul__icontains=q) | Q(penulis__icontains=q)
-        ).order_by('-tanggal_ditambahkan')
     return render(request, "perpustakaan/katalog.html", context)
 
 
