@@ -40,7 +40,7 @@
     <!-- PDF.js harus dimuat SEBELUM buku.js. Masing-masing script hanya SATU kali. -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="{% static 'perpustakaan/js/script.js' %}" defer></script>
-    <script src="{% static 'perpustakaan/js/buku.js' %}?v=7" defer></script>
+    <script src="{% static 'perpustakaan/js/buku.js' %}?v=8" defer></script>
 </head>
 <body>
 
@@ -48,7 +48,7 @@
     <header class="header-baca">
         <div class="header-info">
             <h3>{{ buku.judul }}</h3>
-            <p>Penulis: {{ buku.penulis }} &nbsp;|&nbsp; Jatuh tempo: {{ jatuh_tempo|date:"d M Y" }}</p>
+            <p>Penulis: {{ buku.penulis }} &nbsp;|&nbsp;</p>
         </div>
         <div class="header-actions">
             <a href="{% url 'peminjaman' %}" class="btn-kembali"><i class="fas fa-arrow-left"></i> Kembali</a>
@@ -72,8 +72,8 @@
     <div id="read-ring"
         data-url="{% url 'waktu_baca' %}"
         data-pinjam="{{ pinjam.id }}"
-        data-detik="{{ pinjam.waktu_baca_detik }}"
+        data-detik="{{ user.waktu_baca_detik }}"
         data-total="120"></div>
-    <script src="{% static 'perpustakaan/js/baca-ring.js' %}?v=2" defer></script>
+    <script src="{% static 'perpustakaan/js/baca-ring.js' %}?v=3" defer></script>
 </body>
 </html>

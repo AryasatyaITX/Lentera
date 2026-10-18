@@ -1,55 +1,108 @@
 {% extends 'perpustakaan/base_admin.html' %}
+{% load static %}
 
-{% block title %}Kelola Anggota{% endblock %}
+{% block title %}Kelola Anggota · Lentera{% endblock %}
 {% block page_title %}Kelola Anggota{% endblock %}
 {% block page_subtitle %}Pantau anggota dan aktivitas pinjaman anggota{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'perpustakaan/css/admin.css' %}">
+{% endblock %}
+
 {% block content %}
-<div class="a-toolbar" style="margin-bottom:40px;">
-    <div class="a-search">
-        <i class="fas fa-search"></i>
-        <input type="text" id="a-search-input" placeholder="Cari nama atau email...">
+<div class="ap">
+
+  <div class="ap-toolbar">
+    <div class="ap-search">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="ap-search" placeholder="Cari nama atau email...">
     </div>
-</div>
+  </div>
 
-<div class="a-tabs">
-    <button type="button" class="a-tab active" data-filter="semua">Semua</button>
-    <button type="button" class="a-tab" data-filter="aktif">Aktif</button>
-    <button type="button" class="a-tab" data-filter="nonaktif">Nonaktif</button>
-</div>
+  <div class="ap-tabs" id="ap-tabs">
+    <button type="button" class="ap-tab active" data-filter="semua">Semua</button>
+    <button type="button" class="ap-tab" data-filter="aktif">Aktif</button>
+    <button type="button" class="ap-tab" data-filter="nonaktif">Nonaktif</button>
+  </div>
 
-<div class="a-card" style="padding-top:6px;">
-    <table class="a-table">
-        <thead>
-            <tr>
-                <th style="width:28%">Anggota</th>
-                <th>Email</th>
-                <th>Bergabung</th>
-                <th>Status</th>
-                <th>Total Pinjaman</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for a in anggota %}
-            <tr data-row data-status="{% if a.is_active %}aktif{% else %}nonaktif{% endif %}">
-                <td>
-                    <div class="a-user">
-                        <img src="https://ui-avatars.com/api/?name={{ a.username }}&background=D4F838&color=121824" alt="">
-                        <span class="n">{{ a.get_full_name|default:a.username }}</span>
-                    </div>
-                </td>
-                <td>{{ a.email|default:"-" }}</td>
-                <td>{{ a.date_joined|date:"Y" }}</td>
-                <td>
-                    {% if a.is_active %}<span class="a-badge aktif">Aktif</span>
-                    {% else %}<span class="a-badge nonaktif">Nonaktif</span>{% endif %}
-                </td>
-                <td>{{ a.total_pinjaman|default:0 }} buku</td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="5" class="a-empty">Belum ada anggota.</td></tr>
-            {% endfor %}
-        </tbody>
+  <div class="ap-card">
+    <div class="ap-card-head">
+      <h3>Daftar anggota</h3>
+      <span id="ap-count">{{ anggota|length }} anggota</span>
+    </div>
+
+    <table class="ap-table">
+      <thead>
+        <tr>
+          <th style="width:30%;">Anggota</th>
+          <th>Email</th>
+          <th>Bergabung</th>
+          <th>Status</th>
+          <th>Total Pinjaman</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in anggota %}
+        <tr data-row data-status="{% if a.is_active %}aktif{% else %}nonaktif{% endif %}">
+          <td>
+            <div class="ap-user">
+              <span class="ap-avatar">
+                {% if a.foto_profil %}<img src="{{ a.foto_profil.url }}" alt="">{% else %}{{ a.nama_tampilan|default:a.username|slice:":2"|upper }}{% endif %}
+              </span>
+              <span class="ap-user-name">{{ a.nama_tampilan|default:a.username }}</span>
+            </div>
+          </td>
+          <td>{{ a.email|default:"-" }}</td>
+          <td>{{ a.date_joined|date:"Y" }}</td>
+          <td>
+            {% if a.is_active %}<span class="ap-pill aktif">Aktif</span>{% else %}<span class="ap-pill nonaktif">Nonaktif</span>{% endif %}
+          </td>
+          <td>{{ a.jumlah_pinjaman|default:0 }} buku</td>
+        </tr>
+        {% endfor %}
+        <tr id="ap-empty" {% if anggota %}hidden{% endif %}>
+          <td colspan="5" class="ap-empty">Tidak ada anggota yang cocok.</td>
+        </tr>
+      </tbody>
     </table>
+  </div>
+
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  var rows = Array.prototype.slice.call(document.querySelectorAll('[data-row]'));
+  var input = document.getElementById('ap-search');
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.ap-tab'));
+  var empty = document.getElementById('ap-empty');
+  var count = document.getElementById('ap-count');
+  var current = 'semua';
+
+  function apply() {
+    var q = input.value.trim().toLowerCase();
+    var shown = 0;
+    rows.forEach(function (r) {
+      var okTab = current === 'semua' || r.getAttribute('data-status') === current;
+      var okText = r.textContent.toLowerCase().indexOf(q) !== -1;
+      r.hidden = !(okTab && okText);
+      if (!r.hidden) shown++;
+    });
+    empty.hidden = shown > 0;
+    count.textContent = shown + ' anggota';
+  }
+
+  input.addEventListener('input', apply);
+  tabs.forEach(function (t) {
+    t.addEventListener('click', function () {
+      tabs.forEach(function (x) { x.classList.remove('active'); });
+      t.classList.add('active');
+      current = t.getAttribute('data-filter');
+      apply();
+    });
+  });
+  apply();
+})();
+</script>
 {% endblock %}

@@ -1,6 +1,14 @@
+import hashlib
+import hmac
+import secrets
+from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
+from django.core.validators import validate_email
+
 from datetime import timedelta
 from django.core.paginator import Paginator
 from django.utils import timezone
+from django.utils.timesince import timesince
 import requests
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
@@ -9,7 +17,7 @@ from django.contrib import messages
 from django.http import JsonResponse, Http404
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import ensure_csrf_cookie
-from .models import CustomUser, BukuDigital, Jurnal, Peminjaman, Bookmark
+from .models import CustomUser, BukuDigital, Jurnal, Peminjaman, Bookmark, Pengaturan
 from django.contrib.auth import update_session_auth_hash
 from django.db.models import Count
 from datetime import date, timedelta
@@ -46,6 +54,13 @@ RING_BEAT_MAKS = 15      # batas detik yang boleh dilaporkan per kiriman
 PAGINATION_PAGE_SIZE = 10
 ITEM_ID_RE = re.compile(r'^[\w-]+$')
 COVER_PREFIX = 'https://covers.openlibrary.org/'
+NIM_MAKS = 10
+PW_MIN = 8
+PW_MAKS = 20
+RESET_KEY = "reset_pw"           # kunci di session untuk proses pemulihan
+OTP_BERLAKU_DETIK = 300          
+OTP_JEDA_KIRIM_ULANG = 60        
+OTP_MAKS_SALAH = 5     
 
 # (nilai subject di Open Library, label yang tampil)
 KATEGORI = [
@@ -60,6 +75,151 @@ KATEGORI = [
 DEFAULT_KATEGORI = "engineering"
 BAHASA = [("", "Semua bahasa"), ("ind", "Indonesia"), ("eng", "Inggris")]
 
+def validasi_password(pw):
+    """Aturan sama dengan petunjuk di halaman profil. None = lolos."""
+    if not (PW_MIN <= len(pw) <= PW_MAKS):
+        return f"Password harus {PW_MIN} - {PW_MAKS} karakter."
+    if not re.search(r"[A-Z]", pw):
+        return "Password minimal memiliki 1 huruf besar."
+    if not re.search(r"[^A-Za-z0-9]", pw):
+        return "Password minimal memiliki 1 karakter unik (contoh: ! @ # $)."
+    return None
+
+
+def _hash_otp(uid, kode):
+    pesan = f"{uid}:{kode}".encode()
+    return hmac.new(settings.SECRET_KEY.encode(), pesan, hashlib.sha256).hexdigest()
+
+
+def _samarkan_email(email):
+    nama, _, domain = email.partition("@")
+    depan = nama[:2] if len(nama) > 2 else nama[:1]
+    return f"{depan}{'*' * max(len(nama) - len(depan), 3)}@{domain}"
+
+
+def _render_login(request, step=0, error="", info="", email="", jeda=0):
+    """step: 0 = form login, 1 = isi email, 2 = isi OTP, 3 = password baru."""
+    return render(request, "perpustakaan/login.html", {
+        "reset_step": step,
+        "reset_error": error,
+        "reset_info": info,
+        "reset_email": _samarkan_email(email) if email else "",
+        "reset_jeda": max(int(jeda), 0),
+    })
+
+
+def _proses_reset(request, action):
+    User = get_user_model()
+    state = request.session.get(RESET_KEY)
+    sekarang = time.time()
+
+    if action == "reset_batal":
+        request.session.pop(RESET_KEY, None)
+        return redirect("login")
+
+    if action == "reset_ganti_email":
+        request.session.pop(RESET_KEY, None)
+        return _render_login(request, 1)
+
+    # ---- Langkah 1 dan kirim ulang: kirim kode OTP ke email ----
+    if action in ("reset_kirim_otp", "reset_kirim_ulang"):
+        if action == "reset_kirim_ulang":
+            if not state:
+                return _render_login(request, 1, error="Sesi pemulihan berakhir. Masukkan email lagi.")
+            email = state["email"]
+            sisa = OTP_JEDA_KIRIM_ULANG - (sekarang - state["kirim"])
+            if sisa > 0:
+                return _render_login(request, 2, error=f"Tunggu {int(sisa)} detik sebelum kirim ulang.",
+                                     email=email, jeda=sisa)
+        else:
+            email = request.POST.get("email", "").strip()
+            try:
+                validate_email(email)
+            except ValidationError:
+                return _render_login(request, 1, error="Format email tidak valid.")
+
+        cocok = list(User.objects.filter(email__iexact=email, is_active=True)[:2])
+        if len(cocok) > 1:
+            return _render_login(request, 1, error="Email ini dipakai lebih dari satu akun. Hubungi admin perpustakaan.")
+
+        uid, hash_otp = None, None
+        if len(cocok) == 1:
+            kode = f"{secrets.randbelow(10 ** 6):06d}"
+            uid, hash_otp = cocok[0].pk, _hash_otp(cocok[0].pk, kode)
+            try:
+                send_mail(
+                    "Kode OTP Pemulihan Akun Lentera",
+                    f"Kode OTP kamu: {kode}\n\n"
+                    f"Kode berlaku {OTP_BERLAKU_DETIK // 60} menit. "
+                    "Jangan bagikan kode ini kepada siapa pun.\n"
+                    "Abaikan email ini jika kamu tidak meminta pemulihan akun.",
+                    None,
+                    [email],
+                )
+            except Exception:
+                return _render_login(request, 1, error="Gagal mengirim email. Coba lagi beberapa saat.")
+
+        # Pesan sama untuk email terdaftar maupun tidak (tidak membocorkan data akun)
+        request.session[RESET_KEY] = {
+            "email": email, "uid": uid, "hash": hash_otp,
+            "exp": sekarang + OTP_BERLAKU_DETIK, "kirim": sekarang,
+            "salah": 0, "ok": False,
+        }
+        return _render_login(request, 2, email=email, jeda=OTP_JEDA_KIRIM_ULANG,
+                             info="Jika email terdaftar, kode OTP 6 digit sudah dikirim.")
+
+    if not state:
+        return _render_login(request, 1, error="Sesi pemulihan berakhir. Masukkan email lagi.")
+
+    sisa_jeda = OTP_JEDA_KIRIM_ULANG - (sekarang - state["kirim"])
+
+    # ---- Langkah 2: cek kode OTP ----
+    if action == "reset_verifikasi_otp":
+        if state["ok"]:
+            return _render_login(request, 3, email=state["email"])
+        if sekarang > state["exp"] or state["salah"] >= OTP_MAKS_SALAH:
+            request.session.pop(RESET_KEY, None)
+            return _render_login(request, 1, error="Kode kedaluwarsa atau terlalu banyak salah. Minta kode baru.")
+
+        kode = re.sub(r"\D", "", request.POST.get("otp", ""))
+        if state["hash"] and hmac.compare_digest(state["hash"], _hash_otp(state["uid"], kode)):
+            state["ok"] = True
+            state["exp"] = sekarang + OTP_BERLAKU_DETIK   # waktu untuk mengisi password baru
+            request.session[RESET_KEY] = state
+            return _render_login(request, 3, email=state["email"])
+
+        state["salah"] += 1
+        request.session[RESET_KEY] = state
+        sisa = OTP_MAKS_SALAH - state["salah"]
+        return _render_login(request, 2, error=f"Kode OTP salah. Sisa percobaan: {sisa}.",
+                             email=state["email"], jeda=sisa_jeda)
+
+    # ---- Langkah 3: simpan password baru ----
+    if action == "reset_password":
+        if not state["ok"] or sekarang > state["exp"]:
+            request.session.pop(RESET_KEY, None)
+            return _render_login(request, 1, error="Sesi pemulihan berakhir. Ulangi dari awal.")
+
+        baru = request.POST.get("new_password", "")
+        konfirmasi = request.POST.get("confirm_password", "")
+        if baru != konfirmasi:
+            return _render_login(request, 3, error="Konfirmasi password baru tidak cocok!", email=state["email"])
+        galat = validasi_password(baru)
+        if galat:
+            return _render_login(request, 3, error=galat, email=state["email"])
+
+        user = User.objects.filter(pk=state["uid"]).first()
+        if not user:
+            request.session.pop(RESET_KEY, None)
+            return _render_login(request, 1, error="Akun tidak ditemukan.")
+
+        user.set_password(baru)
+        user.save()
+        request.session.pop(RESET_KEY, None)
+        messages.success(request, "Password berhasil diubah! Silakan login dengan password baru.")
+        return redirect("login")
+
+    return redirect("login")
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -68,50 +228,35 @@ def login_view(request):
         return redirect("dashboard")
 
     if request.method == "POST":
-        action = request.POST.get("action")
+        action = request.POST.get("action", "")
 
-        # LOGIKA 1: RESET PASSWORD MANDIRI
-        if action == "reset_password":
-            username_input = request.POST.get("username")
-            email_input = request.POST.get("email")
-            new_password = request.POST.get("new_password")
-            confirm_password = request.POST.get("confirm_password")
-
-            if new_password != confirm_password:
-                messages.error(request, "Konfirmasi password baru tidak cocok!")
-            else:
-                peringkat = CustomUser.objects.filter(is_member=True, exp__gt=user.exp).count() + 1
-                if user:
-                    user.set_password(new_password)
-                    user.save()
-                    messages.success(request, "Password berhasil diubah! Silakan login dengan password baru.")
-                else:
-                    messages.error(request, "Username/NIM atau Email terdaftar tidak ditemukan!")
+        # LOGIKA 1: PEMULIHAN AKUN (email -> OTP -> password baru)
+        if action.startswith("reset_"):
+            return _proses_reset(request, action)
 
         # LOGIKA 2: LOGIN biasa
-        else:
-            username_input = request.POST.get("username")
-            password_input = request.POST.get("password")
-            remember_me = request.POST.get("remember_me")
+        username_input = request.POST.get("username")
+        password_input = request.POST.get("password")
+        remember_me = request.POST.get("remember_me")
 
-            user = authenticate(
-                request, username=username_input, password=password_input
-            )
+        user = authenticate(
+            request, username=username_input, password=password_input
+        )
 
-            if user is not None:
-                login(request, user)
+        if user is not None:
+            login(request, user)
 
-                # Fitur Remember Me
-                if not remember_me:
-                    request.session.set_expiry(0)
-                else:
-                    request.session.set_expiry(1209600)  # 2 Minggu
-
-                if user.is_staff or user.is_admin:
-                    return redirect("dashboard_admin")
-                return redirect("dashboard")
+            # Fitur Remember Me
+            if not remember_me:
+                request.session.set_expiry(0)
             else:
-                messages.error(request, "Username atau Password Salah. Silahkan Coba Lagi")
+                request.session.set_expiry(1209600)  # 2 Minggu
+
+            if user.is_staff or user.is_admin:
+                return redirect("dashboard_admin")
+            return redirect("dashboard")
+        else:
+            messages.error(request, "NIM atau Password Salah. Password minimal terdiri dari 8 karakter! Silahkan Coba Lagi")
 
     return render(request, "perpustakaan/login.html")
 
@@ -121,32 +266,46 @@ def register_view(request):
         return redirect("dashboard")
 
     if request.method == "POST":
-        username = request.POST.get("username")
-        email = request.POST.get("email")
-        password = request.POST.get("password")
-        confirm_password = request.POST.get("confirm_password")
+        nim = request.POST.get("username", "").strip()
+        email = request.POST.get("email", "").strip()
+        password = request.POST.get("password", "")
+        confirm_password = request.POST.get("confirm_password", "")
 
-        if password != confirm_password:
-            messages.error(request, "Konfirmasi password tidak cocok!")
+        galat = None
+        if not nim or len(nim) > NIM_MAKS:
+            galat = f"NIM wajib diisi dan maksimal {NIM_MAKS} karakter!"
+        elif password != confirm_password:
+            galat = "Konfirmasi password tidak cocok!"
+        else:
+            galat = validasi_password(password)
+
+        if not galat:
+            try:
+                validate_email(email)
+            except ValidationError:
+                galat = "Format email tidak valid!"
+
+        if not galat and CustomUser.objects.filter(username=nim).exists():
+            galat = "NIM sudah terdaftar!"
+        if not galat and CustomUser.objects.filter(email__iexact=email).exists():
+            galat = "Email sudah dipakai akun lain!"
+
+        if galat:
+            messages.error(request, galat)
             return render(request, "perpustakaan/register.html")
 
-        if CustomUser.objects.filter(username=username).exists():
-            messages.error(request, "Username/NIM sudah terdaftar!")
-            return render(request, "perpustakaan/register.html")
-
-        user = CustomUser.objects.create_user(
-            username=username,
+        CustomUser.objects.create_user(
+            username=nim,
             email=email,
             password=password,
             is_member=True,
             is_admin=False,
         )
-        login(request, user)
-        messages.success(request, "Registrasi berhasil!")
-        return redirect("dashboard")
+        # Setelah daftar, arahkan ke halaman login (tidak login otomatis)
+        messages.success(request, "Registrasi berhasil! Silakan login.")
+        return redirect("login")
 
     return render(request, "perpustakaan/register.html")
-
 
 def logout_view(request):
     logout(request)
@@ -156,17 +315,62 @@ def logout_view(request):
 @login_required(login_url="login")
 def dashboard(request):
     user = request.user
-    sedang_dipinjam = Peminjaman.objects.filter(
-        user=user, status="Dibaca"
-    ).count()
-    total_dibaca = Peminjaman.objects.filter(
-        user=user, status="Selesai"
-    ).count()
-    bacaan_terakhir = Peminjaman.objects.filter(
-        user=user, status="Dibaca"
-    ).last()
+
+    sedang_dipinjam = Peminjaman.objects.filter(user=user, status="Dibaca").count()
+    total_dibaca = Peminjaman.objects.filter(user=user, status="Selesai").count()
+
     User = get_user_model()
     peringkat = User.objects.filter(exp__gt=user.exp).count() + 1
+
+    peminjaman_terakhir = (
+        Peminjaman.objects
+        .filter(user=user, status="Dibaca", buku_digital__isnull=False)
+        .select_related("buku_digital")
+        .order_by("-tanggal_pinjam", "-id")
+        .first()
+    )
+
+    def teks_terakhir(dttm):
+        """Versi Indonesia (timesince bawaan masih English)."""
+        if not dttm:
+            return ""
+        menit = int((timezone.now() - dttm).total_seconds() // 60)
+        if menit < 1:
+            return "Terakhir dibaca baru saja"
+        if menit < 60:
+            return f"Terakhir dibaca {menit} menit lalu"
+        if menit < 1440:
+            return f"Terakhir dibaca {menit // 60} jam lalu"
+        return f"Terakhir dibaca {menit // 1440} hari lalu"
+
+    bacaan_terakhir = None
+    if peminjaman_terakhir:
+        p = peminjaman_terakhir
+        buku = p.buku_digital
+
+        # Data lama yang belum punya tanggal_kembali -> isi otomatis, agar tidak "None"
+        if not p.tanggal_kembali:
+            p.tanggal_kembali = timezone.now() + timedelta(days=MASA_PINJAM_HARI)
+            p.save(update_fields=["tanggal_kembali"])
+
+        sisa_hari = (timezone.localtime(p.tanggal_kembali).date() - timezone.localdate()).days
+        if sisa_hari < 0:
+            sisa_hari = 0
+
+        bacaan_terakhir = {
+            "buku_digital": buku,
+            "progress_baca": p.progress_baca,
+            "kategori_label": str(buku.kategori) if buku.kategori else "",
+            "sisa_hari": sisa_hari,
+            "terakhir_teks": teks_terakhir(p.tanggal_pinjam),
+        }
+
+    TARGET_HARIAN_DETIK = 1800   # 30 menit/hari
+
+    detik_hari_ini = user.detik_baca_hari_ini if user.tanggal_baca_harian == timezone.localdate() else 0
+    menit_hari_ini = detik_hari_ini // 60
+    target_menit = TARGET_HARIAN_DETIK // 60
+    persen_target = min(100, round(detik_hari_ini / TARGET_HARIAN_DETIK * 100)) if detik_hari_ini else 0
 
     context = {
         "user": user,
@@ -175,9 +379,12 @@ def dashboard(request):
         "bookmarks": Bookmark.objects.filter(user=user).count(),
         "bacaan_terakhir": bacaan_terakhir,
         "peringkat": peringkat,
+        "streak_hari": user.streak_days, 
+        "menit_hari_ini": menit_hari_ini,
+        "target_menit": target_menit,
+        "persen_target": persen_target,
     }
     return render(request, "perpustakaan/dashboard.html", context)
-
 
 @login_required(login_url="login")
 @ensure_csrf_cookie
@@ -359,35 +566,29 @@ def buku_detail(request, olid):
 
 
 @login_required(login_url="login")
-@ensure_csrf_cookie
 def baca_buku(request, olid):
-    if not ITEM_ID_RE.match(olid):
-        raise Http404
-    pinjam = (
-        Peminjaman.objects.filter(
-            user=request.user, buku_digital_id=olid, status="Dibaca"
-        )
-        .select_related("buku_digital")
-        .first()
-    )
-    if not pinjam:
-        messages.info(request, "Pinjam buku ini dulu supaya bisa dibaca.")
-        return redirect("buku_detail", olid=olid)
+    buku = get_object_or_404(BukuDigital, id_item=olid)
 
-    # Logika Streak & Progress Otomatis
-    request.user.update_streak()
-
-    return render(
-        request,
-        "perpustakaan/baca.html",
-        {
-            "user": request.user,
-            "pinjam": pinjam,
-            "buku": pinjam.buku_digital,
-            "jatuh_tempo": pinjam.tanggal_pinjam
-            + timedelta(days=MASA_PINJAM_HARI),
+    peminjaman, baru_dibuat = Peminjaman.objects.get_or_create(
+        user=request.user,
+        buku_digital=buku,
+        status="Dibaca",
+        defaults={
+            "tanggal_kembali": timezone.now() + timedelta(days=MASA_PINJAM_HARI),
         },
     )
+
+    peminjaman.tanggal_pinjam = timezone.now()
+    peminjaman.save(update_fields=["tanggal_pinjam"])
+
+    request.user.update_streak()
+
+    context = {
+        "buku": buku,
+        "pinjam": peminjaman,
+        "user": request.user,
+    }
+    return render(request, "perpustakaan/baca.html", context)
 
 @login_required(login_url="login")
 @require_POST
@@ -404,9 +605,9 @@ def simpan_progress(request, olid):
     except ValueError:
         return JsonResponse({"error": "Nilai tidak valid."}, status=400)
     persen = max(0, min(persen, 100))
-    if persen > pinjam.progress_baca:
-        pinjam.progress_baca = persen
-        pinjam.save(update_fields=["progress_baca"])
+    pinjam.progress_baca = persen
+    pinjam.save(update_fields=["progress_baca"])
+        
     return JsonResponse({"progress": pinjam.progress_baca})
 
 
@@ -631,33 +832,23 @@ def hapus_bookmark_api(request, bookmark_id):
     except Bookmark.DoesNotExist:
         return JsonResponse({"status": "error"}, status=404)
 
-
 @login_required(login_url="login")
 def riwayat_view(request):
-    riwayat_queryset = (
-        Peminjaman.objects.filter(user=request.user)
-        .select_related('buku_digital', 'jurnal')
-        .order_by('-tanggal_pinjam', '-pk')
+    riwayat_list = (
+        Peminjaman.objects
+        .filter(user=request.user)
+        .order_by("-tanggal_pinjam")
     )
-    page_obj = Paginator(riwayat_queryset, PAGINATION_PAGE_SIZE).get_page(request.GET.get('page'))
-    riwayat_list = page_obj.object_list
-    
-    for item in riwayat_list:
-        if not item.tanggal_kembali:
-            if item.status == 'Selesai':
-                # Fallback untuk data lama yang dikembalikan sebelum perbaikan ini
-                item.tanggal_kembali = item.tanggal_pinjam + timedelta(days=MASA_PINJAM_HARI)
-            else:
-                item.jatuh_tempo = item.tanggal_pinjam + timedelta(days=MASA_PINJAM_HARI)
+
+    masa = Pengaturan.muat().masa_pinjam_hari
+    for p in riwayat_list:
+        # jatuh tempo = tanggal_kembali (sudah tersimpan); kalau NULL, hitung dari Pengaturan
+        p.jatuh_tempo = p.tanggal_kembali or (p.tanggal_pinjam + timedelta(days=masa))
 
     context = {
-        'user': request.user,
-        'riwayat_list': riwayat_list,
-        'page_obj': page_obj,
-        'total_aktivitas': page_obj.paginator.count,
+        "daftar_riwayat": riwayat_list,
     }
     return render(request, "perpustakaan/riwayat.html", context)
-
 
 @login_required(login_url="login")
 def leaderboard_view(request):
@@ -912,8 +1103,8 @@ def profil_user_detail_view(request, username):
     selisih = target.exp - request.user.exp
 
     context = {
-        "user": request.user,          # untuk sidebar dan navbar (akun kamu sendiri)
-        "profile_user": target,        # akun yang sedang dilihat
+        "user": request.user,
+        "profile_user": target,
         "total_buku": total_buku,
         "peringkat": peringkat,
         "level": level,
@@ -932,17 +1123,27 @@ def profil_user_detail_view(request, username):
 @require_POST
 def waktu_baca(request):
     try:
-        klaim = int(request.POST.get("detik", 0))
+        klaim = int(request.POST.get('detik', 0) or 0)
     except ValueError:
-        return JsonResponse({"error": "Nilai tidak valid."}, status=400)
-    klaim = max(0, min(klaim, RING_BEAT_MAKS))
+        klaim = 0
+    klaim = max(0, klaim)
 
-    # Kredit tidak boleh melebihi waktu nyata sejak laporan terakhir
     sekarang = time.time()
     terakhir = request.session.get("ring_terakhir")
     request.session["ring_terakhir"] = sekarang
     if terakhir is not None:
         klaim = min(klaim, int(sekarang - terakhir) + 1)
+
+    if klaim <= 0:
+        user = request.user
+        return JsonResponse({"detik": user.waktu_baca_detik, "exp_gain": 0, "exp": user.exp})
+
+    pinjam_id = request.POST.get('pinjam')
+    if pinjam_id:
+        p = Peminjaman.objects.filter(id=pinjam_id, user=request.user).first()
+        if p:
+            p.waktu_baca_detik += klaim
+            p.save(update_fields=['waktu_baca_detik'])
 
     user = request.user
     pool = user.waktu_baca_detik + klaim
@@ -954,7 +1155,15 @@ def waktu_baca(request):
     user.waktu_baca_detik = pool
     if exp_gain:
         user.exp += exp_gain
-    user.save(update_fields=["waktu_baca_detik", "exp"])
+
+    # Rekap harian (untuk banner streak)
+    hari_ini = timezone.localdate()
+    if user.tanggal_baca_harian != hari_ini:
+        user.detik_baca_hari_ini = 0
+        user.tanggal_baca_harian = hari_ini
+    user.detik_baca_hari_ini += klaim
+
+    user.save(update_fields=["waktu_baca_detik", "exp", "detik_baca_hari_ini", "tanggal_baca_harian"])
 
     return JsonResponse({"detik": pool, "exp_gain": exp_gain, "exp": user.exp})
 

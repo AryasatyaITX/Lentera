@@ -463,6 +463,56 @@
             .quote-kicker { display: none; }
             .deco-circle { display: none; }
         }
+
+        /* ===== Petunjuk password, OTP, dan tombol tambahan ===== */
+        .pw-rules {
+            margin: -6px 0 18px;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            border-radius: 10px;
+            -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
+        }
+        .pw-rules-title {
+            display: flex; align-items: center; gap: 8px;
+            color: #ffffff; font-size: 12px; font-weight: 800; margin-bottom: 10px;
+        }
+        .pw-rules-title i { color: var(--lime); }
+        .pw-rules ul { list-style: none; display: grid; gap: 7px; }
+        .pw-rules li {
+            display: flex; align-items: center; gap: 9px;
+            color: rgba(255, 255, 255, 0.72); font-size: 12px; font-weight: 500;
+            transition: color 0.2s;
+        }
+        .pw-rules li::before {
+            content: ""; width: 10px; height: 10px; flex: none; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.35); transition: background 0.2s, box-shadow 0.2s;
+        }
+        .pw-rules li.ok { color: var(--lime); }
+        .pw-rules li.ok::before { background: var(--lime); box-shadow: 0 0 0 3px rgba(212, 248, 56, 0.2); }
+
+        .input-group input.otp-input {
+            text-align: center; letter-spacing: 0.6em; font-size: 22px; font-weight: 700;
+            padding-left: 0.6em;
+        }
+        .reset-desc {
+            color: rgba(255, 255, 255, 0.82); font-size: 13px; line-height: 1.6; margin: -12px 0 22px;
+        }
+        .reset-desc b { color: #ffffff; }
+        .link-btn {
+            background: none; border: none; padding: 0; cursor: pointer;
+            color: var(--lime); font-size: 13px; font-weight: 700; font-family: inherit;
+        }
+        .link-btn:hover { text-decoration: underline; }
+        .link-btn:disabled { color: rgba(255, 255, 255, 0.5); cursor: not-allowed; text-decoration: none; }
+        .reset-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; }
+        .reset-actions form { margin: 0; }
+        .alert-error-box {
+            display: flex; align-items: center; gap: 8px; color: #ff8a8a; font-size: 13px; font-weight: 600;
+            margin-bottom: 18px; padding: 10px 14px; background: rgba(255, 107, 107, 0.12);
+            border: 1px solid rgba(255, 107, 107, 0.4); border-radius: 8px; animation: fadeIn 0.3s ease-in-out;
+        }
     </style>
 </head>
 
@@ -527,7 +577,7 @@
         <div class="right-panel">
 
             <!-- 1. FORM LOGIN UTAMA -->
-            <div class="form-box" id="loginFormBox">
+            <div class="form-box" id="loginFormBox"{% if reset_step %} style="display: none;"{% endif %}>
                 <div class="subtitle">SELAMAT DATANG</div>
                 <h1 class="title">Masuk ke LENTERA</h1>
 
@@ -549,10 +599,10 @@
 
                     <!-- Input Username / NIM -->
                     <div class="input-group">
-                        <label for="usernameInput">Username / NIM</label>
+                        <label for="usernameInput">NIM</label>
                         <input type="text" id="usernameInput" name="username"
                                class="{% for message in messages %}{% if message.tags != 'success' %}is-invalid {% endif %}{% endfor %}"
-                               placeholder="Masukkan username atau NIM"
+                               placeholder="Masukkan NIM" maxlength="18" autocomplete="username"
                                value="{{ request.POST.username|default:'' }}" required autofocus>
                     </div>
 
@@ -599,49 +649,108 @@
             </div>
 
 
-            <!-- 2. FORM RESET PASSWORD (HIDDEN DEFAULT) -->
-            <div class="form-box" id="forgotFormBox" style="display: none;">
+            <!-- 2. PEMULIHAN AKUN: email -> kode OTP -> password baru -->
+            <div class="form-box" id="forgotFormBox"{% if not reset_step %} style="display: none;"{% endif %}>
                 <div class="subtitle">PEMULIHAN AKUN</div>
-                <h1 class="title">Atur Ulang Password</h1>
+
+                {% if reset_step == 2 %}
+                <!-- LANGKAH 2: MASUKKAN KODE OTP -->
+                <h1 class="title">Masukkan Kode OTP</h1>
+                <p class="reset-desc">Kode 6 digit dikirim ke <b>{{ reset_email }}</b>. Kode berlaku 5 menit.</p>
+
+                {% if reset_info %}<div class="alert-success-below"><i class="fa-solid fa-circle-check"></i><span>{{ reset_info }}</span></div>{% endif %}
+                {% if reset_error %}<div class="alert-error-box"><i class="fa-solid fa-circle-exclamation"></i><span>{{ reset_error }}</span></div>{% endif %}
+
+                <form method="POST" autocomplete="off">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="reset_verifikasi_otp">
+                    <div class="input-group">
+                        <label for="otpInput">Kode OTP</label>
+                        <input type="text" id="otpInput" name="otp" class="otp-input" inputmode="numeric"
+                               maxlength="6" pattern="[0-9]{6}" placeholder="______" required autofocus>
+                    </div>
+                    <button type="submit" class="btn-submit">Verifikasi Kode</button>
+                </form>
+
+                <div class="reset-actions">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="reset_kirim_ulang">
+                        <button type="submit" class="link-btn" id="resendBtn" data-jeda="{{ reset_jeda }}">Kirim ulang kode</button>
+                    </form>
+                    <form method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="reset_ganti_email">
+                        <button type="submit" class="link-btn">Ganti email</button>
+                    </form>
+                </div>
+
+                {% elif reset_step == 3 %}
+                <!-- LANGKAH 3: PASSWORD BARU -->
+                <h1 class="title">Buat Password Baru</h1>
+                <p class="reset-desc">Kode terverifikasi untuk <b>{{ reset_email }}</b>. Buat password baru untuk akunmu.</p>
+
+                {% if reset_error %}<div class="alert-error-box"><i class="fa-solid fa-circle-exclamation"></i><span>{{ reset_error }}</span></div>{% endif %}
 
                 <form method="POST" id="forgotForm">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="reset_password">
 
                     <div class="input-group">
-                        <label for="resetUsername">Username / NIM</label>
-                        <input type="text" id="resetUsername" name="username" placeholder="Masukkan Username / NIM" required>
-                    </div>
-
-                    <div class="input-group">
-                        <label for="resetEmail">Email Terdaftar</label>
-                        <input type="email" id="resetEmail" name="email" placeholder="Masukkan Email Terdaftar" required>
-                    </div>
-
-                    <div class="input-group">
                         <label for="newPassword">Password Baru</label>
                         <div class="password-wrapper">
-                            <input type="password" id="newPassword" name="new_password" placeholder="Masukkan password baru" required>
+                            <input type="password" id="newPassword" name="new_password" placeholder="Masukkan password baru"
+                                   minlength="8" maxlength="20" required autofocus autocomplete="new-password">
                             <i class="fa-regular fa-eye toggle-password" onclick="togglePass('newPassword', this)"></i>
                         </div>
                     </div>
 
+                    <div class="pw-rules">
+                            <div class="pw-rules-title"><i class="fa-solid fa-shield-halved"></i> Syarat Keamanan Password:</div>
+                            <ul id="resetPwRules">
+                                <li data-rule="len">8 - 20 Karakter</li>
+                                <li data-rule="special">Min. 1 Karakter Unik</li>
+                                <li data-rule="upper">Min. 1 Huruf Besar</li>
+                            </ul>
+                        </div>
+
                     <div class="input-group">
                         <label for="confirmPassword">Konfirmasi Password Baru</label>
                         <div class="password-wrapper">
-                            <input type="password" id="confirmPassword" name="confirm_password" placeholder="Ulangi password baru" required>
+                            <input type="password" id="confirmPassword" name="confirm_password" placeholder="Ulangi password baru"
+                                   minlength="8" maxlength="20" required autocomplete="new-password">
                             <i class="fa-regular fa-eye toggle-password" onclick="togglePass('confirmPassword', this)"></i>
                         </div>
                     </div>
 
                     <button type="submit" class="btn-submit">Ubah Password</button>
-
-                    <div class="back-to-login-wrapper">
-                        <a href="javascript:void(0)" class="back-to-login" onclick="showLoginForm()">
-                            <i class="fa-solid fa-arrow-left"></i> Kembali ke Halaman Login
-                        </a>
-                    </div>
                 </form>
+
+                {% else %}
+                <!-- LANGKAH 1: MASUKKAN EMAIL -->
+                <h1 class="title">Atur Ulang Password</h1>
+                <p class="reset-desc">Masukkan email yang terdaftar. Kami akan mengirim kode OTP untuk mengatur ulang password.</p>
+
+                {% if reset_error %}<div class="alert-error-box"><i class="fa-solid fa-circle-exclamation"></i><span>{{ reset_error }}</span></div>{% endif %}
+
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="reset_kirim_otp">
+                    <div class="input-group">
+                        <label for="resetEmail">Email Terdaftar</label>
+                        <input type="email" id="resetEmail" name="email" placeholder="Masukkan email terdaftar" required autofocus>
+                    </div>
+                    <button type="submit" class="btn-submit">Kirim Kode OTP</button>
+                </form>
+                {% endif %}
+
+                <div class="back-to-login-wrapper">
+                    <form method="POST" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="reset_batal">
+                        <button type="submit" class="back-to-login link-btn"><i class="fa-solid fa-arrow-left"></i> Kembali ke Halaman Login</button>
+                    </form>
+                </div>
             </div>
 
         </div>
@@ -651,6 +760,12 @@
     <!-- SCRIPT JAVASCRIPT -->
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            var formLogin = document.getElementById('loginForm');
+            if (formLogin) {
+                formLogin.addEventListener('submit', function () {
+                    try { localStorage.setItem('lentera-admin-sidebar', 'closed'); } catch (e) {}
+                });
+            }
 
             /* 1. FUNCTION TOGGLE EYE PASSWORD */
             window.togglePass = function(inputId, icon) {
@@ -695,6 +810,42 @@
                     localStorage.removeItem('lentera_remembered_username');
                 }
             });
+
+                        /* PETUNJUK PASSWORD (centang otomatis saat mengetik) */
+            window.initPwRules = function (inputId, listId) {
+                var input = document.getElementById(inputId);
+                var items = document.querySelectorAll('#' + listId + ' li');
+                if (!input || !items.length) return;
+                function cek() {
+                    var v = input.value;
+                    var ok = {
+                        len: v.length >= 8 && v.length <= 20,
+                        upper: /[A-Z]/.test(v),
+                        special: /[^A-Za-z0-9]/.test(v)
+                    };
+                    items.forEach(function (li) { li.classList.toggle('ok', !!ok[li.dataset.rule]); });
+                }
+                input.addEventListener('input', cek);
+                cek();
+            };
+
+            initPwRules('newPassword', 'resetPwRules');
+
+            /* HITUNG MUNDUR KIRIM ULANG OTP */
+            var resendBtn = document.getElementById('resendBtn');
+            if (resendBtn) {
+                var sisa = parseInt(resendBtn.dataset.jeda, 10) || 0;
+                var asli = resendBtn.textContent;
+                if (sisa > 0) {
+                    resendBtn.disabled = true;
+                    var t = setInterval(function () {
+                        sisa--;
+                        if (sisa <= 0) { clearInterval(t); resendBtn.disabled = false; resendBtn.textContent = asli; }
+                        else { resendBtn.textContent = asli + ' (' + sisa + ')'; }
+                    }, 1000);
+                    resendBtn.textContent = asli + ' (' + sisa + ')';
+                }
+            }
 
             /* 4. CAROUSEL AUTOMATIC SLIDER */
             let currentSlide = 0;

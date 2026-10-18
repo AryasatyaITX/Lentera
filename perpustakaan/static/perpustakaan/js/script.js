@@ -195,17 +195,19 @@ document.addEventListener("DOMContentLoaded", function () {
         console.error("appLayout atau menuButton tidak ditemukan");
         return;
     }
-    
+
+    // Pulihkan status sidebar selama sesi ini (hilang saat tab/browser ditutup)
     try {
-        if (localStorage.getItem("sidebarOpenV2") !== "0") {
+        if (sessionStorage.getItem("sidebarOpen") === "1") {
             appLayout.classList.add("sidebar-open");
         }
+        localStorage.removeItem("sidebarOpen"); // bersihkan sisa versi lama
     } catch (e) {}
 
     menuButton.addEventListener("click", function () {
         appLayout.classList.toggle("sidebar-open");
         try {
-            localStorage.setItem("sidebarOpenV2", appLayout.classList.contains("sidebar-open") ? "1" : "0");
+            sessionStorage.setItem("sidebarOpen", appLayout.classList.contains("sidebar-open") ? "1" : "0");
         } catch (e) {}
     });
 });

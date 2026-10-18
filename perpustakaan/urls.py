@@ -14,7 +14,6 @@ urlpatterns = [
     path('baca/<str:olid>/', views.baca_buku, name='baca_buku'),
     path('buku/<str:olid>/pinjam/', views.pinjam_buku, name='pinjam_buku'),
     path('buku/<str:olid>/bookmark/', views.toggle_bookmark, name='toggle_bookmark'),
-    path('api/waktu-baca/', views.waktu_baca, name='waktu_baca'),
 
     path('ejournal/', views.ejournal_view, name='ejournal'),
     path('jurnal/<str:jurnal_id>/baca/', views.baca_jurnal, name='baca_jurnal'),
@@ -25,7 +24,6 @@ urlpatterns = [
     path('riwayat/', views.riwayat_view, name='riwayat'),
     path('leaderboard/', views.leaderboard_view, name='leaderboard'),
     path('profil/', views.profil_view, name='profil'),
-    path('achievement/', views.achievement_view, name='achievement'),
     
     # Perbaikan nama URL di sini:
     path('profil/<str:username>/', views.profil_user_detail_view, name='profil_user_detail'),
@@ -35,4 +33,10 @@ urlpatterns = [
     path("dashboard-admin/buku/hapus/<str:id_item>/", views_admin.hapus_buku, name="hapus_buku",),
     path("dashboard-admin/jurnal/", views_admin.kelola_jurnal, name="kelola_jurnal",),
     path("dashboard-admin/jurnal/hapus/<str:id_item>/", views_admin.hapus_jurnal, name="hapus_jurnal",),
+
+    # Kelola anggota, peminjaman, laporan (admin)
+    path("dashboard-admin/anggota/", views_admin.kelola_anggota, name="kelola_anggota"),
+    path("dashboard-admin/peminjaman/", views_admin.peminjaman_admin, name="peminjaman_admin"),
+    path("dashboard-admin/laporan/", views_admin.laporan, name="laporan_peminjaman"),
+    path("dashboard-admin/laporan/unduh/", views_admin.unduh_laporan, name="unduh_laporan"),
 ]

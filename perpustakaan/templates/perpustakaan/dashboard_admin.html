@@ -11,13 +11,18 @@
   .adm-event--jurnal  .adm-event-icon { background: #E0EEFF; color: #173C3A; }
   .adm-event--anggota .adm-event-icon { background: #FCE4EC; color: #C2185B; }
   .adm-event--kembali .adm-event-icon { background: #E4DDFB; color: #4A3AA7; }
+  .adm-stats .stat-card svg.stat-icon {
+    box-sizing: border-box;
+    padding: 10px;
+    border-radius: 50%;
+  }
 </style>
 {% endblock %}
 
 {% block content %}
 <section class="hero-banner adm-hero">
   <h3>Ringkasan hari ini • {{ tanggal_teks }}</h3>
-  <h2>Halo, {{ nama }}</h2>
+  <h2>Semangat untuk hari ini, {{ nama }}</h2>
   <p>
     {% if sedang_dipinjam %}Ada {{ sedang_dipinjam }} buku yang sedang dipinjam anggota.{% else %}Belum ada buku yang sedang dipinjam.{% endif %}
     Lihat ringkasan hari ini yang perlu kamu ketahui.
@@ -29,7 +34,7 @@
 <section class="stats-grid adm-stats" aria-label="Statistik utama">
   <div class="stat-card c-green">
     <h4>Total buku</h4>
-    <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/></svg>
+    <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
     <h2>{{ total_buku }}</h2>
     <p>+ {{ buku_bulan_ini }} bulan ini</p>
   </div>
