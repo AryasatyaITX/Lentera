@@ -9,18 +9,6 @@ function esc(s) {
         ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-// 2. FUNGSI KONFIRMASI PENGEMBALIAN BUKU
-function confirmReturn(event, bookTitle) {
-    event.preventDefault(); // Hentikan aksi klik sementara
-    const url = event.currentTarget.getAttribute('href'); // Ambil link tujuan
-    
-    // Tampilkan Pop Up Konfirmasi bawaan browser
-    if (confirm(`Apakah Anda yakin ingin mengembalikan buku "${bookTitle}"?`)) {
-        window.location.href = url; // Lanjutkan jika pilih OK
-    }
-}
-
-
 // 5. FUNGSI HAPUS BOOKMARK DENGAN AJAX
 async function removeBookmark(element) {
     const bookmarkId = element.dataset.id; // Ambil ID dari atribut data-id
