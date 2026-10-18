@@ -268,7 +268,7 @@ body.auth-body {
    3. HALAMAN DASHBOARD
 ========================================================= */
 .hero-banner {
-    background: linear-gradient(135deg, #1A4D33 0%, #0F3A24 55%, #0A2A19 100%);
+    background-color: #173C3A;
     border-radius: 20px;
     padding: 40px;
     padding-bottom: 100px; /* Ruang ekstra untuk search bar */
@@ -293,11 +293,7 @@ body.auth-body {
 }
 
 .hero-banner h2 span {
-    background: linear-gradient(90deg, #84CC16, #4ADE80);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
+    color: #D4F838;
 }
 
 .hero-banner p {
@@ -375,6 +371,18 @@ body.auth-body {
     padding: 20px;
     border-radius: 16px;
     position: relative;
+}
+
+/* membuat card link */
+a.stat-card {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+a.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, .10);
 }
 
 .stat-card h4 {
@@ -742,6 +750,18 @@ body.auth-body {
     padding: 40px 50px 8px;
 }
 
+/* pencarian */
+.kosong-card {
+    grid-column: 1 / -1;
+    background: #fff; border-radius: 16px; padding: 60px 24px;
+    text-align: center; box-shadow: 0 2px 12px rgba(15,23,42,.06);
+}
+.kosong-card h3 { margin: 14px 0 6px; color: #10182b; }
+.kosong-card p { margin: 0 0 20px; color: #8a94a6; }
+.kosong-btn {
+    background: #D4F838; color: #121824; border: none;
+    padding: 10px 22px; border-radius: 10px; font-weight: 700; cursor: pointer;
+}
 
 /* =========================================================
    5. E-JOURNAL LIST
@@ -880,6 +900,78 @@ body.auth-body {
 /* =========================================================
    6. HALAMAN PEMINJAMAN (Buku Aktif)
 ========================================================= */
+.btn-outline:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Notifikasi (toast) di halaman Peminjaman */
+.toast-stack {
+    position: fixed;
+    top: 20px;
+    right: 24px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.toast-msg {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 300px;
+    max-width: 380px;
+    margin: 0;
+    padding: 14px 16px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.15);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    animation: toast-in 0.3s ease-out;
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+.toast-msg > i {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.toast-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.toast-text strong {
+    font-size: 13px;
+}
+
+.toast-text span {
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.6;
+}
+
+.toast-close:hover {
+    opacity: 1;
+}
+
+.toast-msg.hide {
+    opacity: 0;
+    transform: translateX(24px);
+}
+
+@keyframes toast-in {
+    from { opacity: 0; transform: translateX(24px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
 .hero-banner-small {
     background-color: #173C3A;
     border-radius: 12px;
@@ -996,6 +1088,61 @@ body.auth-body {
 .loan-actions { display: flex; gap: 10px; }
 .btn-outline { background: white; color: #173C3A; border: 1px solid #E5E5D8; padding: 10px 20px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; text-decoration: none; transition: 0.2s; }
 .btn-outline:hover { background: #f0f0f0; border-color: #d0d0c0; }
+
+/* ===== Modal Konfirmasi Kembalikan ===== */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(18, 24, 36, .55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+}
+.modal-overlay[hidden] { display: none; }   /* wajib: biar atribut hidden menang */
+
+.modal-box {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px;
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .25);
+    animation: modal-pop .2s ease;
+}
+@keyframes modal-pop {
+    from { transform: scale(.92); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+}
+.modal-icon {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: #FEE2E2;
+    color: #dc2626;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    margin: 0 auto 14px;
+}
+.modal-box h3 { margin: 0 0 8px; font-size: 18px; color: #10182b; }
+.modal-box p  { margin: 0 0 20px; font-size: 14px; color: #6b7280; line-height: 1.5; }
+.modal-actions { display: flex; gap: 10px; }
+.modal-btn-cancel, .modal-btn-confirm {
+    flex: 1;
+    padding: 11px 16px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 14px;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+}
+.modal-btn-cancel { background: #f1f3f7; color: #374151; }
+.modal-btn-cancel:hover { background: #e5e8ee; }
+.modal-btn-confirm { background: #dc2626; color: #fff; }
+.modal-btn-confirm:hover { background: #b91c1c; color: #fff; }
 
 /* =========================================================
    7. HALAMAN BOOKMARKS
@@ -2292,10 +2439,20 @@ body {
 }
 .streak-left { display: flex; align-items: center; gap: 14px; }
 .streak-fire {
-    width: 44px; height: 44px; border-radius: 12px;
-    background: #FFEDD5;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px; flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #FFF7ED;
+    border: 2px solid #FED7AA;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.streak-fire svg {
+    width: 22px;
+    height: 22px;
+    color: #F97316;
 }
 .streak-title { margin: 0; font-weight: 800; font-size: 15px; color: #1a202c; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .streak-badge { font-size: 10px; font-weight: 800; letter-spacing: .5px; background: #D9F99D; color: #3F6212; padding: 3px 8px; border-radius: 999px; }
@@ -2312,3 +2469,28 @@ body {
     flex-shrink: 0;
 }
 @media (max-width: 700px) { .streak-banner { flex-direction: column; align-items: stretch; } }
+
+/* ===== Header hasil pencarian & empty state ===== */
+.hasil-header {
+    background: #fff; border-radius: 16px; padding: 20px 24px;
+    box-shadow: 0 2px 12px rgba(15,23,42,.06); margin-bottom: 20px;
+}
+.hasil-badge {
+    display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 1px;
+    color: #2563eb; background: #e7f0fe; padding: 5px 12px;
+    border-radius: 999px; margin-bottom: 10px;
+}
+.hasil-header h2 { margin: 0; font-size: 26px; font-weight: 800; color: #10182b; }
+.hasil-header p { margin: 6px 0 0; font-size: 14px; color: #8a94a6; }
+
+.kosong-card {
+    grid-column: 1 / -1;   /* span penuh 1 baris grid */
+    background: #fff; border-radius: 16px; padding: 60px 24px;
+    text-align: center; box-shadow: 0 2px 12px rgba(15,23,42,.06);
+}
+.kosong-card h3 { margin: 14px 0 6px; color: #10182b; }
+.kosong-card p { margin: 0 0 20px; color: #8a94a6; line-height: 1.5; }
+.kosong-btn {
+    background: #D4F838; color: #121824; border: none;
+    padding: 10px 22px; border-radius: 10px; font-weight: 700; cursor: pointer;
+}
