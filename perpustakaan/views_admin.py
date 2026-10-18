@@ -369,7 +369,7 @@ def peminjaman_admin(request):
         p.is_telat = (not p.is_kembali) and tgl < hari_ini
 
     return render(
-        request, "perpustakaan/admin_peminjaman.html", {"peminjaman": daftar}
+        request, "perpustakaan/peminjaman_admin.html", {"peminjaman": daftar}
     )
 
 
@@ -426,7 +426,7 @@ def laporan(request):
         "volume_kembali": grafik["kembali"],
         "kategori_list": kategori_list,
     }
-    return render(request, "perpustakaan/laporan.html", context)
+    return render(request, "perpustakaan/laporan_peminjaman.html", context)
 
 
 @user_passes_test(_boleh_admin, login_url="login")
