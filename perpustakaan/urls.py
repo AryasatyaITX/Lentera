@@ -36,7 +36,7 @@ urlpatterns = [
 
     # Kelola anggota, peminjaman, laporan (admin)
     path("dashboard-admin/anggota/", views_admin.kelola_anggota, name="kelola_anggota"),
-    path("dashboard-admin/peminjaman/", views_admin.peminjaman_admin, name="peminjaman"),
-    path("dashboard-admin/laporan/", views_admin.laporan, name="laporan"),
+    path("dashboard-admin/peminjaman/", views_admin.peminjaman_admin, name="peminjaman_admin"),
+    path("dashboard-admin/laporan/", views_admin.laporan, name="laporan_peminjaman"),
     path("dashboard-admin/laporan/unduh/", views_admin.unduh_laporan, name="unduh_laporan"),
 ]

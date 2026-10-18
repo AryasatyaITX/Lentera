@@ -18,7 +18,7 @@
            Kalau file belum ada, otomatis tampil gradasi hijau tua.
         ===================================================== */
         :root {
-            --forest-img: url('{% static "perpustakaan/img/tera.jpg" %}');
+            --forest-img: url('{% static "perpustakaan/img/tra.jpg" %}');
             --hijau-tua: #173C3A;
             --lime: #D4F838;
         }
@@ -463,6 +463,56 @@
             .quote-kicker { display: none; }
             .deco-circle { display: none; }
         }
+
+        /* ===== Petunjuk password, OTP, dan tombol tambahan ===== */
+        .pw-rules {
+            margin: -6px 0 18px;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            border-radius: 10px;
+            -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
+        }
+        .pw-rules-title {
+            display: flex; align-items: center; gap: 8px;
+            color: #ffffff; font-size: 12px; font-weight: 800; margin-bottom: 10px;
+        }
+        .pw-rules-title i { color: var(--lime); }
+        .pw-rules ul { list-style: none; display: grid; gap: 7px; }
+        .pw-rules li {
+            display: flex; align-items: center; gap: 9px;
+            color: rgba(255, 255, 255, 0.72); font-size: 12px; font-weight: 500;
+            transition: color 0.2s;
+        }
+        .pw-rules li::before {
+            content: ""; width: 10px; height: 10px; flex: none; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.35); transition: background 0.2s, box-shadow 0.2s;
+        }
+        .pw-rules li.ok { color: var(--lime); }
+        .pw-rules li.ok::before { background: var(--lime); box-shadow: 0 0 0 3px rgba(212, 248, 56, 0.2); }
+
+        .input-group input.otp-input {
+            text-align: center; letter-spacing: 0.6em; font-size: 22px; font-weight: 700;
+            padding-left: 0.6em;
+        }
+        .reset-desc {
+            color: rgba(255, 255, 255, 0.82); font-size: 13px; line-height: 1.6; margin: -12px 0 22px;
+        }
+        .reset-desc b { color: #ffffff; }
+        .link-btn {
+            background: none; border: none; padding: 0; cursor: pointer;
+            color: var(--lime); font-size: 13px; font-weight: 700; font-family: inherit;
+        }
+        .link-btn:hover { text-decoration: underline; }
+        .link-btn:disabled { color: rgba(255, 255, 255, 0.5); cursor: not-allowed; text-decoration: none; }
+        .reset-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; }
+        .reset-actions form { margin: 0; }
+        .alert-error-box {
+            display: flex; align-items: center; gap: 8px; color: #ff8a8a; font-size: 13px; font-weight: 600;
+            margin-bottom: 18px; padding: 10px 14px; background: rgba(255, 107, 107, 0.12);
+            border: 1px solid rgba(255, 107, 107, 0.4); border-radius: 8px; animation: fadeIn 0.3s ease-in-out;
+        }
     </style>
 </head>
 
@@ -544,9 +594,9 @@
                     {% csrf_token %}
 
                     <div class="input-group">
-                        <label for="regUsername">Username / NIM</label>
+                        <label for="regUsername">NIM</label>
                         <input type="text" id="regUsername" name="username"
-                               placeholder="Masukkan username atau NIM"
+                               placeholder="Masukkan NIM" maxlength="18"
                                value="{{ request.POST.username|default:'' }}" required autofocus autocomplete="username">
                     </div>
 
@@ -561,17 +611,26 @@
                         <label for="regPassword">Password</label>
                         <div class="password-wrapper">
                             <input type="password" id="regPassword" name="password"
-                                   placeholder="Buat password" required autocomplete="new-password">
+                                   placeholder="Buat password" minlength="8" maxlength="20" required autocomplete="new-password">
                             <i class="fa-regular fa-eye toggle-password" onclick="togglePass('regPassword', this)"></i>
                         </div>
                     </div>
+
+                    <div class="pw-rules">
+                            <div class="pw-rules-title"><i class="fa-solid fa-shield-halved"></i> Syarat Keamanan Password:</div>
+                            <ul id="regPwRules">
+                                <li data-rule="len">8 - 20 Karakter</li>
+                                <li data-rule="special">Min. 1 Karakter Unik</li>
+                                <li data-rule="upper">Min. 1 Huruf Besar</li>
+                            </ul>
+                        </div>
 
                     <div class="input-group">
                         <label for="regConfirm">Konfirmasi Password</label>
                         <div class="password-wrapper">
                             <input type="password" id="regConfirm" name="confirm_password"
                                    class="{% for message in messages %}{% if message.tags != 'success' %}is-invalid {% endif %}{% endfor %}"
-                                   placeholder="Ulangi password" required autocomplete="new-password">
+                                   placeholder="Ulangi password" minlength="8" maxlength="20" required autocomplete="new-password">
                             <i class="fa-regular fa-eye toggle-password" onclick="togglePass('regConfirm', this)"></i>
                         </div>
 
@@ -610,6 +669,26 @@
             var slides = document.querySelectorAll('.slide-item');
             var quotes = document.querySelectorAll('.quote-content');
             var dots = document.querySelectorAll('.dot');
+
+            /* PETUNJUK PASSWORD (centang otomatis saat mengetik) */
+            window.initPwRules = function (inputId, listId) {
+                var input = document.getElementById(inputId);
+                var items = document.querySelectorAll('#' + listId + ' li');
+                if (!input || !items.length) return;
+                function cek() {
+                    var v = input.value;
+                    var ok = {
+                        len: v.length >= 8 && v.length <= 20,
+                        upper: /[A-Z]/.test(v),
+                        special: /[^A-Za-z0-9]/.test(v)
+                    };
+                    items.forEach(function (li) { li.classList.toggle('ok', !!ok[li.dataset.rule]); });
+                }
+                input.addEventListener('input', cek);
+                cek();
+            };
+
+            initPwRules('regPassword', 'regPwRules');
 
             window.setSlide = function (i) {
                 slides[currentSlide].classList.remove('active');
