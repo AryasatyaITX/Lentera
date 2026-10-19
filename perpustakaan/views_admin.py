@@ -331,11 +331,58 @@ def _pinjaman_per_user():
     return {r[_USER_FIELD]: r["n"] for r in rows}
 
 
+def _cek_password(pw):
+    """Kembalikan pesan error bila password tidak memenuhi syarat, else None."""
+    import re
+    if not (8 <= len(pw) <= 20):
+        return "Password harus 8 - 20 karakter."
+    if not re.search(r"[^A-Za-z0-9\s]", pw):
+        return "Password harus memuat minimal 1 karakter unik (mis. ! @ # $)."
+    if not re.search(r"[A-Z]", pw):
+        return "Password harus memuat minimal 1 huruf besar."
+    return None
+
+
+def _queryset_anggota():
+    """Hanya user biasa. Akun admin tidak ditampilkan / tidak bisa diubah di sini."""
+    return (
+        CustomUser.objects.filter(is_member=True)
+        .exclude(is_admin=True)
+        .exclude(is_staff=True)
+        .exclude(is_superuser=True)
+    )
+
+
 @user_passes_test(_boleh_admin, login_url="login")
 def kelola_anggota(request):
-    anggota = list(
-        CustomUser.objects.filter(is_member=True).order_by("-date_joined")
-    )
+    # CREATE
+    if request.method == "POST":
+        username = request.POST.get("username", "").strip()
+        nama = request.POST.get("nama_tampilan", "").strip()
+        email = request.POST.get("email", "").strip()
+        password = request.POST.get("password", "")
+
+        if not username:
+            messages.error(request, "Username wajib diisi.")
+        elif _cek_password(password):
+            messages.error(request, _cek_password(password))
+        elif CustomUser.objects.filter(username__iexact=username).exists():
+            messages.error(request, f"Username \u201c{username}\u201d sudah dipakai.")
+        else:
+            user = CustomUser(
+                username=username,
+                nama_tampilan=nama,
+                email=email,
+                is_member=True,
+                is_active=True,
+            )
+            user.set_password(password)
+            user.save()
+            messages.success(request, f"Anggota \u201c{nama or username}\u201d berhasil ditambahkan.")
+        return redirect("kelola_anggota")
+
+    # READ
+    anggota = list(_queryset_anggota().order_by("-date_joined"))
     jumlah = _pinjaman_per_user()
     for a in anggota:
         a.jumlah_pinjaman = jumlah.get(a.pk, 0)
@@ -343,6 +390,62 @@ def kelola_anggota(request):
     return render(
         request, "perpustakaan/kelola_anggota.html", {"anggota": anggota}
     )
+
+
+@user_passes_test(_boleh_admin, login_url="login")
+def edit_anggota(request, pk):
+    """UPDATE data anggota."""
+    user = get_object_or_404(_queryset_anggota(), pk=pk)
+    if request.method == "POST":
+        username = request.POST.get("username", "").strip()
+        nama = request.POST.get("nama_tampilan", "").strip()
+        email = request.POST.get("email", "").strip()
+        password = request.POST.get("password", "")
+        aktif = request.POST.get("is_active", "1") == "1"
+
+        if not username:
+            messages.error(request, "Username tidak boleh kosong.")
+        elif CustomUser.objects.filter(username__iexact=username).exclude(pk=user.pk).exists():
+            messages.error(request, f"Username \u201c{username}\u201d sudah dipakai.")
+        elif password and _cek_password(password):
+            messages.error(request, _cek_password(password))
+        else:
+            user.username = username
+            user.nama_tampilan = nama
+            user.email = email
+            user.is_active = aktif
+            if password:
+                user.set_password(password)
+            user.save()
+            messages.success(request, "Data anggota berhasil diperbarui.")
+    return redirect("kelola_anggota")
+
+
+@user_passes_test(_boleh_admin, login_url="login")
+def hapus_anggota(request, pk):
+    """DELETE = nonaktifkan akun. Akun pindah ke tab Nonaktif, riwayat pinjam tetap ada."""
+    if request.method == "POST":
+        user = get_object_or_404(_queryset_anggota(), pk=pk)
+        user.is_active = False
+        user.save(update_fields=["is_active"])
+        messages.success(
+            request,
+            f"Akun \u201c{user.nama_tampilan or user.username}\u201d dinonaktifkan.",
+        )
+    return redirect("kelola_anggota")
+
+
+@user_passes_test(_boleh_admin, login_url="login")
+def aktifkan_anggota(request, pk):
+    if request.method == "POST":
+        user = get_object_or_404(_queryset_anggota(), pk=pk)
+        user.is_active = True
+        user.save(update_fields=["is_active"])
+        messages.success(
+            request,
+            f"Akun \u201c{user.nama_tampilan or user.username}\u201d diaktifkan kembali.",
+        )
+    return redirect("kelola_anggota")
 
 
 # ==========================================

@@ -6,24 +6,152 @@
 {% block page_subtitle %}Kelola alur buku keluar dan kembali{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'perpustakaan/css/admin.css' %}">
+<link rel="stylesheet" href="{% static 'perpustakaan/css/admin.css' %}?v=5">
+<style>
+/* Dimuat langsung di halaman ini, jadi tidak bergantung pada versi admin.css. */
+
+/* Scrollbar selalu ada: foto profil di atas tidak geser saat pindah tab. */
+.app-layout .main-content.adm-main { overflow-y: scroll; scrollbar-gutter: stable; }
+
+/* Pencarian putih, panjangnya sama dengan Kelola Anggota */
+.ap-search--white { width: 520px; max-width: 100%; }
+.ap-search--white input { background: #fff; }
+
+.ap-card--tall { min-height: 420px; }
+
+/* Panel filter */
+.ap-filter-panel--wide {
+    display: block;
+    width: 100%;
+    max-width: 880px;
+    margin: -14px 0 26px;
+    padding: 20px 24px;
+    background: #fff;
+    border: 1px solid var(--ap-line);
+    border-radius: 12px;
+}
+.ap-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+}
+.ap-filter-field label.ap-filter-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #4A4A3F;
+}
+.ap-filter-field select,
+.ap-filter-field input[type="date"] {
+    width: 100%;
+    height: 42px;
+    padding: 0 12px;
+    background: #fff;
+    border: 1px solid var(--ap-line);
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--ap-navy);
+    outline: none;
+}
+.ap-filter-field select:focus,
+.ap-filter-field input[type="date"]:focus { border-color: var(--ap-green); }
+
+.ap-filter-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid #f1f1e8;
+    flex-wrap: wrap;
+}
+.ap-check { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #4A4A3F; cursor: pointer; }
+.ap-check input { width: 16px; height: 16px; accent-color: var(--ap-green); }
+
+.ap-btn-reset {
+    height: 38px;
+    padding: 0 18px;
+    background: transparent;
+    border: 1px solid var(--ap-line);
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #6A6A5C;
+    cursor: pointer;
+}
+.ap-btn-reset:hover { background: #f5f5ee; }
+
+.ap-filter-badge {
+    display: none;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: var(--ap-green);
+    color: var(--ap-lime);
+    font-size: 11px;
+    font-weight: 800;
+}
+.ap-filter-badge.show { display: inline-flex; }
+
+@media (max-width: 900px) {
+    .ap-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .ap-search--white { width: 100%; }
+}
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="ap">
 
   <div class="ap-toolbar">
-    <div class="ap-search">
+    <div class="ap-search ap-search--white">
       <i class="fa-solid fa-magnifying-glass"></i>
-      <input type="text" id="ap-search" placeholder="Cari judul atau penulis...">
+      <input type="text" id="ap-search" placeholder="Cari judul, penulis, atau nama anggota...">
     </div>
     <button type="button" class="ap-filter-btn" id="ap-filter-btn" aria-expanded="false">
       <i class="fa-solid fa-sliders"></i> Filter
+      <span class="ap-filter-badge" id="ap-filter-badge">0</span>
     </button>
   </div>
 
-  <div class="ap-filter-panel" id="ap-filter-panel" hidden>
-    <label><input type="checkbox" id="ap-telat-only"> Tampilkan hanya yang terlambat</label>
+  <div class="ap-filter-panel--wide" id="ap-filter-panel" hidden>
+    <div class="ap-filter-grid">
+      <div class="ap-filter-field">
+        <label class="ap-filter-label" for="f-jenis">Jenis</label>
+        <select id="f-jenis">
+          <option value="">Semua</option>
+          <option value="buku">Buku</option>
+          <option value="jurnal">Jurnal</option>
+        </select>
+      </div>
+      <div class="ap-filter-field">
+        <label class="ap-filter-label" for="f-dari">Dipinjam dari</label>
+        <input type="date" id="f-dari">
+      </div>
+      <div class="ap-filter-field">
+        <label class="ap-filter-label" for="f-sampai">Sampai</label>
+        <input type="date" id="f-sampai">
+      </div>
+      <div class="ap-filter-field">
+        <label class="ap-filter-label" for="f-urut">Urutkan</label>
+        <select id="f-urut">
+          <option value="baru">Terbaru</option>
+          <option value="lama">Terlama</option>
+          <option value="judul">Judul A–Z</option>
+          <option value="anggota">Nama anggota A–Z</option>
+        </select>
+      </div>
+    </div>
+    <div class="ap-filter-foot">
+      <label class="ap-check"><input type="checkbox" id="ap-telat-only"> Tampilkan hanya yang terlambat</label>
+      <button type="button" class="ap-btn-reset" id="ap-reset">Atur ulang filter</button>
+    </div>
   </div>
 
   <div class="ap-tabs" id="ap-tabs">
@@ -31,7 +159,7 @@
     <button type="button" class="ap-tab" data-filter="kembali">Sudah dikembalikan</button>
   </div>
 
-  <div class="ap-card">
+  <div class="ap-card ap-card--tall">
     <div class="ap-card-head">
       <h3 id="ap-title">Pinjaman Aktif</h3>
       <span id="ap-count">{{ peminjaman|length }} transaksi</span>
@@ -47,9 +175,16 @@
           <th>Status</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id="ap-body">
         {% for p in peminjaman %}
-        <tr data-row data-status="{% if p.is_kembali %}kembali{% else %}dipinjam{% endif %}" data-telat="{% if p.is_telat %}1{% else %}0{% endif %}">
+        <tr data-row
+            data-status="{% if p.is_kembali %}kembali{% else %}dipinjam{% endif %}"
+            data-telat="{% if p.is_telat %}1{% else %}0{% endif %}"
+            data-jenis="{% if p.buku_digital %}buku{% else %}jurnal{% endif %}"
+            data-tgl="{{ p.tanggal_pinjam|date:'Y-m-d' }}"
+            data-ts="{{ p.tanggal_pinjam|date:'U' }}"
+            data-judul="{{ p.item.judul|default:''|lower }}"
+            data-anggota="{{ p.pengguna.nama_tampilan|default:p.pengguna.username|lower }}">
           <td>
             <div class="ap-item">
               <img src="{{ p.item.cover|default:'https://placehold.co/112x156?text=Cover' }}" alt="">
@@ -59,7 +194,7 @@
               </div>
             </div>
           </td>
-          <td>{{ p.user.nama_tampilan|default:p.user.username }}</td>
+          <td>{{ p.pengguna.nama_tampilan|default:p.pengguna.username }}</td>
           <td>{{ p.tanggal_pinjam|date:"d F Y" }}</td>
           <td>{{ p.jatuh_tempo_tampil|date:"d F Y" }}</td>
           <td>
@@ -82,6 +217,7 @@
 {% block extra_js %}
 <script>
 (function () {
+  var body = document.getElementById('ap-body');
   var rows = Array.prototype.slice.call(document.querySelectorAll('[data-row]'));
   var input = document.getElementById('ap-search');
   var tabs = Array.prototype.slice.call(document.querySelectorAll('.ap-tab'));
@@ -90,28 +226,72 @@
   var title = document.getElementById('ap-title');
   var filterBtn = document.getElementById('ap-filter-btn');
   var filterPanel = document.getElementById('ap-filter-panel');
+  var badge = document.getElementById('ap-filter-badge');
   var telatOnly = document.getElementById('ap-telat-only');
+  var fJenis = document.getElementById('f-jenis');
+  var fDari = document.getElementById('f-dari');
+  var fSampai = document.getElementById('f-sampai');
+  var fUrut = document.getElementById('f-urut');
   var current = 'dipinjam';
 
   var judul = { dipinjam: 'Pinjaman Aktif', kembali: 'Riwayat Pengembalian' };
 
+  function urutkan() {
+    var mode = fUrut.value;
+    var sorted = rows.slice().sort(function (a, b) {
+      if (mode === 'lama')    return a.dataset.ts - b.dataset.ts;
+      if (mode === 'judul')   return a.dataset.judul.localeCompare(b.dataset.judul);
+      if (mode === 'anggota') return a.dataset.anggota.localeCompare(b.dataset.anggota);
+      return b.dataset.ts - a.dataset.ts;
+    });
+    sorted.forEach(function (r) { body.insertBefore(r, empty); });
+  }
+
+  function hitungAktif() {
+    var n = 0;
+    if (telatOnly.checked) n++;
+    if (fJenis.value) n++;
+    if (fDari.value) n++;
+    if (fSampai.value) n++;
+    if (fUrut.value !== 'baru') n++;
+    badge.textContent = n;
+    badge.classList.toggle('show', n > 0);
+  }
+
   function apply() {
     var q = input.value.trim().toLowerCase();
     var shown = 0;
+    urutkan();
     rows.forEach(function (r) {
-      var okTab = r.getAttribute('data-status') === current;
+      var d = r.dataset;
+      var okTab = d.status === current;
       var okText = r.textContent.toLowerCase().indexOf(q) !== -1;
-      var okTelat = !telatOnly.checked || r.getAttribute('data-telat') === '1';
-      r.hidden = !(okTab && okText && okTelat);
+      var okTelat = !telatOnly.checked || d.telat === '1';
+      var okJenis = !fJenis.value || d.jenis === fJenis.value;
+      var okDari = !fDari.value || d.tgl >= fDari.value;
+      var okSampai = !fSampai.value || d.tgl <= fSampai.value;
+      r.hidden = !(okTab && okText && okTelat && okJenis && okDari && okSampai);
       if (!r.hidden) shown++;
     });
     empty.hidden = shown > 0;
     count.textContent = shown + ' transaksi';
     title.textContent = judul[current];
+    hitungAktif();
   }
 
   input.addEventListener('input', apply);
-  telatOnly.addEventListener('change', apply);
+  [telatOnly, fJenis, fDari, fSampai, fUrut].forEach(function (el) {
+    el.addEventListener('change', apply);
+  });
+
+  document.getElementById('ap-reset').addEventListener('click', function () {
+    telatOnly.checked = false;
+    fJenis.value = '';
+    fDari.value = '';
+    fSampai.value = '';
+    fUrut.value = 'baru';
+    apply();
+  });
 
   filterBtn.addEventListener('click', function () {
     var open = filterPanel.hidden;
