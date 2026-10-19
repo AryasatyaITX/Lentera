@@ -427,7 +427,15 @@
   var tabs = Array.prototype.slice.call(document.querySelectorAll('.ap-tab'));
   var empty = document.getElementById('ap-empty');
   var count = document.getElementById('ap-count');
+  var KEY = 'lentera-anggota-tab';
   var current = 'semua';
+  try {
+    var saved = sessionStorage.getItem(KEY);
+    if (saved === 'aktif' || saved === 'nonaktif' || saved === 'semua') current = saved;
+  } catch (e) {}
+  tabs.forEach(function (x) {
+    x.classList.toggle('active', x.getAttribute('data-filter') === current);
+  });
 
   function apply() {
     var q = input.value.trim().toLowerCase();
@@ -448,6 +456,7 @@
       tabs.forEach(function (x) { x.classList.remove('active'); });
       t.classList.add('active');
       current = t.getAttribute('data-filter');
+      try { sessionStorage.setItem(KEY, current); } catch (e) {}
       apply();
     });
   });
