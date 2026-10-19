@@ -750,27 +750,6 @@
         `);
     }
 
-    // ---------- Dashboard: rekomendasi + pencarian ----------
-    const dash = document.getElementById('book-grid-container');
-    if (dash) {
-        olSearch('subject:"engineering"', 1, 4, 'rating').then(r => {
-            r.books.forEach(b => bookCache.set(b.olid, b));
-            dash.innerHTML = r.books.length
-                ? r.books.map(b => cardHtml(b, false)).join('')
-                : '<p>Buku tidak ditemukan.</p>';
-        }).catch(() => {
-            dash.innerHTML = '<p>Gagal memuat rekomendasi dari Open Library. Muat ulang halaman ini nanti.</p>';
-        });
-        const heroSearch = document.getElementById('hero-search');
-        if (heroSearch) {
-            heroSearch.addEventListener('keydown', (e) => {
-                if (e.key !== 'Enter') return;
-                const q = heroSearch.value.trim();
-                if (q) window.location.href = '/katalog/?q=' + encodeURIComponent(q);
-            });
-        }
-    }
-
     // ---------- Halaman katalog ----------
     const grid = document.getElementById('katalog-grid');
     if (!grid) return;
