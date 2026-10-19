@@ -763,6 +763,37 @@ a.stat-card:hover {
     padding: 10px 22px; border-radius: 10px; font-weight: 700; cursor: pointer;
 }
 
+/* ===== Header hasil pencarian ===== */
+.hasil-header {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px 24px;
+    box-shadow: 0 2px 12px rgba(15,23,42,.06);
+    margin-bottom: 20px;
+}
+.hasil-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: #2563eb;
+    background: #e7f0fe;
+    padding: 5px 12px;
+    border-radius: 999px;
+    margin-bottom: 10px;
+}
+.hasil-header h2 {
+    margin: 0;
+    font-size: 26px;
+    font-weight: 800;
+    color: #10182b;
+}
+.hasil-header p {
+    margin: 6px 0 0;
+    font-size: 14px;
+    color: #8a94a6;
+}
+
 /* =========================================================
    5. E-JOURNAL LIST
 ========================================================= */
@@ -2376,7 +2407,7 @@ body {
 .cc-info { flex: 1; min-width: 0; }
 .cc-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
 .cc-chip { font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 8px; }
-.cc-chip-kat { background: #d7f3ec; color: #0d9488; }
+.cc-chip-kat { background: #e7f0fe; color: #2563eb; }
 .cc-chip-waktu { background: #fde8e8; color: #e02424; }
 
 .cc-info h3 { font-size: 17px; font-weight: 700; line-height: 1.35; margin: 0; }
@@ -2469,3 +2500,40 @@ body {
     flex-shrink: 0;
 }
 @media (max-width: 700px) { .streak-banner { flex-direction: column; align-items: stretch; } }
+
+/* ===== Card rekomendasi + badge genre ===== */
+.book-cover-wrap { position: relative; }
+.book-cover-wrap .book-cover { display: block; width: 100%; }
+
+.book-cover-empty {
+    height: 210px;
+    display: flex; align-items: center; justify-content: center;
+    background: #0f172a; color: #94a3b8;
+    font-size: 12px; font-weight: 600;
+    border-radius: 12px 12px 0 0;
+}
+
+.genre-chip {
+    position: absolute;
+    top: 10px; left: 10px;
+    background: #e7f0fe;
+    color: #2563eb;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 999px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.25);
+}
+
+/* Grid katalog: 5 per baris di desktop, menyesuaikan di layar kecil */
+.grid-buku-5 {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
+}
+@media (max-width: 1200px) { .grid-buku-5 { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 900px)  { .grid-buku-5 { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 640px)  { .grid-buku-5 { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 420px)  { .grid-buku-5 { grid-template-columns: 1fr; } }
