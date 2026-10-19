@@ -4,11 +4,6 @@
 (function () {
     'use strict';
 
-    const OL = 'https://openlibrary.org';
-    const FIELDS = 'key,title,author_name,first_publish_year,cover_i,ia,ratings_average,want_to_read_count,ebook_access';
-    const NO_COVER = 'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=300';
-    const PDFJS_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
     // CSS pembaca PDF disuntikkan oleh JS sendiri, jadi tidak bergantung pada baca.html.
     const PV_CSS = `
 .reader-stage.pdf-mode{display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;background:#F3F4EE!important;overflow:hidden!important;min-height:0}
