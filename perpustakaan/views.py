@@ -1,44 +1,24 @@
-from datetime import timedelta
+from datetime import timedelta, date
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.utils.timesince import timesince
 import requests
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, logout, authenticate
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth import login, logout, authenticate, get_user_model, update_session_auth_hash
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.http import JsonResponse, Http404
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import ensure_csrf_cookie
-from .models import CustomUser, BukuDigital, Jurnal, Peminjaman, Bookmark, Pengaturan
-from django.contrib.auth import update_session_auth_hash
-from django.db.models import Count
-from datetime import date, timedelta
+from .models import CustomUser, BukuDigital, Jurnal, Peminjaman, Bookmark, Pengaturan, Achievement, UserAchievement
+from django.db.models import Count, Q
 import json
 import os
 import random
 import re
 import time
 from urllib.parse import urlparse
-
-import requests
 from django.conf import settings
-from django.contrib import messages
-from django.contrib.auth import (
-    authenticate,
-    get_user_model,
-    login,
-    logout,
-    update_session_auth_hash,
-)
-from django.utils import timezone
-from django.contrib.auth.decorators import login_required
-from django.http import Http404, JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.http import require_POST
-
-from .models import Bookmark, BukuDigital, CustomUser, Jurnal, Peminjaman
 
 MASA_PINJAM_HARI = 14
 RING_DETIK_PENUH = 120   # 2 menit membaca aktif
@@ -48,7 +28,6 @@ PAGINATION_PAGE_SIZE = 10
 ITEM_ID_RE = re.compile(r'^[\w-]+$')
 COVER_PREFIX = 'https://covers.openlibrary.org/'
 
-# (nilai subject di Open Library, label yang tampil)
 KATEGORI = [
     ("engineering", "Engineering"),
     ("computer science", "Computer Science"),
@@ -62,16 +41,19 @@ DEFAULT_KATEGORI = "engineering"
 BAHASA = [("", "Semua bahasa"), ("ind", "Indonesia"), ("eng", "Inggris")]
 
 
+def is_admin(user):
+    return user.is_authenticated and (user.is_admin or user.is_staff)
+
+
 def login_view(request):
     if request.user.is_authenticated:
-        if request.user.is_staff or request.user.is_admin:
+        if is_admin(request.user):
             return redirect("dashboard_admin")
         return redirect("dashboard")
 
     if request.method == "POST":
         action = request.POST.get("action")
 
-        # LOGIKA 1: RESET PASSWORD MANDIRI
         if action == "reset_password":
             username_input = request.POST.get("username")
             email_input = request.POST.get("email")
@@ -81,34 +63,28 @@ def login_view(request):
             if new_password != confirm_password:
                 messages.error(request, "Konfirmasi password baru tidak cocok!")
             else:
-                peringkat = CustomUser.objects.filter(is_member=True, exp__gt=user.exp).count() + 1
+                user = CustomUser.objects.filter(username=username_input, email=email_input).first()
                 if user:
                     user.set_password(new_password)
                     user.save()
                     messages.success(request, "Password berhasil diubah! Silakan login dengan password baru.")
                 else:
                     messages.error(request, "Username/NIM atau Email terdaftar tidak ditemukan!")
-
-        # LOGIKA 2: LOGIN biasa
         else:
             username_input = request.POST.get("username")
             password_input = request.POST.get("password")
             remember_me = request.POST.get("remember_me")
 
-            user = authenticate(
-                request, username=username_input, password=password_input
-            )
+            user = authenticate(request, username=username_input, password=password_input)
 
             if user is not None:
                 login(request, user)
-
-                # Fitur Remember Me
                 if not remember_me:
                     request.session.set_expiry(0)
                 else:
-                    request.session.set_expiry(1209600)  # 2 Minggu
+                    request.session.set_expiry(1209600)
 
-                if user.is_staff or user.is_admin:
+                if is_admin(user):
                     return redirect("dashboard_admin")
                 return redirect("dashboard")
             else:
@@ -173,7 +149,6 @@ def dashboard(request):
     )
 
     def teks_terakhir(dttm):
-        """Versi Indonesia (timesince bawaan masih English)."""
         if not dttm:
             return ""
         menit = int((timezone.now() - dttm).total_seconds() // 60)
@@ -190,7 +165,6 @@ def dashboard(request):
         p = peminjaman_terakhir
         buku = p.buku_digital
 
-        # Data lama yang belum punya tanggal_kembali -> isi otomatis, agar tidak "None"
         if not p.tanggal_kembali:
             p.tanggal_kembali = timezone.now() + timedelta(days=MASA_PINJAM_HARI)
             p.save(update_fields=["tanggal_kembali"])
@@ -207,8 +181,7 @@ def dashboard(request):
             "terakhir_teks": teks_terakhir(p.tanggal_pinjam),
         }
 
-    TARGET_HARIAN_DETIK = 1800   # 30 menit/hari
-
+    TARGET_HARIAN_DETIK = 1800
     detik_hari_ini = user.detik_baca_hari_ini if user.tanggal_baca_harian == timezone.localdate() else 0
     menit_hari_ini = detik_hari_ini // 60
     target_menit = TARGET_HARIAN_DETIK // 60
@@ -228,65 +201,42 @@ def dashboard(request):
     }
     return render(request, "perpustakaan/dashboard.html", context)
 
+
 @login_required(login_url="login")
 @ensure_csrf_cookie
 def katalog_view(request):
-    kategori_pilihan = request.GET.get("kategori", DEFAULT_KATEGORI)
-    buku_admin_all = BukuDigital.objects.all()
+    kategori_pilihan = request.GET.get("kategori", "").strip()
+    search_query = request.GET.get("q", "").strip()
+    
+    buku_queryset = BukuDigital.objects.all().distinct()
 
-    # Buku Harian (Beda-beda tiap hari menggunakan seed tanggal)
-    today_seed = int(date.today().strftime("%Y%m%d"))
-    buku_list = list(buku_admin_all)
-    random.seed(today_seed)
-    random.shuffle(buku_list)
-    buku_harian = buku_list[:6]
+    aktif_kategori = kategori_pilihan
+    if search_query and (not kategori_pilihan or kategori_pilihan.lower() == "semua"):
+        for nilai_kat, label_kat in KATEGORI:
+            if search_query.lower() in nilai_kat.lower() or search_query.lower() in label_kat.lower():
+                aktif_kategori = nilai_kat
+                break
 
-    # Ambil Buku Rilis Terbaru dari Google Books API
-    buku_rilis_terbaru = []
-    try:
-        google_api_key = getattr(settings, "GOOGLE_BOOKS_API_KEY", "")
-        url = f"https://www.googleapis.com/books/v1/volumes?q=subject:{kategori_pilihan}&orderBy=newest&maxResults=8"
-        if google_api_key:
-            url += f"&key={google_api_key}"
+    if aktif_kategori and aktif_kategori.lower() != "semua":
+        buku_queryset = buku_queryset.filter(
+            Q(kategori__icontains=aktif_kategori) |
+            Q(kategori__iexact=aktif_kategori)
+        )
 
-        response = requests.get(url, timeout=5)
-        if response.status_code == 200:
-            data = response.json()
-            for item in data.get("items", []):
-                volume_info = item.get("volumeInfo", {})
-                image_links = volume_info.get("imageLinks", {})
-                buku_rilis_terbaru.append(
-                    {
-                        "id": item.get("id"),
-                        "judul": volume_info.get("title", "Tanpa Judul"),
-                        "penulis": ", ".join(
-                            volume_info.get("authors", ["Unknown"])
-                        ),
-                        "tahun_terbit": volume_info.get("publishedDate", "")[
-                            :4
-                        ],
-                        "cover": image_links.get("thumbnail", "").replace(
-                            "http://", "https://"
-                        ),
-                        "deskripsi": volume_info.get(
-                            "description", "Tidak ada deskripsi."
-                        ),
-                        "link_baca": volume_info.get(
-                            "previewLink", "https://books.google.com"
-                        ),
-                    }
-                )
-    except Exception:
-        buku_rilis_terbaru = []
+    if search_query:
+        buku_queryset = buku_queryset.filter(
+            Q(judul__icontains=search_query) |
+            Q(penulis__icontains=search_query) |
+            Q(kategori__icontains=search_query) |
+            Q(deskripsi__icontains=search_query)
+        ).distinct()
 
     context = {
         "user": request.user,
         "kategori_list": KATEGORI,
         "bahasa_list": BAHASA,
-        "default_kategori": kategori_pilihan,
-        "buku_harian": buku_harian,
-        "buku_admin": buku_admin_all,
-        "buku_rilis_terbaru": buku_rilis_terbaru,
+        "default_kategori": aktif_kategori if aktif_kategori else "semua",
+        "search_query": search_query,
         "tersimpan_ids": list(
             Bookmark.objects.filter(
                 user=request.user, buku_digital__isnull=False
@@ -306,9 +256,9 @@ def katalog_view(request):
                 'ia_semua': [],
                 'akses': '',
                 'deskripsi': buku.deskripsi,
-                'subjek': [],
+                'subjek': [buku.kategori] if buku.kategori else [],
             }
-            for buku in BukuDigital.objects.order_by('judul')
+            for buku in buku_queryset.order_by('judul')
         ],
     }
     return render(request, "perpustakaan/katalog.html", context)
@@ -334,17 +284,11 @@ def _pastikan_buku(request, olid):
 
     cover = _bersih(d.get("cover"), 200)
     ia = _bersih(d.get("ia"), 100)
-    tahun = "".join(ch for ch in _bersih(d.get("tahun"), 10) if ch.isdigit())[
-        :4
-    ]
+    tahun = "".join(ch for ch in _bersih(d.get("tahun"), 10) if ch.isdigit())[:4]
 
     link_baca = _bersih(d.get("link_baca"), 500)
     if not link_baca:
-        link_baca = (
-            f"https://archive.org/details/{ia}"
-            if ia
-            else f"https://openlibrary.org/works/{olid}"
-        )
+        link_baca = f"https://archive.org/details/{ia}" if ia else f"https://openlibrary.org/works/{olid}"
 
     return BukuDigital.objects.create(
         id_item=olid,
@@ -357,7 +301,6 @@ def _pastikan_buku(request, olid):
         link_unduh=link_baca,
     )
 
-
 @login_required(login_url="login")
 @ensure_csrf_cookie
 def buku_detail(request, olid):
@@ -366,9 +309,7 @@ def buku_detail(request, olid):
 
     user = request.user
     buku_db = BukuDigital.objects.filter(pk=olid).first()
-    pinjam_aktif = Peminjaman.objects.filter(
-        user=user, buku_digital_id=olid, status="Dibaca"
-    ).first()
+    pinjam_aktif = Peminjaman.objects.filter(user=user, buku_digital_id=olid, status="Dibaca").first()
     jumlah_aktif = Peminjaman.objects.filter(user=user, status="Dibaca").count()
     context = {
         "user": user,
@@ -390,9 +331,7 @@ def buku_detail(request, olid):
             if buku_db
             else None
         ),
-        "bookmarked": Bookmark.objects.filter(
-            user=user, buku_digital_id=olid
-        ).exists(),
+        "bookmarked": Bookmark.objects.filter(user=user, buku_digital_id=olid).exists(),
         "pinjam_aktif": pinjam_aktif,
         "jatuh_tempo": (
             pinjam_aktif.tanggal_pinjam + timedelta(days=MASA_PINJAM_HARI)
@@ -432,14 +371,13 @@ def baca_buku(request, olid):
     }
     return render(request, "perpustakaan/baca.html", context)
 
+
 @login_required(login_url="login")
 @require_POST
 def simpan_progress(request, olid):
     if not ITEM_ID_RE.match(olid):
         raise Http404
-    pinjam = Peminjaman.objects.filter(
-        user=request.user, buku_digital_id=olid, status="Dibaca"
-    ).first()
+    pinjam = Peminjaman.objects.filter(user=request.user, buku_digital_id=olid, status="Dibaca").first()
     if not pinjam:
         return JsonResponse({"error": "Peminjaman tidak ditemukan."}, status=404)
     try:
@@ -460,36 +398,21 @@ def pinjam_buku(request, olid):
         raise Http404
     user = request.user
 
-    if Peminjaman.objects.filter(
-        user=user, buku_digital_id=olid, status="Dibaca"
-    ).exists():
+    if Peminjaman.objects.filter(user=user, buku_digital_id=olid, status="Dibaca").exists():
         messages.info(request, "Buku ini sudah ada di daftar pinjamanmu.")
         return redirect("buku_detail", olid=olid)
 
-    if (
-        Peminjaman.objects.filter(user=user, status="Dibaca").count()
-        >= user.max_loans
-    ):
-        messages.error(
-            request,
-            f"Batas pinjam {user.max_loans} buku tercapai. Kembalikan satu buku"
-            " dulu.",
-        )
+    if Peminjaman.objects.filter(user=user, status="Dibaca").count() >= user.max_loans:
+        messages.error(request, f"Batas pinjam {user.max_loans} buku tercapai. Kembalikan satu buku dulu.")
         return redirect("buku_detail", olid=olid)
 
     buku = _pastikan_buku(request, olid)
     if buku is None:
-        messages.error(
-            request,
-            "Data buku belum selesai dimuat. Tunggu sebentar, lalu coba lagi.",
-        )
+        messages.error(request, "Data buku belum selesai dimuat. Tunggu sebentar, lalu coba lagi.")
         return redirect("buku_detail", olid=olid)
 
     Peminjaman.objects.create(user=user, buku_digital=buku)
-    messages.success(
-        request,
-        f'"{buku.judul}" berhasil dipinjam selama {MASA_PINJAM_HARI} hari.',
-    )
+    messages.success(request, f'"{buku.judul}" berhasil dipinjam selama {MASA_PINJAM_HARI} hari.')
     return redirect("peminjaman")
 
 
@@ -498,9 +421,7 @@ def pinjam_buku(request, olid):
 def toggle_bookmark(request, olid):
     if not ITEM_ID_RE.match(olid):
         raise Http404
-    ada = Bookmark.objects.filter(
-        user=request.user, buku_digital_id=olid
-    ).first()
+    ada = Bookmark.objects.filter(user=request.user, buku_digital_id=olid).first()
     if ada:
         ada.delete()
         return JsonResponse({"bookmarked": False})
@@ -515,7 +436,6 @@ def toggle_bookmark(request, olid):
 def ejournal_view(request):
     jurnal_harian = []
 
-    # Jurnal pilihan admin dari database, ditambah katalog JSON kurasi awal.
     for jurnal in Jurnal.objects.order_by("judul", "id_item"):
         jurnal_harian.append({
             "id": jurnal.id_item,
@@ -555,8 +475,6 @@ def ejournal_view(request):
             or query_lower in jurnal["nama_jurnal"].casefold()
         ]
 
-    # Geser satu posisi per tanggal: daftar konsisten sepanjang hari dan
-    # pasti berubah besok selama koleksinya berisi lebih dari enam jurnal.
     if jurnal_harian:
         offset = timezone.localdate().toordinal() % len(jurnal_harian)
         jurnal_harian = jurnal_harian[offset:] + jurnal_harian[:offset]
@@ -612,15 +530,10 @@ def peminjaman_view(request):
     ).order_by("-tanggal_pinjam")
 
     for pinjaman in daftar_pinjaman:
-        pinjaman.jatuh_tempo = pinjaman.tanggal_pinjam + timedelta(
-            days=MASA_PINJAM_HARI
-        )
+        pinjaman.jatuh_tempo = pinjaman.tanggal_pinjam + timedelta(days=MASA_PINJAM_HARI)
 
-    # Info slot peminjaman
     batas_pinjam = request.user.max_loans
-    jumlah_aktif = Peminjaman.objects.filter(
-        user=request.user, status="Dibaca"
-    ).count()
+    jumlah_aktif = Peminjaman.objects.filter(user=request.user, status="Dibaca").count()
     sisa_slot = max(batas_pinjam - jumlah_aktif, 0)
 
     context = {
@@ -674,17 +587,12 @@ def hapus_bookmark_api(request, bookmark_id):
     except Bookmark.DoesNotExist:
         return JsonResponse({"status": "error"}, status=404)
 
+
 @login_required(login_url="login")
 def riwayat_view(request):
-    riwayat_list = (
-        Peminjaman.objects
-        .filter(user=request.user)
-        .order_by("-tanggal_pinjam")
-    )
-
+    riwayat_list = Peminjaman.objects.filter(user=request.user).order_by("-tanggal_pinjam")
     masa = Pengaturan.muat().masa_pinjam_hari
     for p in riwayat_list:
-        # jatuh tempo = tanggal_kembali (sudah tersimpan); kalau NULL, hitung dari Pengaturan
         p.jatuh_tempo = p.tanggal_kembali or (p.tanggal_pinjam + timedelta(days=masa))
 
     context = {
@@ -694,7 +602,7 @@ def riwayat_view(request):
 
 @login_required(login_url="login")
 def leaderboard_view(request):
-    semua_user = CustomUser.objects.filter(is_member=True).order_by("-exp")
+    semua_user = CustomUser.objects.filter(is_member=True, is_admin=False, is_staff=False).order_by("-exp")
     top_3 = semua_user[:3]
     other_users = semua_user[3:10]
     max_exp = top_3[0].exp if top_3 else 1
@@ -721,9 +629,8 @@ def leaderboard_view(request):
 @login_required(login_url="login")
 def profil_view(request):
     user = request.user
-    total_dibaca = Peminjaman.objects.filter(
-        user=user, status="Selesai"
-    ).count()
+    total_dibaca = Peminjaman.objects.filter(user=user, status="Selesai").count()
+    semua_achievement = _achievements(user)
 
     if request.method == "POST":
         nama_baru = request.POST.get("nama_tampilan")
@@ -737,54 +644,51 @@ def profil_view(request):
         hapus_foto_profil = request.POST.get("hapus_foto_profil")
         hapus_foto_bg = request.POST.get("hapus_foto_background")
 
+        pinned_list = request.POST.getlist("pinned_achievements")
+        if len(pinned_list) > 3:
+            pinned_list = pinned_list[:3]
+
         perubahan_terjadi = False
 
         if nama_baru and nama_baru != user.nama_tampilan:
             user.nama_tampilan = nama_baru
             perubahan_terjadi = True
 
-        if email_baru and email_baru != user.email:
+        if email_baru is not None and email_baru != user.email:
             user.email = email_baru
             perubahan_terjadi = True
 
-        # Hapus Foto Profil jika dicentang
+        new_pinned_str = ",".join(pinned_list)
+        if new_pinned_str != user.pinned_achievements:
+            user.pinned_achievements = new_pinned_str
+            perubahan_terjadi = True
+
         if hapus_foto_profil and user.foto_profil:
             if user.foto_profil.storage.exists(user.foto_profil.name):
                 user.foto_profil.delete(save=False)
             user.foto_profil = None
             perubahan_terjadi = True
 
-        # Upload Foto Profil Baru dengan batasan 2MB & hapus file lama
         if foto_profil:
             if foto_profil.size > 2 * 1024 * 1024:
-                messages.error(
-                    request, "Gagal: Ukuran foto profil maksimal 2 MB!"
-                )
+                messages.error(request, "Gagal: Ukuran foto profil maksimal 2 MB!")
                 return redirect("profil")
-            if user.foto_profil and user.foto_profil.storage.exists(
-                user.foto_profil.name
-            ):
+            if user.foto_profil and user.foto_profil.storage.exists(user.foto_profil.name):
                 user.foto_profil.delete(save=False)
             user.foto_profil = foto_profil
             perubahan_terjadi = True
 
-        # Hapus Background jika dicentang
         if hapus_foto_bg and user.foto_background:
             if user.foto_background.storage.exists(user.foto_background.name):
                 user.foto_background.delete(save=False)
             user.foto_background = None
             perubahan_terjadi = True
 
-        # Upload Background Baru dengan batasan 2MB & hapus file lama
         if foto_bg:
             if foto_bg.size > 2 * 1024 * 1024:
-                messages.error(
-                    request, "Gagal: Ukuran background maksimal 2 MB!"
-                )
+                messages.error(request, "Gagal: Ukuran background maksimal 2 MB!")
                 return redirect("profil")
-            if user.foto_background and user.foto_background.storage.exists(
-                user.foto_background.name
-            ):
+            if user.foto_background and user.foto_background.storage.exists(user.foto_background.name):
                 user.foto_background.delete(save=False)
             user.foto_background = foto_bg
             perubahan_terjadi = True
@@ -793,7 +697,6 @@ def profil_view(request):
             user.save()
             messages.success(request, "Profil berhasil diperbarui!")
 
-        # Validasi & Update Password
         if pass_lama and pass_baru:
             if user.check_password(pass_lama):
                 user.set_password(pass_baru)
@@ -805,16 +708,24 @@ def profil_view(request):
 
         return redirect("profil")
 
-    selesai = Peminjaman.objects.filter(
-        user=user, status="Selesai", buku_digital__isnull=False
-    )
+    selesai = Peminjaman.objects.filter(user=user, status="Selesai", buku_digital__isnull=False)
     total_buku = selesai.values("buku_digital_id").distinct().count()
     peringkat = CustomUser.objects.filter(is_member=True, exp__gt=user.exp).count() + 1
     level = user.exp // LEVEL_EXP + 1
     exp_di_level = user.exp % LEVEL_EXP
     persen_level = exp_di_level * 100 // LEVEL_EXP
-    semua_achievement = _achievements(user)
     
+    pinned_names = [name.strip() for name in user.pinned_achievements.split(",") if name.strip()]
+    achievements_dict = {a["nama"]: a for a in semua_achievement}
+    
+    display_achievements = []
+    for name in pinned_names:
+        if name in achievements_dict:
+            display_achievements.append(achievements_dict[name])
+            
+    if not display_achievements:
+        display_achievements = [a for a in semua_achievement if a["didapat"]][:3]
+
     context = {
         "user": user,
         "total_dibaca": total_dibaca,
@@ -823,17 +734,18 @@ def profil_view(request):
         "exp_di_level": exp_di_level,
         "exp_per_level": LEVEL_EXP,
         "persen_level": persen_level,
-        "achievements": [a for a in semua_achievement if a["didapat"]][:5],
+        "achievements": display_achievements,
+        "semua_achievement": semua_achievement,
+        "pinned_names": pinned_names,
         "achievement_terbuka": sum(1 for a in semua_achievement if a["didapat"]),
         "achievement_total": len(semua_achievement),
     }
     return render(request, "perpustakaan/profil.html", context)
-        
-LEVEL_EXP = 100  # EXP yang dibutuhkan per level
+
+
+LEVEL_EXP = 100
 
 def _achievements(user):
-    from django.db.models import Q
-
     peminjaman = Peminjaman.objects.filter(user=user)
     buku = peminjaman.filter(buku_digital__isnull=False)
 
@@ -841,10 +753,7 @@ def _achievements(user):
     pinjam_selesai = peminjaman.filter(status="Selesai").count()
     buku_selesai = buku.filter(status="Selesai").values("buku_digital_id").distinct().count()
     buku_dimulai = buku.values("buku_digital_id").distinct().count()
-    genre = (
-        buku.exclude(buku_digital__kategori="")
-        .values("buku_digital__kategori").distinct().count()
-    )
+    genre = buku.exclude(buku_digital__kategori="").values("buku_digital__kategori").distinct().count()
     bookmark = Bookmark.objects.filter(user=user).count()
     exp = user.exp
     hari = user.streak_days
@@ -855,7 +764,7 @@ def _achievements(user):
             q |= Q(buku_digital__kategori__icontains=k)
         return buku.filter(q, status="Selesai").values("buku_digital_id").distinct().count()
 
-    def item(nama, ikon, syarat, nilai, target):
+    def item(nama, ikon, syarat, nilai, target, kategori="Umum"):
         nilai = min(nilai, target)
         return {
             "nama": nama,
@@ -864,47 +773,49 @@ def _achievements(user):
             "nilai": nilai,
             "target": target,
             "didapat": nilai >= target,
-            "persen": round(nilai / target * 100),
+            "persen": round(nilai / target * 100) if target > 0 else 100,
+            "kategori": kategori,
         }
 
     return [
-        item("Halaman Pertama", "fa-book-open", "Selesaikan sesi baca buku pertamamu.", 0, 1),
-        item("Tunas Literasi", "fa-seedling", "Selesaikan 5 sesi baca buku.", 0, 5),
-        item("Rak Mulai Terisi", "fa-leaf", "Selesaikan 10 sesi baca buku.", 0, 10),
-        item("Pembaca Tekun", "fa-tree", "Selesaikan 25 sesi baca buku.", 0, 25),
-        item("Penjaga Cerita", "fa-shield-halved", "Selesaikan 50 sesi baca buku.", 0, 50),
-        item("Sampul Terakhir", "fa-flag-checkered", "Tuntaskan satu buku sampai bagian terakhir.", buku_selesai, 1),
-        item("Tiga Cerita", "fa-medal", "Tuntaskan tiga buku.", buku_selesai, 3),
-        item("Kolektor Kisah", "fa-layer-group", "Tuntaskan lima buku.", buku_selesai, 5),
-        item("Penjelajah Rak", "fa-compass", "Mulai membaca lima judul buku berbeda.", buku_dimulai, 5),
-        item("Rak Pribadi", "fa-book", "Mulai membaca tujuh judul buku berbeda.", buku_dimulai, 7),
-        item("Misteri Terurai", "fa-magnifying-glass", "Selesaikan sesi baca buku berkategori Misteri.", kategori_selesai("misteri", "mystery"), 1),
-        item("Dunia Ajaib", "fa-wand-magic-sparkles", "Selesaikan sesi baca buku berkategori Fantasi.", kategori_selesai("fantasi", "fantasy"), 1),
-        item("Hati di Halaman", "fa-heart", "Selesaikan sesi baca buku berkategori Romansa.", kategori_selesai("romansa", "romance"), 1),
-        item("Langkah Bertumbuh", "fa-arrow-trend-up", "Selesaikan sesi baca buku Pengembangan Diri.", kategori_selesai("pengembangan", "self"), 1),
-        item("Pencari Ilmu", "fa-graduation-cap", "Selesaikan sesi baca buku berkategori Pendidikan.", kategori_selesai("pendidikan", "education"), 1),
-        item("Sang Pencinta Sastra", "fa-feather-pointed", "Selesaikan sesi baca buku berkategori Sastra.", kategori_selesai("sastra", "literature"), 1),
-        item("Lintas Genre", "fa-shuffle", "Baca buku dari 3 genre yang berbeda.", genre, 3),
-        item("Pustaka Berwarna", "fa-palette", "Baca buku dari 5 genre yang berbeda.", genre, 5),
-        item("Percikan Pertama", "fa-bolt", "Kumpulkan 25 EXP dari ikon membaca.", exp, 25),
-        item("Bintang Pembaca", "fa-star", "Kumpulkan 100 EXP.", exp, 100),
-        item("Cahaya Lentera", "fa-lightbulb", "Kumpulkan 250 EXP.", exp, 250),
-        item("Lentera Emas", "fa-crown", "Kumpulkan 500 EXP.", exp, 500),
-        item("Penanda Cerita", "fa-bookmark", "Buat bookmark pertamamu.", bookmark, 1),
-        item("Penjaga Halaman", "fa-book-bookmark", "Simpan 5 bookmark buku atau bab.", bookmark, 5),
-        item("Peminjam Pertama", "fa-handshake", "Ajukan peminjaman buku pertamamu.", pinjam_total, 1),
-        item("Sahabat Perpustakaan", "fa-user-group", "Selesaikan 5 transaksi peminjaman.", pinjam_selesai, 5),
-        item("Pembaca Jurnal", "fa-newspaper", "Selesaikan satu bagian jurnal.", 0, 1),
-        item("Penjelajah Wacana", "fa-scroll", "Selesaikan 5 bagian jurnal.", 0, 5),
-        item("Hadir Membaca", "fa-sun", "Dapatkan EXP pada satu hari membaca.", hari, 1),
-        item("Ritme Membaca", "fa-chart-line", "Dapatkan EXP pada 3 hari berbeda.", hari, 3),
-        item("Kebiasaan Terbentuk", "fa-calendar-check", "Dapatkan EXP pada 7 hari berbeda.", hari, 7),
-        item("Rak Kesayangan", "fa-heart-circle-check", "Simpan 3 judul ke koleksi favorit.", bookmark, 3),
-        item("Saldo Pertama", "fa-coins", "Lakukan simulasi top up Reader pertamamu.", 0, 1),
-        item("Poin Terkumpul", "fa-gem", "Simulasikan top up minimal 50 kredit total.", 0, 50),
-        item("Pinjam dan Kembali", "fa-rotate-left", "Kembalikan setidaknya satu buku pinjaman.", pinjam_selesai, 1),
-        item("Bagian demi Bagian", "fa-puzzle-piece", "Selesaikan 15 bagian buku dan jurnal.", 0, 15),
+        item("Halaman Pertama", "fa-book-open", "Selesaikan sesi baca buku pertamamu.", 0, 1, "Umum"),
+        item("Tunas Literasi", "fa-seedling", "Selesaikan 5 sesi baca buku.", 0, 5, "Umum"),
+        item("Rak Mulai Terisi", "fa-leaf", "Selesaikan 10 sesi baca buku.", 0, 10, "Umum"),
+        item("Pembaca Tekun", "fa-tree", "Selesaikan 25 sesi baca buku.", 0, 25, "Langka"),
+        item("Penjaga Cerita", "fa-shield-halved", "Selesaikan 50 sesi baca buku.", 0, 50, "Epik"),
+        item("Sampul Terakhir", "fa-flag-checkered", "Tuntaskan satu buku sampai bagian terakhir.", buku_selesai, 1, "Umum"),
+        item("Tiga Cerita", "fa-medal", "Tuntaskan tiga buku.", buku_selesai, 3, "Umum"),
+        item("Kolektor Kisah", "fa-layer-group", "Tuntaskan lima buku.", buku_selesai, 5, "Langka"),
+        item("Penjelajah Rak", "fa-compass", "Mulai membaca lima judul buku berbeda.", buku_dimulai, 5, "Langka"),
+        item("Rak Pribadi", "fa-book", "Mulai membaca tujuh judul buku berbeda.", buku_dimulai, 7, "Langka"),
+        item("Misteri Terurai", "fa-magnifying-glass", "Selesaikan sesi baca buku berkategori Misteri.", kategori_selesai("misteri", "mystery"), 1, "Umum"),
+        item("Dunia Ajaib", "fa-wand-magic-sparkles", "Selesaikan sesi baca buku berkategori Fantasi.", kategori_selesai("fantasi", "fantasy"), 1, "Umum"),
+        item("Hati di Halaman", "fa-heart", "Selesaikan sesi baca buku berkategori Romansa.", kategori_selesai("romansa", "romance"), 1, "Umum"),
+        item("Langkah Bertumbuh", "fa-arrow-trend-up", "Selesaikan sesi baca buku Pengembangan Diri.", kategori_selesai("pengembangan", "self"), 1, "Umum"),
+        item("Pencari Ilmu", "fa-graduation-cap", "Selesaikan sesi baca buku berkategori Pendidikan.", kategori_selesai("pendidikan", "education"), 1, "Umum"),
+        item("Sang Pencinta Sastra", "fa-feather-pointed", "Selesaikan sesi baca buku berkategori Sastra.", kategori_selesai("sastra", "literature"), 1, "Umum"),
+        item("Lintas Genre", "fa-shuffle", "Baca buku dari 3 genre yang berbeda.", genre, 3, "Langka"),
+        item("Pustaka Berwarna", "fa-palette", "Baca buku dari 5 genre yang berbeda.", genre, 5, "Epik"),
+        item("Percikan Pertama", "fa-bolt", "Kumpulkan 25 EXP dari ikon membaca.", exp, 25, "Umum"),
+        item("Bintang Pembaca", "fa-star", "Kumpulkan 100 EXP.", exp, 100, "Umum"),
+        item("Cahaya Lentera", "fa-lightbulb", "Kumpulkan 250 EXP.", exp, 250, "Langka"),
+        item("Lentera Emas", "fa-crown", "Kumpulkan 500 EXP.", exp, 500, "Epik"),
+        item("Penanda Cerita", "fa-bookmark", "Buat bookmark pertamamu.", bookmark, 1, "Umum"),
+        item("Penjaga Halaman", "fa-book-bookmark", "Simpan 5 bookmark buku atau bab.", bookmark, 5, "Langka"),
+        item("Peminjam Pertama", "fa-handshake", "Ajukan peminjaman buku pertamamu.", pinjam_total, 1, "Umum"),
+        item("Sahabat Perpustakaan", "fa-user-group", "Selesaikan 5 transaksi peminjaman.", pinjam_selesai, 5, "Langka"),
+        item("Pembaca Jurnal", "fa-newspaper", "Selesaikan satu bagian jurnal.", 0, 1, "Umum"),
+        item("Penjelajah Wacana", "fa-scroll", "Selesaikan 5 bagian jurnal.", 0, 5, "Langka"),
+        item("Hadir Membaca", "fa-sun", "Dapatkan EXP pada satu hari membaca.", hari, 1, "Umum"),
+        item("Ritme Membaca", "fa-chart-line", "Dapatkan EXP pada 3 hari berbeda.", hari, 3, "Umum"),
+        item("Kebiasaan Terbentuk", "fa-calendar-check", "Dapatkan EXP pada 7 hari berbeda.", hari, 7, "Langka"),
+        item("Rak Kesayangan", "fa-heart-circle-check", "Simpan 3 judul ke koleksi favorit.", bookmark, 3, "Umum"),
+        item("Saldo Pertama", "fa-coins", "Lakukan simulasi top up Reader pertamamu.", 0, 1, "Umum"),
+        item("Poin Terkumpul", "fa-gem", "Simulasikan top up minimal 50 kredit total.", 0, 50, "Langka"),
+        item("Pinjam dan Kembali", "fa-rotate-left", "Kembalikan setidaknya satu buku pinjaman.", pinjam_selesai, 1, "Umum"),
+        item("Bagian demi Bagian", "fa-puzzle-piece", "Selesaikan 15 bagian buku dan jurnal.", 0, 15, "Epik"),
     ]
+
 
 @login_required(login_url="login")
 def profil_user_detail_view(request, username):
@@ -912,12 +823,9 @@ def profil_user_detail_view(request, username):
     if target.pk == request.user.pk:
         return redirect("profil")
 
-    selesai = Peminjaman.objects.filter(
-        user=target, status="Selesai", buku_digital__isnull=False
-    )
+    selesai = Peminjaman.objects.filter(user=target, status="Selesai", buku_digital__isnull=False)
     total_buku = selesai.values("buku_digital_id").distinct().count()
 
-    # 6 buku terbaru yang selesai dibaca (tanpa duplikat)
     buku_terbaru, terlihat = [], set()
     for p in selesai.select_related("buku_digital").order_by("-tanggal_kembali", "-pk")[:30]:
         if p.buku_digital_id in terlihat:
@@ -927,7 +835,6 @@ def profil_user_detail_view(request, username):
         if len(buku_terbaru) == 6:
             break
 
-    # Kategori yang paling sering diselesaikan
     favorit = [
         row["buku_digital__kategori"].replace("_", " ").capitalize()
         for row in (
@@ -944,6 +851,18 @@ def profil_user_detail_view(request, username):
     level_sisa = target.exp % LEVEL_EXP
     selisih = target.exp - request.user.exp
 
+    semua_achievement_target = _achievements(target)
+    pinned_names = [name.strip() for name in target.pinned_achievements.split(",") if name.strip()]
+    achievements_dict = {a["nama"]: a for a in semua_achievement_target}
+    
+    pinned_achievements = []
+    for name in pinned_names:
+        if name in achievements_dict:
+            pinned_achievements.append(achievements_dict[name])
+            
+    if not pinned_achievements:
+        pinned_achievements = [a for a in semua_achievement_target if a["didapat"]][:3]
+
     context = {
         "user": request.user,
         "profile_user": target,
@@ -955,11 +874,13 @@ def profil_user_detail_view(request, username):
         "level_persen": round(level_sisa / LEVEL_EXP * 100),
         "buku_terbaru": buku_terbaru,
         "favorit": favorit,
-        "achievements": [a for a in _achievements(target) if a["didapat"]],
+        "achievements": [a for a in semua_achievement_target if a["didapat"]],
+        "pinned_achievements": pinned_achievements,
         "selisih": selisih,
         "selisih_abs": abs(selisih),
     }
     return render(request, "perpustakaan/profil_publik.html", context)
+
 
 @login_required(login_url="login")
 @require_POST
@@ -998,7 +919,6 @@ def waktu_baca(request):
     if exp_gain:
         user.exp += exp_gain
 
-    # Rekap harian (untuk banner streak)
     hari_ini = timezone.localdate()
     if user.tanggal_baca_harian != hari_ini:
         user.detik_baca_hari_ini = 0
@@ -1009,13 +929,65 @@ def waktu_baca(request):
 
     return JsonResponse({"detik": pool, "exp_gain": exp_gain, "exp": user.exp})
 
+
 @login_required(login_url="login")
 def achievement_view(request):
     daftar = _achievements(request.user)
+    pinned_names = [name.strip() for name in request.user.pinned_achievements.split(",") if name.strip()]
+    
     context = {
         "user": request.user,
         "achievements": daftar,
+        "pinned_names": pinned_names,
         "terbuka": sum(1 for a in daftar if a["didapat"]),
         "total": len(daftar),
     }
     return render(request, "perpustakaan/achievement.html", context)
+
+
+@login_required(login_url="login")
+@require_POST
+def update_pinned_achievement_api(request):
+    try:
+        data = json.loads(request.body)
+        pinned_list = data.get("pinned_achievements", [])
+        
+        if not isinstance(pinned_list, list):
+            return JsonResponse({"status": "error", "message": "Format data tidak valid."}, status=400)
+            
+        if len(pinned_list) > 3:
+            pinned_list = pinned_list[:3]
+            
+        request.user.pinned_achievements = ",".join(pinned_list)
+        request.user.save(update_fields=["pinned_achievements"])
+        
+        return JsonResponse({"status": "success", "pinned": pinned_list})
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=400)
+
+
+@login_required(login_url="login")
+@user_passes_test(is_admin, login_url="login")
+def dashboard_admin(request):
+    total_pengguna = CustomUser.objects.filter(is_member=True).count()
+    total_buku = BukuDigital.objects.count()
+    total_peminjaman = Peminjaman.objects.filter(status="Dibaca").count()
+    
+    context = {
+        "user": request.user,
+        "total_pengguna": total_pengguna,
+        "total_buku": total_buku,
+        "total_peminjaman": total_peminjaman,
+    }
+    return render(request, "perpustakaan/admin/dashboard.html", context)
+
+
+@login_required(login_url="login")
+@user_passes_test(is_admin, login_url="login")
+def kelola_buku_admin(request):
+    buku_list = BukuDigital.objects.all().order_by('-id')
+    context = {
+        "user": request.user,
+        "buku_list": buku_list,
+    }
+    return render(request, "perpustakaan/admin/kelola_buku.html", context)

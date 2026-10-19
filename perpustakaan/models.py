@@ -80,13 +80,11 @@ class Peminjaman(models.Model):
         max_length=20, default="Dibaca"
     )  # Dibaca / Selesai
     progress_baca = models.IntegerField(default=0)  # 0 - 100%
-    waktu_baca_detik = models.IntegerField(default=0)  # BARU: detik membaca untuk peminjaman ini
+    waktu_baca_detik = models.IntegerField(default=0)  # Detik membaca untuk peminjaman ini
 
     def __str__(self):
-        # Pemanggilan str(item) menggunakan __str__ milik class object item
-        # yang dipilih (BukuDigital atau Jurnal), contoh polimorfisme.
         item = self.buku_digital or self.jurnal
-        return f"{self.user.username} - {item} ({self.status})"
+        return f"{self.user.username} {item} ({self.status})"
 
 
 # ASOSIASI ANTAROBJECT: Bookmark menghubungkan user dengan item katalog yang
@@ -107,6 +105,33 @@ class Bookmark(models.Model):
         return f"{self.user.username} saved {item}"
 
 
+# ====================== ACHIEVEMENT & KATEGORI ======================
+class Achievement(models.Model):
+    KATEGORI_CHOICES = [
+        ('Umum', 'Umum'),
+        ('Langka', 'Langka'),
+        ('Epik', 'Epik'),
+    ]
+    
+    nama = models.CharField(max_length=100)
+    deskripsi = models.TextField(blank=True)
+    kategori = models.CharField(max_length=20, choices=KATEGORI_CHOICES, default='Umum')
+    ikon = models.CharField(max_length=50, default='fa-trophy') # Kelas icon FontAwesome/Material
+    syarat = models.CharField(max_length=255, blank=True)
+
+    def __str__(self):
+        return f"[{self.kategori}] {self.nama}"
+
+
+class UserAchievement(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='user_achievements')
+    achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE)
+    tanggal_didapat = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} {self.achievement.nama}"
+
+
 # PEWARISAN: CustomUser memperluas class AbstractUser dari Django dengan
 # atribut dan perilaku khusus aplikasi Lentera.
 class CustomUser(AbstractUser):
@@ -120,6 +145,11 @@ class CustomUser(AbstractUser):
         upload_to="backgrounds/", null=True, blank=True
     )
 
+    # Tambahan untuk OTP dan Reset Password (email sudah bawaan AbstractUser)
+    email = models.EmailField(blank=True, null=True)
+    otp_code = models.CharField(max_length=6, blank=True, null=True)
+    otp_created_at = models.DateTimeField(blank=True, null=True)
+
     exp = models.IntegerField(default=0)
     waktu_baca_detik = models.IntegerField(default=0)
     detik_baca_hari_ini = models.PositiveIntegerField(default=0)
@@ -127,6 +157,9 @@ class CustomUser(AbstractUser):
     streak_days = models.IntegerField(default=0)
     last_read_date = models.DateField(null=True, blank=True)
     max_loans = models.IntegerField(default=5)
+
+    # BARU: Field untuk menyimpan custom achievement yang dipilih/disematkan di profil (maksimal 3)
+    pinned_achievements = models.TextField(blank=True, default="")
 
     # POLIMORFISME (method overriding): save() mengganti/menambahkan perilaku
     # penyimpanan bawaan dengan membuat nama_tampilan sebelum menyimpan object.
@@ -164,6 +197,7 @@ class CustomUser(AbstractUser):
     # berbeda dari representasi bawaan AbstractUser.
     def __str__(self):
         return self.username
+
 
 class Pengaturan(models.Model):
     masa_pinjam_hari = models.PositiveIntegerField(default=14)
