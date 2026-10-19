@@ -38,26 +38,28 @@
         </div>
 
         <main class="main-content">
-            <div class="top-nav">
-                <div class="top-nav-left">
-                    <button id="menuButton" class="menu-button" type="button" aria-label="Buka atau tutup menu"><i class="fas fa-bars"></i></button>
-                    <div class="top-divider"></div>
-                    <div class="greeting"><h4>Lentera / Anggota</h4><h1 class="page-title-space">Riwayat Peminjaman</h1><p>Siap menemukan bacaan baru hari ini?</p></div>
-                </div>
-                <div class="nav-actions">
-                    <i class="far fa-bell"></i>
-                    <div class="avatar-circle">
-                        {% if user.foto_profil %}<img src="{{ user.foto_profil.url }}" alt="Avatar">
-                        {% else %}{{ user.nama_tampilan|default:user.username|slice:2|upper }}{% endif %}
+            <div class="riwayat-header">
+                <div class="top-nav">
+                    <div class="top-nav-left">
+                        <button id="menuButton" class="menu-button" type="button" aria-label="Buka atau tutup menu"><i class="fas fa-bars"></i></button>
+                        <div class="top-divider"></div>
+                        <div class="greeting"><h4>Lentera / Anggota</h4><h1 class="page-title-space">Riwayat Peminjaman</h1><p>Siap menemukan bacaan baru hari ini?</p></div>
                     </div>
-                    <a href="{% url 'logout' %}" style="margin-left:15px; color:#dc2626; font-size: 20px;" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
+                    <div class="nav-actions">
+                        <i class="far fa-bell"></i>
+                        <div class="avatar-circle">
+                            {% if user.foto_profil %}<img src="{{ user.foto_profil.url }}" alt="Avatar">
+                            {% else %}{{ user.nama_tampilan|default:user.username|slice:2|upper }}{% endif %}
+                        </div>
+                        <a href="{% url 'logout' %}" style="margin-left:15px; color:#dc2626; font-size: 20px;" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
+                    </div>
                 </div>
             </div>
 
-            <div class="riwayat-container">
-                <div class="riwayat-thead">
-                    <div>Buku</div><div>Tanggal Pinjam</div><div>Tanggal Kembali</div><div>Status</div>
-                </div>
+                <div class="riwayat-container">
+                    <div class="riwayat-thead">
+                        <div>Buku</div><div>Tanggal Pinjam</div><div>Tanggal Kembali</div><div>Status</div>
+                    </div>
                 {% for item in daftar_riwayat %}
                 <div class="riwayat-row">
                     <div class="history-book-info">

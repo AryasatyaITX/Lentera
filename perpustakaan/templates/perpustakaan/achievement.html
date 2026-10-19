@@ -102,10 +102,10 @@
             <div class="acv-head">
                 <div>
                     <p class="acv-eyebrow">Lencana perjalanan</p>
-                    <p class="acv-desc">Klik achievement yang sudah terbuka untuk menyematkannya di profil kamu (Maksimal 3).</p>
+                    <p class="acv-desc">Klik achievement yang sudah terbuka untuk menyematkannya di profil kamu (Maksimal 5).</p>
                 </div>
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <span id="pinnedCountBadge" style="background: #173C3A; color: #D4F838; padding: 6px 12px; border-radius: 999px; font-size: 11px; font-weight: 700;">Disematkan: <span id="numPinned">0</span>/3</span>
+                    <span id="pinnedCountBadge" style="background: #173C3A; color: #D4F838; padding: 6px 12px; border-radius: 999px; font-size: 11px; font-weight: 700;">Disematkan: <span id="numPinned">0</span>/5</span>
                     <p class="acv-count" style="margin: 0;">{{ terbuka }} dari {{ total }} terbuka</p>
                 </div>
             </div>
@@ -123,11 +123,11 @@
             <div class="acv-grid">
                 {% for a in achievements %}
                 <div class="acv-card {% if a.didapat %}terbuka{% endif %} {% if a.nama in pinned_names %}pinned{% endif %}" 
-                     data-status="{% if a.didapat %}terbuka{% else %}terkunci{% endif %}"
-                     data-kategori="{{ a.kategori|lower|default:'umum' }}"
-                     data-name="{{ a.nama }}"
-                     data-unlocked="{{ a.didapat|lower }}"
-                     onclick="togglePinAchievement(this)">
+                    data-status="{% if a.didapat %}terbuka{% else %}terkunci{% endif %}"
+                    data-kategori="{{ a.kategori|lower|default:'umum' }}"
+                    data-name="{{ a.nama }}"
+                    data-unlocked="{{ a.didapat|lower }}"
+                    onclick="togglePinAchievement(this)">
                     
                     <span class="acv-status">
                         {% if a.nama in pinned_names %}
@@ -229,8 +229,8 @@
         var isPinned = cardElement.classList.contains('pinned');
         var currentPinnedCount = document.querySelectorAll('.acv-card.pinned').length;
 
-        if (!isPinned && currentPinnedCount >= 3) {
-            showToast("Maksimal hanya dapat menyematkan 3 achievement!");
+        if (!isPinned && currentPinnedCount >= 5) {
+            showToast("Maksimal hanya dapat menyematkan 5 achievement!");
             return;
         }
 

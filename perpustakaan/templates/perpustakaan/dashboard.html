@@ -9,72 +9,38 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1020">
+    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1021">
     <script src="{% static 'perpustakaan/js/script.js' %}?v=5" defer></script>
-    <script src="{% static 'perpustakaan/js/buku.js' %}?v=4" defer></script>
+    <script src="{% static 'perpustakaan/js/buku.js' %}?v=13" defer></script>
 </head>
 <body>
 
     <div class="app-layout" id="appLayout"> 
         <div class="sidebar">
             <div class="sidebar-brand">
-            <img src="{% static 'perpustakaan/img/logo.svg' %}" alt="Logo Lentera" class="sidebar-logo">
-            <div>
-                <h2>lentera<span>.</span></h2>
-            </div>
-        </div>
-
-        <ul class="sidebar-menu">
-            <li><a href="#" class="active"><i class="fas fa-border-all"></i> Dashboard</a></li>
-            <li><a href="{% url 'katalog' %}"><i class="fas fa-book"></i> Katalog Buku</a></li>
-            <li><a href="{% url 'ejournal' %}"><i class="fas fa-file-alt"></i> E-journal</a></li>
-            <li>
-                <a href="{% url 'peminjaman' %}">
-                    <i class="fas fa-book-reader"></i> Peminjaman
-                    {% if sedang_dipinjam %}<span class="menu-badge">{{ sedang_dipinjam }}</span>{% endif %}
-                </a>
-            </li>
-            <li><a href="{% url 'bookmarks' %}"><i class="fas fa-heart"></i> Bookmarks</a></li>
-            <li><a href="{% url 'riwayat' %}"><i class="fas fa-history"></i> Riwayat Peminjaman</a></li>
-            <li><a href="{% url 'leaderboard' %}"><i class="fas fa-trophy"></i> Top List Reader</a></li>
-            <li><a href="{% url 'profil' %}"><i class="fas fa-user"></i> Profil</a></li>
-        </ul>
-
-        <div class="sidebar-profile">
-            <div class="avatar-circle">
-                {% if user.foto_profil %}
-                    <img src="{{ user.foto_profil.url }}" alt="Avatar">
-                {% else %}
-                    {{ user.nama_tampilan|default:user.username|slice:2|upper }}
-                {% endif %}
-            </div>
-            <div>
-                <h4>{{ user.nama_tampilan|default:user.username }}</h4>
-                <p>User / Anggota</p>
-            </div>
-        </div>
-    </div>
-
-    <div class="main-content">
-        <div class="top-nav">
-            <div class="top-nav-left">
-                <button id="menuButton" 
-                        class="menu-button" 
-                        type="button" 
-                        aria-label="Buka atau tutup menu">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <div class="top-divider"></div>
-                <div class="greeting">
-                    <h4> Lentera / Anggota</h4>
-                    <h1 class="page-title-space">
-                        <span id="salam">Selamat Datang</span>, {{ user.nama_tampilan|default:user.username }}
-                    </h1>
-                    <p>Siap menemukan bacaan baru hari ini?</p>
+                <img src="{% static 'perpustakaan/img/logo.svg' %}" alt="Logo Lentera" class="sidebar-logo">
+                <div>
+                    <h2>lentera<span>.</span></h2>
                 </div>
             </div>
-            <div class="nav-actions">
-                <i class="far fa-bell"></i>
+
+            <ul class="sidebar-menu">
+                <li><a href="#" class="active"><i class="fas fa-border-all"></i> Dashboard</a></li>
+                <li><a href="{% url 'katalog' %}"><i class="fas fa-book"></i> Katalog Buku</a></li>
+                <li><a href="{% url 'ejournal' %}"><i class="fas fa-file-alt"></i> E-journal</a></li>
+                <li>
+                    <a href="{% url 'peminjaman' %}">
+                        <i class="fas fa-book-reader"></i> Peminjaman
+                        {% if sedang_dipinjam %}<span class="menu-badge">{{ sedang_dipinjam }}</span>{% endif %}
+                    </a>
+                </li>
+                <li><a href="{% url 'bookmarks' %}"><i class="fas fa-heart"></i> Bookmarks</a></li>
+                <li><a href="{% url 'riwayat' %}"><i class="fas fa-history"></i> Riwayat Peminjaman</a></li>
+                <li><a href="{% url 'leaderboard' %}"><i class="fas fa-trophy"></i> Top List Reader</a></li>
+                <li><a href="{% url 'profil' %}"><i class="fas fa-user"></i> Profil</a></li>
+            </ul>
+
+            <div class="sidebar-profile">
                 <div class="avatar-circle">
                     {% if user.foto_profil %}
                         <img src="{{ user.foto_profil.url }}" alt="Avatar">
@@ -82,228 +48,237 @@
                         {{ user.nama_tampilan|default:user.username|slice:2|upper }}
                     {% endif %}
                 </div>
-                <a href="{% url 'logout' %}"
+                <div>
+                    <h4>{{ user.nama_tampilan|default:user.username }}</h4>
+                    <p>User / Anggota</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="top-nav">
+                <div class="top-nav-left">
+                    <button id="menuButton" class="menu-button" type="button" aria-label="Buka atau tutup menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="top-divider"></div>
+                    <div class="greeting">
+                        <h4>Lentera / Anggota</h4>
+                        <h1 class="page-title-space">
+                            <span id="salam">Selamat Datang</span>, {{ user.nama_tampilan|default:user.username }}
+                        </h1>
+                        <p>Siap menemukan bacaan baru hari ini?</p>
+                    </div>
+                </div>
+                <div class="nav-actions">
+                    <i class="far fa-bell"></i>
+                    <div class="avatar-circle">
+                        {% if user.foto_profil %}
+                            <img src="{{ user.foto_profil.url }}" alt="Avatar">
+                        {% else %}
+                            {{ user.nama_tampilan|default:user.username|slice:2|upper }}
+                        {% endif %}
+                    </div>
+                    <a href="{% url 'logout' %}"
                         onclick="try{sessionStorage.removeItem('sidebarOpen')}catch(e){}"
                         style="margin-left:15px; color:#dc2626; font-size:20px;"
                         title="Logout">
-                    <i class="fas fa-sign-out-alt"></i>
-                </a>
-            </div>
-        </div>
-
-        <div class="hero-banner">
-            <h3 class="page-title-space">Perpustakaan Digital</h3>
-            <h2>Temukan ide baru,<br><span>satu halaman</span> setiap hari.</h2>
-            <p>Temukan ribuan ebook, lanjutkan bacaan, simpan wishlist, dan akses artikel literasi dalam satu aplikasi yang cepat dan mudah digunakan.</p>
-            
-            <div class="hero-actions">
-                <a href="{% url 'katalog' %}" class="btn-katalog">Jelajahi Katalog <i class="fas fa-arrow-right"></i></a>
-
-                <div class="search-bar">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="hero-search" placeholder="Cari judul atau penulis, lalu tekan Enter...">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
                 </div>
             </div>
 
-            <div class="hero-decoration">
-                <i class="fas fa-book-open"></i>
-            </div>
-        </div>
+            <div class="hero-banner">
+                <h3 class="page-title-space">Perpustakaan Digital</h3>
+                <h2>Temukan ide baru,<br><span>satu halaman</span> setiap hari.</h2>
+                <p>Temukan ribuan ebook, lanjutkan bacaan, simpan wishlist, dan akses artikel literasi dalam satu aplikasi yang cepat dan mudah digunakan.</p>
 
-        <div class="streak-banner">
-            <div class="streak-left">
-                <span class="streak-fire">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                <div class="hero-actions">
+                    <a href="{% url 'katalog' %}" class="btn-katalog">Jelajahi Katalog <i class="fas fa-arrow-right"></i></a>
+
+                    <form method="get" action="{% url 'katalog' %}" style="display:flex; gap:10px; flex:1; max-width:460px;">
+                        <div class="search-box" style="flex:1;">
+                            <i class="fas fa-search"></i>
+                            <input type="text" name="q" value="{{ q }}" placeholder="Cari judul atau penulis, lalu tekan Enter..." autocomplete="off">
+                        </div>
+                        <button type="submit" class="btn-filter" style="border:none; cursor:pointer;">
+                            <i class="fas fa-search"></i> Cari
+                        </button>
+                    </form>
+                </div>
+
+                <div class="hero-decoration">
+                    <i class="fas fa-book-open"></i>
+                </div>
+            </div>
+
+            <div class="streak-banner">
+                <div class="streak-left">
+                    <span class="streak-fire">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+                        </svg>
+                    </span>
+                    <div>
+                        <p class="streak-title">
+                            {% if streak_hari > 0 %}{{ streak_hari }} Hari Streak Membaca!
+                            {% else %}Yuk mulai streak membacamu!
+                                <span class="streak-badge off">BELUM AKTIF</span>
+                            {% endif %}
+                        </p>
+                        <p class="streak-sub">Target harian: {{ menit_hari_ini }} / {{ target_menit }} menit ({{ persen_target }}% tercapai)</p>
+                    </div>
+                </div>
+                <div class="streak-right">
+                    <div class="streak-bar">
+                        <div class="streak-bar-fill" style="width: {{ persen_target }}%;"></div>
+                    </div>
+                    <span class="streak-pct">{{ persen_target }}%</span>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <a class="stat-card c-green" href="{% url 'peminjaman' %}">
+                    <h4>Sedang dipinjam</h4>
+                    <h2>{{ sedang_dipinjam }}</h2>
+                    <p>buku aktif</p>
+                    <i class="far fa-bookmark"></i>
+                </a>
+
+                <a class="stat-card c-blue" href="{% url 'riwayat' %}">
+                    <h4>Total Dibaca</h4>
+                    <h2>{{ total_dibaca }}</h2>
+                    <p>buku selesai</p>
+                    <svg class="stat-icon" width="22" height="22"
+                        style="position:absolute; top:20px; right:20px; width:22px; height:22px; color:#000;"
+                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
                         fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
                     </svg>
-                </span>
-                <div>
-                    <p class="streak-title">
-                        {% if streak_hari > 0 %}{{ streak_hari }} Hari Streak Membaca!
-                        {% else %}Yuk mulai streak membacamu!
-                            <span class="streak-badge off">BELUM AKTIF</span>
-                        {% endif %}
-                    </p>
-                    <p class="streak-sub">Target harian: {{ menit_hari_ini }} / {{ target_menit }} menit ({{ persen_target }}% tercapai)</p>
-                </div>
-            </div>
-            <div class="streak-right">
-                <div class="streak-bar">
-                    <div class="streak-bar-fill" style="width: {{ persen_target }}%;"></div>
-                </div>
-                <span class="streak-pct">{{ persen_target }}%</span>
-            </div>
-        </div>
-
-        {% if q %}
-        <div style="margin: 30px 0;">
-            <div class="hasil-header" style="margin-bottom: 20px;">
-                <span class="hasil-badge">HASIL PENCARIAN</span>
-                <h2>{{ q }}</h2>
-                <p>{{ hasil_cari|length }} hasil untuk "{{ q }}"</p>
-            </div>
-
-            {% if hasil_cari %}
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px;">
-                {% for buku in hasil_cari %}
-                <a href="{% url 'buku_detail' buku.id_item %}" style="text-decoration: none; color: inherit;">
-                    <div style="background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.06); display: flex; flex-direction: column; height: 100%;">
-                        <div style="width: 100%; height: 210px; background: #0f172a;">
-                            {% if buku.cover %}
-                                <img src="{{ buku.cover }}" alt="{{ buku.judul }}" style="width: 100%; height: 100%; object-fit: cover; display: block;">
-                            {% else %}
-                                <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 12px; font-weight: 600;">No Cover</div>
-                            {% endif %}
-                        </div>
-                        <div style="padding: 14px; display: flex; flex-direction: column; flex: 1;">
-                            <span style="font-size: 10px; font-weight: 700; color: #3b82f6; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; display: block;">BUKU DIGITAL</span>
-                            <h4 style="font-size: 15px; font-weight: 700; color: #0f172a; margin: 0 0 6px 0;" title="{{ buku.judul }}">{{ buku.judul }}</h4>
-                            <p style="font-size: 12px; color: #64748b; margin: 0 0 12px 0;">
-                                {{ buku.penulis }}{% if buku.tahun_terbit %} • {{ buku.tahun_terbit }}{% endif %}
-                            </p>
-                            <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
-                                <span style="color: #f59e0b; font-weight: 600; display: flex; align-items: center; gap: 4px;">
-                                    <i class="fas fa-star" style="font-size: 11px;"></i> 4.5
-                                </span>
-                                <span style="background: #0f172a; color: white; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 600;">Detail</span>
-                            </div>
-                        </div>
-                    </div>
                 </a>
-                {% endfor %}
+
+                <a class="stat-card c-pink" href="{% url 'bookmarks' %}">
+                    <h4>Bookmarks</h4>
+                    <h2>{{ bookmarks }}</h2>
+                    <p>koleksi tersimpan</p>
+                    <i class="far fa-heart"></i>
+                </a>
+
+                <a class="stat-card c-purple" href="{% url 'leaderboard' %}">
+                    <h4>Peringkat & EXP</h4>
+                    <h2>#{{ peringkat }}</h2>
+                    <p>{{ user.exp }} Total EXP Point</p>
+                    <svg class="stat-icon" width="22" height="22"
+                        style="position:absolute; top:20px; right:20px; width:22px; height:22px; color:#000;"
+                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+                        <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+                        <path d="M4 22h16"/>
+                        <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+                        <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+                        <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+                    </svg>
+                </a>
             </div>
-            {% else %}
-            <div class="kosong-card">
-                <i class="fas fa-search" style="font-size:34px;color:#c9d2e0;"></i>
-                <h3>Buku tidak ditemukan</h3>
-                <p>Tidak ada hasil untuk "<strong>{{ q }}</strong>".</p>
-                <a href="{% url 'dashboard' %}" class="kosong-btn">Hapus pencarian</a>
-            </div>
-            {% endif %}
-        </div>
-        {% endif %}
 
-        <div class="stats-grid">
-            <a class="stat-card c-green" href="{% url 'peminjaman' %}">
-                <h4>Sedang dipinjam</h4>
-                <h2>{{ sedang_dipinjam }}</h2>
-                <p>buku aktif</p>
-                <i class="far fa-bookmark"></i>
-            </a>
-            
-            <a class="stat-card c-blue" href="{% url 'riwayat' %}">
-                <h4>Total Dibaca</h4>
-                <h2>{{ total_dibaca }}</h2>
-                <p>buku selesai</p>
-                <svg class="stat-icon" width="22" height="22"
-                    style="position:absolute; top:20px; right:20px; width:22px; height:22px; color:#000;"
-                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                    fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                </svg>
-            </a>
+            <div class="bottom-layout">
+                <div class="recommendations">
+                    <div class="section-header">
+                        <div>
+                            <h4>Pilihan Untukmu</h4>
+                            <h2>Rekomendasi Hari Ini</h2>
+                        </div>
+                        <a href="{% url 'katalog' %}">LIHAT SEMUA <i class="fas fa-arrow-right"></i></a>
+                    </div>
 
-            <a class="stat-card c-pink" href="{% url 'bookmarks' %}">
-                <h4>Bookmarks</h4>
-                <h2>{{ bookmarks }}</h2>
-                <p>koleksi tersimpan</p>
-                <i class="far fa-heart"></i>
-            </a>
-
-            <a class="stat-card c-purple" href="{% url 'leaderboard' %}">
-                <h4>Peringkat & EXP</h4>
-                <h2>#{{ peringkat }}</h2>
-                <p>{{ user.exp }} Total EXP Point</p>
-            <svg class="stat-icon" width="22" height="22"
-                style="position:absolute; top:20px; right:20px; width:22px; height:22px; color:#000;"
-                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
-                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
-                <path d="M4 22h16"/>
-                <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
-                <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
-                <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
-            </svg>
-            </a>
-        </div>
-
-        <div class="bottom-layout">
-            
-        <div class="recommendations">
-            <div class="section-header">
-                <div>
-                    <h4>Pilihan Untukmu</h4>
-                    <h2 id="rec-title">Rekomendasi Minggu Ini</h2>
-                </div>
-                <a href="{% url 'katalog' %}">LIHAT SEMUA <i class="fas fa-arrow-right"></i></a>
-            </div>
-            <div class="book-grid" id="book-grid-container">
-                <p>Loading...</p>
-            </div>
-        </div>
-
-            <div class="continue-reading">
-                <div class="section-header">
-                    <div>
-                        <h4>Lanjutkan</h4>
-                        <h2>Bacaanmu</h2>
+                    <div class="book-grid">
+                        {% for buku in rekomendasi_buku %}
+                        <a href="{% url 'buku_detail' buku.id_item %}" class="book-card" style="text-decoration:none; color:inherit;">
+                            <div class="book-cover-wrap">
+                                {% if buku.cover %}
+                                    <img src="{{ buku.cover }}" alt="{{ buku.judul }}" class="book-cover">
+                                {% else %}
+                                    <div class="book-cover book-cover-empty">No Cover</div>
+                                {% endif %}
+                                {% if buku.kategori %}
+                                    <span class="genre-chip">{{ buku.kategori }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="book-info">
+                                <p class="type">Buku Digital</p>
+                                <h3>{{ buku.judul|truncatechars:50 }}</h3>
+                                <p class="author">{{ buku.penulis }}{% if buku.tahun_terbit %} • {{ buku.tahun_terbit }}{% endif %}</p>
+                            </div>
+                        </a>
+                        {% empty %}
+                        <p style="color:#8a94a6;">Belum ada buku yang direkomendasikan.</p>
+                        {% endfor %}
                     </div>
                 </div>
-                
-                <div class="continue-card">
-                    {% if bacaan_terakhir %}
-                        <div class="cc-top">
-                            <a href="{% url 'baca_buku' bacaan_terakhir.buku_digital.id_item %}" class="cc-cover" title="Lanjut membaca">
-                                <img src="{% if bacaan_terakhir.buku_digital.cover %}{{ bacaan_terakhir.buku_digital.cover }}{% else %}https://images.unsplash.com/photo-1532012197267-da84d127e765?w=120{% endif %}" alt="Cover">
-                            </a>
 
-                            <div class="cc-info">
-                                <div class="cc-chips">
-                                    <span class="cc-chip cc-chip-kat">{{ bacaan_terakhir.kategori_label }}</span>
-                                    <span class="cc-chip cc-chip-waktu{% if bacaan_terakhir.sisa_hari <= 3 %} urgent{% endif %}">
-                                        {% if bacaan_terakhir.sisa_hari == 0 %}Jatuh tempo hari ini{% else %}Batas: {{ bacaan_terakhir.sisa_hari }} hari lagi{% endif %}
-                                    </span>
+                <div class="continue-reading">
+                    <div class="section-header">
+                        <div>
+                            <h4>Lanjutkan</h4>
+                            <h2>Bacaanmu</h2>
+                        </div>
+                    </div>
+
+                    <div class="continue-card">
+                        {% if bacaan_terakhir %}
+                            <div class="cc-top">
+                                <a href="{% url 'baca_buku' bacaan_terakhir.buku_digital.id_item %}" class="cc-cover" title="Lanjut membaca">
+                                    <img src="{% if bacaan_terakhir.buku_digital.cover %}{{ bacaan_terakhir.buku_digital.cover }}{% else %}https://images.unsplash.com/photo-1532012197267-da84d127e765?w=120{% endif %}" alt="Cover">
+                                </a>
+
+                                <div class="cc-info">
+                                    <div class="cc-chips">
+                                        <span class="cc-chip cc-chip-kat">{{ bacaan_terakhir.kategori_label }}</span>
+                                        <span class="cc-chip cc-chip-waktu{% if bacaan_terakhir.sisa_hari <= 3 %} urgent{% endif %}">
+                                            {% if bacaan_terakhir.sisa_hari == 0 %}Jatuh tempo hari ini{% else %}Batas: {{ bacaan_terakhir.sisa_hari }} hari lagi{% endif %}
+                                        </span>
+                                    </div>
+                                    <h3>{{ bacaan_terakhir.buku_digital.judul }}</h3>
+                                    <p class="cc-subtitle">{{ bacaan_terakhir.buku_digital.penulis }}</p>
                                 </div>
-                                <h3>{{ bacaan_terakhir.buku_digital.judul }}</h3>
-                                <p class="cc-subtitle">{{ bacaan_terakhir.buku_digital.penulis }}</p>
                             </div>
-                        </div>
 
-                        <div class="cc-progress">
-                            <div class="cc-progress-head">
-                                <span>Progress Membaca</span>
-                                <span class="cc-percent">{{ bacaan_terakhir.progress_baca|default:0 }}%</span>
+                            <div class="cc-progress">
+                                <div class="cc-progress-head">
+                                    <span>Progress Membaca</span>
+                                    <span class="cc-percent">{{ bacaan_terakhir.progress_baca|default:0 }}%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="--progress: {{ bacaan_terakhir.progress_baca|default:0 }}%;"></div>
+                                </div>
                             </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="--progress: {{ bacaan_terakhir.progress_baca|default:0 }}%;"></div>
-                            </div>
-                        </div>
 
-                        <div class="cc-bottom">
-                            <div class="cc-last">
-                                <i class="far fa-clock"></i>
-                                <span>{{ bacaan_terakhir.terakhir_teks }}</span>
+                            <div class="cc-bottom">
+                                <div class="cc-last">
+                                    <i class="far fa-clock"></i>
+                                    <span>{{ bacaan_terakhir.terakhir_teks }}</span>
+                                </div>
+                                <a href="{% url 'baca_buku' bacaan_terakhir.buku_digital.id_item %}" class="cc-btn">
+                                    Lanjut Baca <i class="fas fa-play"></i>
+                                </a>
                             </div>
-                            <a href="{% url 'baca_buku' bacaan_terakhir.buku_digital.id_item %}" class="cc-btn">
-                                Lanjut Baca <i class="fas fa-play"></i>
+
+                            <a href="{% url 'peminjaman' %}" class="cc-footer">
+                                Lihat peminjaman <i class="fas fa-arrow-right"></i>
                             </a>
-                        </div>
-
-                        <a href="{% url 'peminjaman' %}" class="cc-footer">
-                            Lihat peminjaman <i class="fas fa-arrow-right"></i>
-                        </a>
-                    {% else %}
-                        <div class="continue-info">
-                            <h3>Belum ada bacaan</h3>
-                            <p>Pinjam buku di katalog untuk mulai membaca!</p>
-                        </div>
-                    {% endif %}
+                        {% else %}
+                            <div class="continue-info">
+                                <h3>Belum ada bacaan</h3>
+                                <p>Pinjam buku di katalog untuk mulai membaca!</p>
+                            </div>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
@@ -323,7 +298,6 @@
         var el = document.getElementById("salam");
         if (el) el.textContent = salam;
     })();
-    
 </script>
 
 </body>
