@@ -147,7 +147,7 @@ def _proses_reset(request, action):
             "salah": 0, "ok": False,
         }
         return _render_login(request, 2, email=email, jeda=OTP_JEDA_KIRIM_ULANG,
-                             info="Jika email terdaftar, kode OTP 6 digit sudah dikirim.")
+                            info="Jika email terdaftar, kode OTP 6 digit sudah dikirim.")
 
     if not state:
         return _render_login(request, 1, error="Sesi pemulihan berakhir. Masukkan email lagi.")
@@ -250,20 +250,13 @@ def login_view(request):
                 else:
                     request.session.set_expiry(1209600)
 
-                if is_admin(user):
+                if is_admin(user) or user.is_staff:
                     return redirect("dashboard_admin")
                 return redirect("dashboard")
             else:
-                request.session.set_expiry(1209600)  # 2 Minggu
-
-            if user.is_staff or user.is_admin:
-                return redirect("dashboard_admin")
-            return redirect("dashboard")
-        else:
-            messages.error(request, "NIM atau Password Salah. Password minimal terdiri dari 8 karakter! Silahkan Coba Lagi")
+                messages.error(request, "NIM atau Password Salah. Password minimal terdiri dari 8 karakter! Silahkan Coba Lagi")
 
     return render(request, "perpustakaan/login.html")
-
 
 def register_view(request):
     if request.user.is_authenticated:
@@ -385,6 +378,16 @@ def dashboard(request):
         "target_menit": target_menit,
         "persen_target": persen_target,
     }
+
+    # --- rekomendasi harian berubah tiap hari ---
+    buku_semua = list(BukuDigital.objects.order_by("id_item"))
+    jumlah_tampil = 4
+    rekomendasi = []
+    if buku_semua:
+        offset = (timezone.localdate().timetuple().tm_yday * jumlah_tampil) % len(buku_semua)
+        rekomendasi = (buku_semua[offset:] + buku_semua[:offset])[:jumlah_tampil]
+    context["rekomendasi_buku"] = rekomendasi
+
     return render(request, "perpustakaan/dashboard.html", context)
 
 
@@ -442,6 +445,7 @@ def katalog_view(request):
                 'ia_semua': [],
                 'akses': '',
                 'deskripsi': buku.deskripsi,
+                'kategori': buku.kategori or '',
                 'subjek': [buku.kategori] if buku.kategori else [],
             }
             for buku in buku_queryset.order_by('judul')
@@ -833,7 +837,6 @@ def leaderboard_view(request):
     }
     return render(request, "perpustakaan/leaderboard.html", context)
 
-
 @login_required(login_url="login")
 def profil_view(request):
     user = request.user
@@ -849,12 +852,10 @@ def profil_view(request):
         foto_profil = request.FILES.get("foto_profil")
         foto_bg = request.FILES.get("foto_background")
 
-        hapus_foto_profil = request.POST.get("hapus_foto_profil")
-        hapus_foto_bg = request.POST.get("hapus_foto_background")
-
-        pinned_list = request.POST.getlist("pinned_achievements")
-        if len(pinned_list) > 3:
-            pinned_list = pinned_list[:3]
+        # PENTING: dibandingkan eksplisit dengan "1"
+        # (string "0" di Python itu TRUE, makanya dulu foto/bg selalu terhapus!)
+        hapus_foto_profil = request.POST.get("hapus_foto_profil") == "1"
+        hapus_foto_bg = request.POST.get("hapus_foto_background") == "1"
 
         perubahan_terjadi = False
 
@@ -866,11 +867,7 @@ def profil_view(request):
             user.email = email_baru
             perubahan_terjadi = True
 
-        new_pinned_str = ",".join(pinned_list)
-        if new_pinned_str != user.pinned_achievements:
-            user.pinned_achievements = new_pinned_str
-            perubahan_terjadi = True
-
+        # --- FOTO PROFIL: hapus / ganti / biarkan ---
         if hapus_foto_profil and user.foto_profil:
             if user.foto_profil.storage.exists(user.foto_profil.name):
                 user.foto_profil.delete(save=False)
@@ -886,6 +883,7 @@ def profil_view(request):
             user.foto_profil = foto_profil
             perubahan_terjadi = True
 
+        # --- BACKGROUND: hapus / ganti / biarkan ---
         if hapus_foto_bg and user.foto_background:
             if user.foto_background.storage.exists(user.foto_background.name):
                 user.foto_background.delete(save=False)
@@ -922,21 +920,22 @@ def profil_view(request):
     level = user.exp // LEVEL_EXP + 1
     exp_di_level = user.exp % LEVEL_EXP
     persen_level = exp_di_level * 100 // LEVEL_EXP
-    
+
     pinned_names = [name.strip() for name in user.pinned_achievements.split(",") if name.strip()]
     achievements_dict = {a["nama"]: a for a in semua_achievement}
-    
+
     display_achievements = []
     for name in pinned_names:
         if name in achievements_dict:
             display_achievements.append(achievements_dict[name])
-            
+
     if not display_achievements:
-        display_achievements = [a for a in semua_achievement if a["didapat"]][:3]
+        display_achievements = [a for a in semua_achievement if a["didapat"]][:5]
 
     context = {
         "user": user,
         "total_dibaca": total_dibaca,
+        "total_buku": total_buku,
         "peringkat": peringkat,
         "level": level,
         "exp_di_level": exp_di_level,
@@ -949,7 +948,6 @@ def profil_view(request):
         "achievement_total": len(semua_achievement),
     }
     return render(request, "perpustakaan/profil.html", context)
-
 
 LEVEL_EXP = 100
 
@@ -1024,7 +1022,6 @@ def _achievements(user):
         item("Bagian demi Bagian", "fa-puzzle-piece", "Selesaikan 15 bagian buku dan jurnal.", 0, 15, "Epik"),
     ]
 
-
 @login_required(login_url="login")
 def profil_user_detail_view(request, username):
     target = get_object_or_404(CustomUser, username=username)
@@ -1069,7 +1066,17 @@ def profil_user_detail_view(request, username):
             pinned_achievements.append(achievements_dict[name])
             
     if not pinned_achievements:
-        pinned_achievements = [a for a in semua_achievement_target if a["didapat"]][:3]
+        pinned_achievements = [a for a in semua_achievement_target if a["didapat"]][:5]
+
+    semua_achievement = _achievements(request.user)
+    pinned_names = [n.strip() for n in request.user.pinned_achievements.split(",") if n.strip()]
+    ach_dict = {a["nama"]: a for a in semua_achievement}
+    pinned = [ach_dict[n] for n in pinned_names if n in ach_dict]
+    if not pinned:
+        # saat user belum mem-pin apa pun -> tampilkan 5 terbaru
+        pinned = [a for a in semua_achievement if a["didapat"]][:5]
+
+    context["achievements"] = pinned
 
     context = {
         "user": request.user,
@@ -1088,7 +1095,6 @@ def profil_user_detail_view(request, username):
         "selisih_abs": abs(selisih),
     }
     return render(request, "perpustakaan/profil_publik.html", context)
-
 
 @login_required(login_url="login")
 @require_POST
@@ -1152,7 +1158,6 @@ def achievement_view(request):
     }
     return render(request, "perpustakaan/achievement.html", context)
 
-
 @login_required(login_url="login")
 @require_POST
 def update_pinned_achievement_api(request):
@@ -1163,8 +1168,8 @@ def update_pinned_achievement_api(request):
         if not isinstance(pinned_list, list):
             return JsonResponse({"status": "error", "message": "Format data tidak valid."}, status=400)
             
-        if len(pinned_list) > 3:
-            pinned_list = pinned_list[:3]
+        if len(pinned_list) > 5:
+            pinned_list = pinned_list[:5]
             
         request.user.pinned_achievements = ",".join(pinned_list)
         request.user.save(update_fields=["pinned_achievements"])
