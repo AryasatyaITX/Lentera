@@ -1,4 +1,11 @@
-from datetime import timedelta, date
+import hashlib
+import hmac
+import secrets
+from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
+from django.core.validators import validate_email
+
+from datetime import timedelta
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.utils.timesince import timesince
@@ -20,13 +27,22 @@ import time
 from urllib.parse import urlparse
 from django.conf import settings
 
-MASA_PINJAM_HARI = 14
+MASA_PINJAM_HARI = 14   #masa pinjam buku
+MASA_PERPANJANG_HARI = 7   # tambahan hari tiap perpanjangan buku
+MAKS_PERPANJANG = 1        # batas perpanjangan per peminjaman
 RING_DETIK_PENUH = 120   # 2 menit membaca aktif
 RING_EXP = 10            # EXP tiap cincin penuh
 RING_BEAT_MAKS = 15      # batas detik yang boleh dilaporkan per kiriman
 PAGINATION_PAGE_SIZE = 10
 ITEM_ID_RE = re.compile(r'^[\w-]+$')
 COVER_PREFIX = 'https://covers.openlibrary.org/'
+NIM_MAKS = 10
+PW_MIN = 8
+PW_MAKS = 20
+RESET_KEY = "reset_pw"           # kunci di session untuk proses pemulihan
+OTP_BERLAKU_DETIK = 300          
+OTP_JEDA_KIRIM_ULANG = 60        
+OTP_MAKS_SALAH = 5     
 
 KATEGORI = [
     ("engineering", "Engineering"),
@@ -40,6 +56,156 @@ KATEGORI = [
 DEFAULT_KATEGORI = "engineering"
 BAHASA = [("", "Semua bahasa"), ("ind", "Indonesia"), ("eng", "Inggris")]
 
+def validasi_password(pw):
+    """Aturan sama dengan petunjuk di halaman profil. None = lolos."""
+    if not (PW_MIN <= len(pw) <= PW_MAKS):
+        return f"Password harus {PW_MIN} - {PW_MAKS} karakter."
+    if not re.search(r"[A-Z]", pw):
+        return "Password minimal memiliki 1 huruf besar."
+    if not re.search(r"[^A-Za-z0-9]", pw):
+        return "Password minimal memiliki 1 karakter unik (contoh: ! @ # $)."
+    return None
+
+
+def _hash_otp(uid, kode):
+    pesan = f"{uid}:{kode}".encode()
+    return hmac.new(settings.SECRET_KEY.encode(), pesan, hashlib.sha256).hexdigest()
+
+
+def _samarkan_email(email):
+    nama, _, domain = email.partition("@")
+    depan = nama[:2] if len(nama) > 2 else nama[:1]
+    return f"{depan}{'*' * max(len(nama) - len(depan), 3)}@{domain}"
+
+
+def _render_login(request, step=0, error="", info="", email="", jeda=0):
+    """step: 0 = form login, 1 = isi email, 2 = isi OTP, 3 = password baru."""
+    return render(request, "perpustakaan/login.html", {
+        "reset_step": step,
+        "reset_error": error,
+        "reset_info": info,
+        "reset_email": _samarkan_email(email) if email else "",
+        "reset_jeda": max(int(jeda), 0),
+    })
+
+
+def _proses_reset(request, action):
+    User = get_user_model()
+    state = request.session.get(RESET_KEY)
+    sekarang = time.time()
+
+    if action == "reset_batal":
+        request.session.pop(RESET_KEY, None)
+        return redirect("login")
+
+    if action == "reset_ganti_email":
+        request.session.pop(RESET_KEY, None)
+        return _render_login(request, 1)
+
+    # ---- Langkah 1 dan kirim ulang: kirim kode OTP ke email ----
+    if action in ("reset_kirim_otp", "reset_kirim_ulang"):
+        if action == "reset_kirim_ulang":
+            if not state:
+                return _render_login(request, 1, error="Sesi pemulihan berakhir. Masukkan email lagi.")
+            email = state["email"]
+            sisa = OTP_JEDA_KIRIM_ULANG - (sekarang - state["kirim"])
+            if sisa > 0:
+                return _render_login(request, 2, error=f"Tunggu {int(sisa)} detik sebelum kirim ulang.",
+                                     email=email, jeda=sisa)
+        else:
+            email = request.POST.get("email", "").strip()
+            try:
+                validate_email(email)
+            except ValidationError:
+                return _render_login(request, 1, error="Format email tidak valid.")
+
+        cocok = list(User.objects.filter(email__iexact=email, is_active=True)[:2])
+        if len(cocok) > 1:
+            return _render_login(request, 1, error="Email ini dipakai lebih dari satu akun. Hubungi admin perpustakaan.")
+
+        uid, hash_otp = None, None
+        if len(cocok) == 1:
+            kode = f"{secrets.randbelow(10 ** 6):06d}"
+            uid, hash_otp = cocok[0].pk, _hash_otp(cocok[0].pk, kode)
+            try:
+                send_mail(
+                    "Kode OTP Pemulihan Akun Lentera",
+                    f"Kode OTP kamu: {kode}\n\n"
+                    f"Kode berlaku {OTP_BERLAKU_DETIK // 60} menit. "
+                    "Jangan bagikan kode ini kepada siapa pun.\n"
+                    "Abaikan email ini jika kamu tidak meminta pemulihan akun.",
+                    None,
+                    [email],
+                )
+            except Exception:
+                return _render_login(request, 1, error="Gagal mengirim email. Coba lagi beberapa saat.")
+
+        # Pesan sama untuk email terdaftar maupun tidak (tidak membocorkan data akun)
+        request.session[RESET_KEY] = {
+            "email": email, "uid": uid, "hash": hash_otp,
+            "exp": sekarang + OTP_BERLAKU_DETIK, "kirim": sekarang,
+            "salah": 0, "ok": False,
+        }
+        return _render_login(request, 2, email=email, jeda=OTP_JEDA_KIRIM_ULANG,
+                             info="Jika email terdaftar, kode OTP 6 digit sudah dikirim.")
+
+    if not state:
+        return _render_login(request, 1, error="Sesi pemulihan berakhir. Masukkan email lagi.")
+
+    sisa_jeda = OTP_JEDA_KIRIM_ULANG - (sekarang - state["kirim"])
+
+    # ---- Langkah 2: cek kode OTP ----
+    if action == "reset_verifikasi_otp":
+        if state["ok"]:
+            return _render_login(request, 3, email=state["email"])
+        if sekarang > state["exp"] or state["salah"] >= OTP_MAKS_SALAH:
+            request.session.pop(RESET_KEY, None)
+            return _render_login(request, 1, error="Kode kedaluwarsa atau terlalu banyak salah. Minta kode baru.")
+
+        kode = re.sub(r"\D", "", request.POST.get("otp", ""))
+        if state["hash"] and hmac.compare_digest(state["hash"], _hash_otp(state["uid"], kode)):
+            state["ok"] = True
+            state["exp"] = sekarang + OTP_BERLAKU_DETIK   # waktu untuk mengisi password baru
+            request.session[RESET_KEY] = state
+            return _render_login(request, 3, email=state["email"])
+
+        state["salah"] += 1
+        request.session[RESET_KEY] = state
+        sisa = OTP_MAKS_SALAH - state["salah"]
+        return _render_login(request, 2, error=f"Kode OTP salah. Sisa percobaan: {sisa}.",
+            email=state["email"], jeda=sisa_jeda)
+
+    # ---- Langkah 3: simpan password baru ----
+    if action == "reset_password":
+        if not state["ok"] or sekarang > state["exp"]:
+            request.session.pop(RESET_KEY, None)
+            return _render_login(request, 1, error="Sesi pemulihan berakhir. Ulangi dari awal.")
+
+        baru = request.POST.get("new_password", "")
+        konfirmasi = request.POST.get("confirm_password", "")
+        if baru != konfirmasi:
+            return _render_login(request, 3, error="Konfirmasi password baru tidak cocok!", email=state["email"])
+        galat = validasi_password(baru)
+        if galat:
+            return _render_login(request, 3, error=galat, email=state["email"])
+
+        user = User.objects.filter(pk=state["uid"]).first()
+        if not user:
+            request.session.pop(RESET_KEY, None)
+            return _render_login(request, 1, error="Akun tidak ditemukan.")
+
+        user.set_password(baru)
+        user.save()
+        request.session.pop(RESET_KEY, None)
+        messages.success(request, "Password berhasil diubah! Silakan login dengan password baru.")
+        return redirect("login")
+
+    return redirect("login")
+
+def _jatuh_tempo(pinjaman):
+    return pinjaman.tanggal_pinjam + timedelta(
+        days=MASA_PINJAM_HARI + pinjaman.perpanjangan * MASA_PERPANJANG_HARI
+    )
 
 def is_admin(user):
     return user.is_authenticated and (user.is_admin or user.is_staff)
@@ -88,7 +254,13 @@ def login_view(request):
                     return redirect("dashboard_admin")
                 return redirect("dashboard")
             else:
-                messages.error(request, "Username atau Password Salah. Silahkan Coba Lagi")
+                request.session.set_expiry(1209600)  # 2 Minggu
+
+            if user.is_staff or user.is_admin:
+                return redirect("dashboard_admin")
+            return redirect("dashboard")
+        else:
+            messages.error(request, "NIM atau Password Salah. Password minimal terdiri dari 8 karakter! Silahkan Coba Lagi")
 
     return render(request, "perpustakaan/login.html")
 
@@ -98,32 +270,46 @@ def register_view(request):
         return redirect("dashboard")
 
     if request.method == "POST":
-        username = request.POST.get("username")
-        email = request.POST.get("email")
-        password = request.POST.get("password")
-        confirm_password = request.POST.get("confirm_password")
+        nim = request.POST.get("username", "").strip()
+        email = request.POST.get("email", "").strip()
+        password = request.POST.get("password", "")
+        confirm_password = request.POST.get("confirm_password", "")
 
-        if password != confirm_password:
-            messages.error(request, "Konfirmasi password tidak cocok!")
+        galat = None
+        if not nim or len(nim) > NIM_MAKS:
+            galat = f"NIM wajib diisi dan maksimal {NIM_MAKS} karakter!"
+        elif password != confirm_password:
+            galat = "Konfirmasi password tidak cocok!"
+        else:
+            galat = validasi_password(password)
+
+        if not galat:
+            try:
+                validate_email(email)
+            except ValidationError:
+                galat = "Format email tidak valid!"
+
+        if not galat and CustomUser.objects.filter(username=nim).exists():
+            galat = "NIM sudah terdaftar!"
+        if not galat and CustomUser.objects.filter(email__iexact=email).exists():
+            galat = "Email sudah dipakai akun lain!"
+
+        if galat:
+            messages.error(request, galat)
             return render(request, "perpustakaan/register.html")
 
-        if CustomUser.objects.filter(username=username).exists():
-            messages.error(request, "Username/NIM sudah terdaftar!")
-            return render(request, "perpustakaan/register.html")
-
-        user = CustomUser.objects.create_user(
-            username=username,
+        CustomUser.objects.create_user(
+            username=nim,
             email=email,
             password=password,
             is_member=True,
             is_admin=False,
         )
-        login(request, user)
-        messages.success(request, "Registrasi berhasil!")
-        return redirect("dashboard")
+        # Setelah daftar, arahkan ke halaman login (tidak login otomatis)
+        messages.success(request, "Registrasi berhasil! Silakan login.")
+        return redirect("login")
 
     return render(request, "perpustakaan/register.html")
-
 
 def logout_view(request):
     logout(request)
@@ -333,11 +519,7 @@ def buku_detail(request, olid):
         ),
         "bookmarked": Bookmark.objects.filter(user=user, buku_digital_id=olid).exists(),
         "pinjam_aktif": pinjam_aktif,
-        "jatuh_tempo": (
-            pinjam_aktif.tanggal_pinjam + timedelta(days=MASA_PINJAM_HARI)
-            if pinjam_aktif
-            else None
-        ),
+        "jatuh_tempo": _jatuh_tempo(pinjam_aktif) if pinjam_aktif else None,
         "jumlah_aktif": jumlah_aktif,
         "max_loans": user.max_loans,
         "slot_penuh": jumlah_aktif >= user.max_loans,
@@ -541,6 +723,7 @@ def peminjaman_view(request):
         "daftar_pinjaman": daftar_pinjaman,
         "total_pinjaman": daftar_pinjaman.count(),
         "batas_pinjam": batas_pinjam,
+        "maks_perpanjangan": MAKS_PERPANJANG,
         "jumlah_aktif": jumlah_aktif,
         "sisa_slot": sisa_slot,
         "slot_range": range(batas_pinjam),
@@ -560,6 +743,31 @@ def kembalikan_buku(request, pinjaman_id):
 
     return redirect("peminjaman")
 
+@login_required(login_url="login")
+@require_POST
+def perpanjang_buku(request, pinjaman_id):
+    pinjaman = get_object_or_404(
+        Peminjaman, id=pinjaman_id, user=request.user, status="Dibaca"
+    )
+
+    if pinjaman.perpanjangan >= MAKS_PERPANJANG:
+        messages.error(
+            request,
+            f"Batas perpanjangan {MAKS_PERPANJANG} kali untuk buku ini sudah tercapai.",
+                extra_tags="Perpanjangan gagal",
+            )
+        return redirect("peminjaman")
+
+    pinjaman.perpanjangan += 1
+    pinjaman.save(update_fields=["perpanjangan"])
+    jatuh_tempo = timezone.localtime(_jatuh_tempo(pinjaman))
+    messages.success(
+        request,
+        f"Peminjaman diperpanjang {MASA_PERPANJANG_HARI} hari. "
+        f"Jatuh tempo baru: {jatuh_tempo:%d %b %Y}.",
+        extra_tags="Perpanjangan berhasil",
+    )
+    return redirect("peminjaman")
 
 @login_required(login_url="login")
 def bookmarks_view(request):

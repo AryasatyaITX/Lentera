@@ -80,7 +80,8 @@ class Peminjaman(models.Model):
         max_length=20, default="Dibaca"
     )  # Dibaca / Selesai
     progress_baca = models.IntegerField(default=0)  # 0 - 100%
-    waktu_baca_detik = models.IntegerField(default=0)  # Detik membaca untuk peminjaman ini
+    waktu_baca_detik = models.IntegerField(default=0)  # BARU: detik membaca untuk peminjaman ini
+    perpanjangan = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         item = self.buku_digital or self.jurnal

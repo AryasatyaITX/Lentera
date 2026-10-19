@@ -1,11 +1,10 @@
+import csv
 from datetime import timedelta
 import uuid
-import csv
-from django.http import HttpResponse
-from django.db.models import Count, Q
 from django.core.files.storage import FileSystemStorage
 from django.contrib import messages
 from django.db.models import Q
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import user_passes_test
 from django.db.models import Count
@@ -14,13 +13,25 @@ from django.shortcuts import render
 from django.utils import timezone
 
 from .models import Bookmark, BukuDigital, CustomUser, Jurnal, Peminjaman
-LAMA_PINJAM_HARI = 7  # sesuaikan dengan aturan perpustakaanmu(punya yoga)
 
 BULAN = [
     "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli",
     "Agustus", "September", "Oktober", "November", "Desember",
 ]
 HARI_SINGKAT = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"]
+
+# Dipakai kalau model Peminjaman tidak punya field jatuh_tempo.
+LAMA_PINJAM_HARI = 7
+
+# Nama field di Peminjaman yang menunjuk ke CustomUser (otomatis terdeteksi).
+_USER_FIELD = next(
+    (
+        f.name
+        for f in Peminjaman._meta.fields
+        if f.is_relation and f.related_model is CustomUser
+    ),
+    "user",
+)
 
 
 def _boleh_admin(user):
@@ -158,7 +169,6 @@ def dashboard_admin(request):
         "total_buku": BukuDigital.objects.count(),
         "total_jurnal": Jurnal.objects.count(),
         "total_anggota": anggota.count(),
-        "buku_bulan_ini": BukuDigital.objects.filter(tanggal_ditambahkan__gte=awal_bulan).count(),
         "anggota_baru": anggota.filter(date_joined__gte=awal_bulan).count(),
         "sedang_dipinjam": Peminjaman.objects.filter(status="Dibaca").count(),
         "dikembalikan_minggu": Peminjaman.objects.filter(
@@ -248,7 +258,6 @@ def kelola_jurnal(request):
     if request.method == "POST":
         judul = request.POST.get("judul")
         penulis = request.POST.get("penulis")
-        kategori="", 
         bidang_ilmu = request.POST.get("bidang_ilmu", "")
         volume = request.POST.get("volume", "")
         tahun_terbit = request.POST.get("tahun_terbit", "")
@@ -312,14 +321,131 @@ def hapus_jurnal(request, id_item):
 # ==========================================
 # KELOLA ANGGOTA (ADMIN)
 # ==========================================
+def _pinjaman_per_user():
+    """Dictionary {id_user: jumlah_peminjaman}."""
+    rows = (
+        Peminjaman.objects.order_by()
+        .values(_USER_FIELD)
+        .annotate(n=Count("id"))
+    )
+    return {r[_USER_FIELD]: r["n"] for r in rows}
+
+
+def _cek_password(pw):
+    """Kembalikan pesan error bila password tidak memenuhi syarat, else None."""
+    import re
+    if not (8 <= len(pw) <= 20):
+        return "Password harus 8 - 20 karakter."
+    if not re.search(r"[^A-Za-z0-9\s]", pw):
+        return "Password harus memuat minimal 1 karakter unik (mis. ! @ # $)."
+    if not re.search(r"[A-Z]", pw):
+        return "Password harus memuat minimal 1 huruf besar."
+    return None
+
+
+def _queryset_anggota():
+    """Hanya user biasa. Akun admin tidak ditampilkan / tidak bisa diubah di sini."""
+    return (
+        CustomUser.objects.filter(is_member=True)
+        .exclude(is_admin=True)
+        .exclude(is_staff=True)
+        .exclude(is_superuser=True)
+    )
+
+
 @user_passes_test(_boleh_admin, login_url="login")
 def kelola_anggota(request):
-    anggota = (
-        CustomUser.objects.filter(is_member=True)
-        .annotate(total_pinjaman=Count("peminjaman"))
-        .order_by("-date_joined")
+    # CREATE
+    if request.method == "POST":
+        username = request.POST.get("username", "").strip()
+        nama = request.POST.get("nama_tampilan", "").strip()
+        email = request.POST.get("email", "").strip()
+        password = request.POST.get("password", "")
+
+        if not username:
+            messages.error(request, "Username wajib diisi.")
+        elif _cek_password(password):
+            messages.error(request, _cek_password(password))
+        elif CustomUser.objects.filter(username__iexact=username).exists():
+            messages.error(request, f"Username \u201c{username}\u201d sudah dipakai.")
+        else:
+            user = CustomUser(
+                username=username,
+                nama_tampilan=nama,
+                email=email,
+                is_member=True,
+                is_active=True,
+            )
+            user.set_password(password)
+            user.save()
+            messages.success(request, f"Anggota \u201c{nama or username}\u201d berhasil ditambahkan.")
+        return redirect("kelola_anggota")
+
+    # READ
+    anggota = list(_queryset_anggota().order_by("-date_joined"))
+    jumlah = _pinjaman_per_user()
+    for a in anggota:
+        a.jumlah_pinjaman = jumlah.get(a.pk, 0)
+
+    return render(
+        request, "perpustakaan/kelola_anggota.html", {"anggota": anggota}
     )
-    return render(request, "perpustakaan/kelola_anggota.html", {"anggota": anggota})
+
+
+@user_passes_test(_boleh_admin, login_url="login")
+def edit_anggota(request, pk):
+    """UPDATE data anggota."""
+    user = get_object_or_404(_queryset_anggota(), pk=pk)
+    if request.method == "POST":
+        username = request.POST.get("username", "").strip()
+        nama = request.POST.get("nama_tampilan", "").strip()
+        email = request.POST.get("email", "").strip()
+        password = request.POST.get("password", "")
+        aktif = request.POST.get("is_active", "1") == "1"
+
+        if not username:
+            messages.error(request, "Username tidak boleh kosong.")
+        elif CustomUser.objects.filter(username__iexact=username).exclude(pk=user.pk).exists():
+            messages.error(request, f"Username \u201c{username}\u201d sudah dipakai.")
+        elif password and _cek_password(password):
+            messages.error(request, _cek_password(password))
+        else:
+            user.username = username
+            user.nama_tampilan = nama
+            user.email = email
+            user.is_active = aktif
+            if password:
+                user.set_password(password)
+            user.save()
+            messages.success(request, "Data anggota berhasil diperbarui.")
+    return redirect("kelola_anggota")
+
+
+@user_passes_test(_boleh_admin, login_url="login")
+def hapus_anggota(request, pk):
+    """DELETE = nonaktifkan akun. Akun pindah ke tab Nonaktif, riwayat pinjam tetap ada."""
+    if request.method == "POST":
+        user = get_object_or_404(_queryset_anggota(), pk=pk)
+        user.is_active = False
+        user.save(update_fields=["is_active"])
+        messages.success(
+            request,
+            f"Akun \u201c{user.nama_tampilan or user.username}\u201d dinonaktifkan.",
+        )
+    return redirect("kelola_anggota")
+
+
+@user_passes_test(_boleh_admin, login_url="login")
+def aktifkan_anggota(request, pk):
+    if request.method == "POST":
+        user = get_object_or_404(_queryset_anggota(), pk=pk)
+        user.is_active = True
+        user.save(update_fields=["is_active"])
+        messages.success(
+            request,
+            f"Akun \u201c{user.nama_tampilan or user.username}\u201d diaktifkan kembali.",
+        )
+    return redirect("kelola_anggota")
 
 
 # ==========================================
@@ -327,45 +453,61 @@ def kelola_anggota(request):
 # ==========================================
 @user_passes_test(_boleh_admin, login_url="login")
 def peminjaman_admin(request):
+    hari_ini = timezone.localdate()
     daftar = list(
-        Peminjaman.objects.select_related("user", "buku_digital", "jurnal")
+        Peminjaman.objects.select_related(_USER_FIELD, "buku_digital", "jurnal")
         .order_by("-tanggal_pinjam")
     )
-    sekarang = timezone.now()
+
     for p in daftar:
-        # hanya diisi kalau model belum punya properti dengan nama yang sama
-        if not hasattr(p, "sudah_kembali"):
-            p.sudah_kembali = p.status == "Selesai"
-        if not hasattr(p, "jatuh_tempo"):
-            p.jatuh_tempo = p.tanggal_pinjam + timedelta(days=LAMA_PINJAM_HARI)
-        if not hasattr(p, "terlambat"):
-            p.terlambat = (not p.sudah_kembali) and sekarang > p.jatuh_tempo
-    return render(request, "perpustakaan/peminjaman_admin.html", {"peminjaman": daftar})
+        p.pengguna = getattr(p, _USER_FIELD)
+        p.item = p.buku_digital or p.jurnal
+        p.is_kembali = p.status == "Selesai"
+
+        jatuh_tempo = getattr(p, "jatuh_tempo", None) or (
+            p.tanggal_pinjam + timedelta(days=LAMA_PINJAM_HARI)
+        )
+        p.jatuh_tempo_tampil = jatuh_tempo
+        tgl = jatuh_tempo.date() if hasattr(jatuh_tempo, "date") else jatuh_tempo
+        p.is_telat = (not p.is_kembali) and tgl < hari_ini
+
+    return render(
+        request, "perpustakaan/peminjaman_admin.html", {"peminjaman": daftar}
+    )
 
 
 # ==========================================
 # LAPORAN (ADMIN)
 # ==========================================
 @user_passes_test(_boleh_admin, login_url="login")
-def laporan_peminjaman(request):
+def laporan(request):
     sekarang = timezone.now()
-    awal_bulan = sekarang.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    awal_bulan = sekarang.replace(
+        day=1, hour=0, minute=0, second=0, microsecond=0
+    )
 
-    bulan_ini = Peminjaman.objects.filter(tanggal_pinjam__gte=awal_bulan)
-    anggota_aktif = bulan_ini.values("user").distinct().count()
-    total_pembaca = CustomUser.objects.filter(is_member=True).count()
+    anggota = CustomUser.objects.filter(is_member=True)
 
-    # buku per kategori
-    rows = (
-        Peminjaman.objects.filter(buku_digital__isnull=False)
-        .values("buku_digital__kategori")
-        .annotate(jumlah=Count("id"))
-        .order_by("-jumlah")[:6]
+    # Anggota aktif = anggota yang meminjam dalam 30 hari terakhir.
+    id_aktif = (
+        Peminjaman.objects.filter(
+            tanggal_pinjam__gte=sekarang - timedelta(days=30)
+        )
+        .order_by()
+        .values_list(_USER_FIELD, flat=True)
+        .distinct()
+    )
+
+    # Buku per kategori
+    rows = list(
+        BukuDigital.objects.values("kategori")
+        .annotate(jumlah=Count("pk"))
+        .order_by("-jumlah")
     )
     maks = rows[0]["jumlah"] if rows else 1
     kategori_list = [
         {
-            "nama": r["buku_digital__kategori"] or "Tanpa kategori",
+            "nama": (r["kategori"] or "Lainnya").replace("_", " ").title(),
             "jumlah": r["jumlah"],
             "persen": round(r["jumlah"] / maks * 100),
         }
@@ -375,33 +517,42 @@ def laporan_peminjaman(request):
     grafik = _data_grafik_7_hari()
 
     context = {
-        "peminjaman_bulan_ini": bulan_ini.count(),
+        "peminjaman_bulan_ini": Peminjaman.objects.filter(
+            tanggal_pinjam__gte=awal_bulan
+        ).count(),
         "jurnal_tersedia": Jurnal.objects.count(),
-        "anggota_aktif": anggota_aktif,
-        "total_pembaca": total_pembaca,
+        "anggota_aktif": anggota.filter(pk__in=id_aktif).count(),
+        "total_pembaca": anggota.count(),
         "buku_tersedia": BukuDigital.objects.count(),
-        "kategori_list": kategori_list,
         "volume_labels": grafik["labels"],
         "volume_pinjam": grafik["pinjam"],
         "volume_kembali": grafik["kembali"],
+        "kategori_list": kategori_list,
     }
     return render(request, "perpustakaan/laporan_peminjaman.html", context)
 
 
 @user_passes_test(_boleh_admin, login_url="login")
 def unduh_laporan(request):
-    response = HttpResponse(content_type="text/csv")
-    response["Content-Disposition"] = 'attachment; filename="laporan_peminjaman.csv"'
-    response.write("\ufeff")  # supaya terbaca benar di Excel
-    w = csv.writer(response)
-    w.writerow(["Judul", "Anggota", "Tanggal Pinjam", "Tanggal Kembali", "Status"])
-    qs = Peminjaman.objects.select_related("user", "buku_digital", "jurnal").order_by("-tanggal_pinjam")
+    """Unduh seluruh data peminjaman sebagai CSV (bisa dibuka di Excel)."""
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = 'attachment; filename="laporan-peminjaman.csv"'
+    response.write("\ufeff")  # agar Excel membaca UTF-8 dengan benar
+
+    writer = csv.writer(response)
+    writer.writerow(["Buku/Jurnal", "Anggota", "Tanggal pinjam", "Tanggal kembali", "Status"])
+
+    qs = Peminjaman.objects.select_related(
+        _USER_FIELD, "buku_digital", "jurnal"
+    ).order_by("-tanggal_pinjam")
+
     for p in qs:
-        w.writerow([
+        writer.writerow([
             _judul_item(p),
-            p.user.username,
+            getattr(p, _USER_FIELD).username,
             p.tanggal_pinjam.strftime("%Y-%m-%d"),
             p.tanggal_kembali.strftime("%Y-%m-%d") if p.tanggal_kembali else "-",
-            p.status,
+            "Dikembalikan" if p.status == "Selesai" else "Dipinjam",
         ])
+
     return response

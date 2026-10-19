@@ -309,3 +309,543 @@ body.admin-body {
     .a-stats { grid-template-columns: repeat(2, 1fr); }
     .a-panels { grid-template-columns: 1fr; }
 }
+
+
+/* ===== HALAMAN ANGGOTA, PEMINJAMAN, LAPORAN (dulu admin-pages.css) ===== */
+/* =========================================================
+   LENTERA ADMIN - HALAMAN ANGGOTA, PEMINJAMAN, LAPORAN
+   File mandiri: tidak bergantung pada style.css / admin.css.
+   Semua kelas berawalan .ap- dan berada di dalam <div class="ap">.
+   Simpan di: static/perpustakaan/css/admin-pages.css
+========================================================= */
+
+.ap {
+    --ap-green: #173C3A;
+    --ap-lime: #D4F838;
+    --ap-navy: #121824;
+    --ap-line: #E5E5D8;
+    --ap-muted: #8A8A7A;
+    --ap-cream: #FDF9E8;
+    padding-bottom: 40px;
+}
+
+.ap [hidden] { display: none !important; }
+
+/* ---------------- Toolbar (pencarian + filter) ---------------- */
+.ap-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 8px 0 30px;
+    flex-wrap: wrap;
+}
+
+.ap-search {
+    position: relative;
+    width: 380px;
+    max-width: 100%;
+}
+
+.ap-search i {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 13px;
+    color: var(--ap-muted);
+    pointer-events: none;
+}
+
+.ap-search input {
+    width: 100%;
+    height: 46px;
+    padding: 0 16px 0 44px;
+    background: var(--ap-cream);
+    border: 1px solid var(--ap-line);
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--ap-navy);
+    outline: none;
+}
+
+.ap-search input::placeholder { color: #a4a495; }
+.ap-search input:focus { border-color: var(--ap-green); }
+
+.ap-filter-btn {
+    height: 46px;
+    padding: 0 22px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    border: 1px solid var(--ap-line);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ap-navy);
+    cursor: pointer;
+    transition: background .2s, border-color .2s;
+}
+
+.ap-filter-btn:hover { background: #f5f5ee; }
+.ap-filter-btn.on { border-color: var(--ap-green); }
+
+.ap-filter-panel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: -14px 0 26px;
+    padding: 12px 18px;
+    background: #fff;
+    border: 1px solid var(--ap-line);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #4A4A3F;
+    width: fit-content;
+}
+
+.ap-filter-panel input { width: 16px; height: 16px; accent-color: var(--ap-green); }
+.ap-filter-panel label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+
+/* ---------------- Tab ---------------- */
+.ap-tabs {
+    display: flex;
+    gap: 28px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.ap-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0 8px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ap-muted);
+    cursor: pointer;
+    transition: color .2s, border-color .2s;
+}
+
+.ap-tab::after {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #6CD04F;
+}
+
+.ap-tab:hover { color: var(--ap-navy); }
+.ap-tab.active { color: var(--ap-navy); border-bottom-color: var(--ap-navy); }
+
+/* ---------------- Kartu + tabel ---------------- */
+.ap-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 26px 30px 32px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    overflow-x: auto;
+}
+
+.ap-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+}
+
+.ap-card-head h3 { font-size: 16px; font-weight: 800; color: var(--ap-navy); }
+.ap-card-head span { font-size: 12px; font-weight: 600; color: var(--ap-muted); }
+
+.ap-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 720px;
+}
+
+.ap-table th {
+    padding: 16px 18px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+    text-align: center;
+    border-top: 1.5px solid var(--ap-navy);
+    border-bottom: 1px solid #eee;
+}
+
+.ap-table td {
+    padding: 24px 18px;
+    font-size: 13px;
+    color: #777;
+    text-align: center;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f1e8;
+}
+
+.ap-table th:first-child,
+.ap-table td:first-child { text-align: left; }
+
+.ap-table tbody tr:last-child td { border-bottom: none; }
+.ap-table tbody tr:hover td { background: #fafaf5; }
+
+.ap-empty {
+    text-align: center !important;
+    padding: 70px 0 !important;
+    color: var(--ap-muted) !important;
+    font-size: 13px !important;
+}
+
+/* Sel anggota */
+.ap-user { display: flex; align-items: center; gap: 14px; }
+
+.ap-avatar {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ap-lime);
+    color: var(--ap-green);
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.ap-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.ap-user-name { font-size: 14px; font-weight: 700; color: var(--ap-navy); }
+.ap-user-sub { display: block; font-size: 12px; color: var(--ap-muted); margin-top: 2px; }
+
+/* Sel buku */
+.ap-item { display: flex; align-items: center; gap: 16px; }
+
+.ap-item img {
+    width: 56px;
+    height: 78px;
+    flex-shrink: 0;
+    border-radius: 4px;
+    object-fit: cover;
+    background: #ddd;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.ap-item-title { display: block; font-size: 13px; font-weight: 700; color: var(--ap-navy); }
+.ap-item-sub { display: block; font-size: 12px; color: var(--ap-muted); margin-top: 4px; }
+
+/* Badge status */
+.ap-pill {
+    display: inline-block;
+    padding: 5px 14px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.ap-pill.aktif    { background: #E8F5E9; color: #2E7D32; }
+.ap-pill.nonaktif { background: #ECECE4; color: #777; }
+.ap-pill.dipinjam { background: #FFF8E1; color: #F57F17; }
+.ap-pill.telat    { background: #FEE2E2; color: #DC2626; }
+.ap-pill.kembali  { background: #E3F2FD; color: #1976D2; }
+
+/* ---------------- Laporan: kartu statistik ---------------- */
+.ap-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 28px;
+    margin: 8px 0 28px;
+}
+
+.ap-stat {
+    position: relative;
+    min-height: 130px;
+    padding: 20px 24px 22px;
+    border-radius: 10px;
+}
+
+.ap-stat.c-green  { background: #DDFBC6; }
+.ap-stat.c-blue   { background: #E3F1FC; }
+.ap-stat.c-pink   { background: #FFDFE3; }
+.ap-stat.c-purple { background: #DDD8FB; }
+
+.ap-stat h4 { font-size: 12px; font-weight: 500; color: #777; }
+
+.ap-stat h2 {
+    margin: 10px 0 14px;
+    font-size: 40px;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--ap-navy);
+}
+
+.ap-stat p { font-size: 12px; color: #777; }
+
+.ap-stat-ico {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--ap-navy);
+}
+
+/* ---------------- Laporan: grafik + kategori ---------------- */
+.ap-panels {
+    display: grid;
+    grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
+    gap: 28px;
+    align-items: start;
+}
+
+.ap-panel {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px 28px 30px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+}
+
+.ap-panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.ap-panel-head small { display: block; font-size: 12px; color: var(--ap-muted); margin-bottom: 6px; }
+.ap-panel-head h3 { font-size: 17px; font-weight: 800; color: var(--ap-navy); }
+
+.ap-eyebrow {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: #777;
+}
+
+.ap-btn-unduh {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 22px;
+    background: var(--ap-lime);
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ap-navy);
+    text-decoration: none;
+    transition: background .2s;
+}
+
+.ap-btn-unduh:hover { background: #c0e628; }
+
+.ap-chart { position: relative; height: 360px; }
+
+.ap-cat-list { display: flex; flex-direction: column; gap: 30px; padding-top: 10px; }
+
+.ap-cat-top {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 13px;
+    color: #666;
+}
+
+.ap-cat-top b { font-weight: 700; color: var(--ap-navy); }
+
+.ap-cat-bar { height: 8px; background: #F0F0E6; border-radius: 999px; overflow: hidden; }
+
+.ap-cat-bar span {
+    display: block;
+    width: var(--w, 0%);
+    height: 100%;
+    background: var(--ap-green);
+    border-radius: 999px;
+    transition: width .4s ease;
+}
+
+.ap-muted-text { font-size: 13px; color: var(--ap-muted); }
+
+/* ---------------- Responsif ---------------- */
+@media (max-width: 1200px) {
+    .ap-stats { grid-template-columns: repeat(2, 1fr); }
+    .ap-panels { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 700px) {
+    .ap-stats { grid-template-columns: 1fr; }
+    .ap-card { padding: 20px; }
+}
+
+
+/* =========================================================
+   KELOLA ANGGOTA: CRUD, modal, pencarian putih
+========================================================= */
+
+/* Scrollbar selalu disediakan, jadi foto profil di atas tidak geser
+   saat pindah tab (mis. ke Nonaktif yang daftarnya pendek). */
+.app-layout .main-content.adm-main {
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
+}
+
+.ap-card--tall { min-height: 420px; }
+
+.ap-search--white { width: 520px; }
+.ap-search--white input { background: #fff; }
+
+.ap-toolbar .ap-btn-add { margin-left: auto; }
+
+.ap-btn-add {
+    height: 46px;
+    padding: 0 22px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--ap-lime);
+    color: var(--ap-green);
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .2s;
+}
+.ap-btn-add:hover { background: #c0e628; }
+
+.ap-btn-cancel {
+    height: 44px;
+    padding: 0 20px;
+    background: transparent;
+    border: 1px solid var(--ap-line);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #6A6A5C;
+    cursor: pointer;
+}
+
+.ap-btn-danger {
+    height: 44px;
+    padding: 0 22px;
+    background: #dc2626;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.ap-btn-danger:hover { background: #b91c1c; }
+
+/* Tombol aksi di tabel */
+.ap-actions { display: flex; justify-content: center; gap: 8px; }
+.ap-actions form { margin: 0; }
+
+.ap-icon-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    background: #F0F0E6;
+    color: #666;
+    font-size: 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .2s, color .2s;
+}
+.ap-icon-btn:hover { background: var(--ap-green); color: var(--ap-lime); }
+.ap-icon-btn.danger:hover { background: #fee2e2; color: #dc2626; }
+.ap-icon-btn.restore:hover { background: #E8F5E9; color: #2E7D32; }
+
+/* Pesan sukses / error */
+.ap-messages { margin-bottom: 18px; }
+.ap-msg {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    background: #E8F5E9;
+    color: #2E7D32;
+    margin-bottom: 8px;
+}
+.ap-msg.error { background: #fff3f0; color: #a33224; }
+
+/* Modal */
+.ap-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(13, 18, 28, .5);
+    align-items: center;
+    justify-content: center;
+}
+.ap-modal.open { display: flex; }
+
+.ap-modal-box {
+    background: #fff;
+    border-radius: 16px;
+    width: 540px;
+    max-width: 92%;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 28px;
+}
+.ap-modal-sm { width: 430px; text-align: center; }
+
+.ap-modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.ap-modal-head h3 { font-size: 18px; font-weight: 800; color: var(--ap-green); }
+.ap-modal-close { background: none; border: none; font-size: 24px; color: var(--ap-muted); cursor: pointer; }
+
+.ap-form label { display: block; font-size: 12px; font-weight: 700; color: #4A4A3F; margin: 14px 0 6px; }
+.ap-form input, .ap-form select {
+    width: 100%;
+    height: 44px;
+    padding: 0 16px;
+    background: #fff;
+    border: 1px solid var(--ap-line);
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--ap-green);
+    outline: none;
+}
+.ap-form input:focus, .ap-form select:focus { border-color: var(--ap-green); }
+.ap-form .ap-readonly { background: #F7F7F0; color: #8A8A7A; cursor: not-allowed; }
+.ap-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.ap-hint { font-weight: 500; color: var(--ap-muted); }
+
+.ap-modal-foot { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+.ap-modal-foot.ap-center { justify-content: center; }
+
+.ap-trash-ico {
+    width: 56px; height: 56px; margin: 0 auto 16px;
+    border-radius: 50%;
+    background: #fee2e2; color: #dc2626;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+}
+.ap-confirm-title { font-size: 18px; font-weight: 800; color: var(--ap-green); margin-bottom: 8px; }
+.ap-confirm-text { font-size: 13px; color: #6A6A5C; line-height: 1.6; }
+
+@media (max-width: 700px) {
+    .ap-search--white { width: 100%; }
+    .ap-form-row { grid-template-columns: 1fr; }
+}
