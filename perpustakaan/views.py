@@ -47,7 +47,9 @@ from django.views.decorators.http import require_POST
 
 from .models import Bookmark, BukuDigital, CustomUser, Jurnal, Peminjaman
 
-MASA_PINJAM_HARI = 14
+MASA_PINJAM_HARI = 14   #masa pinjam buku
+MASA_PERPANJANG_HARI = 7   # tambahan hari tiap perpanjangan buku
+MAKS_PERPANJANG = 1        # batas perpanjangan per peminjaman
 RING_DETIK_PENUH = 120   # 2 menit membaca aktif
 RING_EXP = 10            # EXP tiap cincin penuh
 RING_BEAT_MAKS = 15      # batas detik yang boleh dilaporkan per kiriman
@@ -192,7 +194,7 @@ def _proses_reset(request, action):
         request.session[RESET_KEY] = state
         sisa = OTP_MAKS_SALAH - state["salah"]
         return _render_login(request, 2, error=f"Kode OTP salah. Sisa percobaan: {sisa}.",
-                             email=state["email"], jeda=sisa_jeda)
+            email=state["email"], jeda=sisa_jeda)
 
     # ---- Langkah 3: simpan password baru ----
     if action == "reset_password":
@@ -220,6 +222,11 @@ def _proses_reset(request, action):
         return redirect("login")
 
     return redirect("login")
+
+def _jatuh_tempo(pinjaman):
+    return pinjaman.tanggal_pinjam + timedelta(
+        days=MASA_PINJAM_HARI + pinjaman.perpanjangan * MASA_PERPANJANG_HARI
+    )
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -552,11 +559,7 @@ def buku_detail(request, olid):
             user=user, buku_digital_id=olid
         ).exists(),
         "pinjam_aktif": pinjam_aktif,
-        "jatuh_tempo": (
-            pinjam_aktif.tanggal_pinjam + timedelta(days=MASA_PINJAM_HARI)
-            if pinjam_aktif
-            else None
-        ),
+        "jatuh_tempo": _jatuh_tempo(pinjam_aktif) if pinjam_aktif else None,
         "jumlah_aktif": jumlah_aktif,
         "max_loans": user.max_loans,
         "slot_penuh": jumlah_aktif >= user.max_loans,
@@ -770,9 +773,7 @@ def peminjaman_view(request):
     ).order_by("-tanggal_pinjam")
 
     for pinjaman in daftar_pinjaman:
-        pinjaman.jatuh_tempo = pinjaman.tanggal_pinjam + timedelta(
-            days=MASA_PINJAM_HARI
-        )
+        pinjaman.jatuh_tempo = _jatuh_tempo(pinjaman)
 
     # Info slot peminjaman
     batas_pinjam = request.user.max_loans
@@ -786,6 +787,7 @@ def peminjaman_view(request):
         "daftar_pinjaman": daftar_pinjaman,
         "total_pinjaman": daftar_pinjaman.count(),
         "batas_pinjam": batas_pinjam,
+        "maks_perpanjangan": MAKS_PERPANJANG,
         "jumlah_aktif": jumlah_aktif,
         "sisa_slot": sisa_slot,
         "slot_range": range(batas_pinjam),
@@ -805,6 +807,31 @@ def kembalikan_buku(request, pinjaman_id):
 
     return redirect("peminjaman")
 
+@login_required(login_url="login")
+@require_POST
+def perpanjang_buku(request, pinjaman_id):
+    pinjaman = get_object_or_404(
+        Peminjaman, id=pinjaman_id, user=request.user, status="Dibaca"
+    )
+
+    if pinjaman.perpanjangan >= MAKS_PERPANJANG:
+        messages.error(
+            request,
+            f"Batas perpanjangan {MAKS_PERPANJANG} kali untuk buku ini sudah tercapai.",
+                extra_tags="Perpanjangan gagal",
+            )
+        return redirect("peminjaman")
+
+    pinjaman.perpanjangan += 1
+    pinjaman.save(update_fields=["perpanjangan"])
+    jatuh_tempo = timezone.localtime(_jatuh_tempo(pinjaman))
+    messages.success(
+        request,
+        f"Peminjaman diperpanjang {MASA_PERPANJANG_HARI} hari. "
+        f"Jatuh tempo baru: {jatuh_tempo:%d %b %Y}.",
+        extra_tags="Perpanjangan berhasil",
+    )
+    return redirect("peminjaman")
 
 @login_required(login_url="login")
 def bookmarks_view(request):

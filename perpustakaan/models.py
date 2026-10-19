@@ -81,6 +81,7 @@ class Peminjaman(models.Model):
     )  # Dibaca / Selesai
     progress_baca = models.IntegerField(default=0)  # 0 - 100%
     waktu_baca_detik = models.IntegerField(default=0)  # BARU: detik membaca untuk peminjaman ini
+    perpanjangan = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         # Pemanggilan str(item) menggunakan __str__ milik class object item
