@@ -6,17 +6,219 @@
 {% block page_subtitle %}Pantau anggota dan aktivitas pinjaman anggota{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'perpustakaan/css/admin.css' %}">
+<link rel="stylesheet" href="{% static 'perpustakaan/css/admin.css' %}?v=4">
+<style>
+/* Cadangan: CSS Kelola Anggota dimuat langsung di halaman ini,
+   jadi tetap tampil benar walau admin.css belum terbarui / masih di-cache. */
+/* =========================================================
+   KELOLA ANGGOTA: CRUD, modal, pencarian putih
+========================================================= */
+
+/* Scrollbar selalu disediakan, jadi foto profil di atas tidak geser
+   saat pindah tab (mis. ke Nonaktif yang daftarnya pendek). */
+.app-layout .main-content.adm-main {
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
+}
+
+.ap-card--tall { min-height: 420px; }
+
+.ap-search--white { width: 520px; }
+.ap-search--white input { background: #fff; }
+
+.ap-toolbar .ap-btn-add { margin-left: auto; }
+
+.ap-btn-add {
+    height: 46px;
+    padding: 0 22px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--ap-lime);
+    color: var(--ap-green);
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .2s;
+}
+.ap-btn-add:hover { background: #c0e628; }
+
+.ap-btn-cancel {
+    height: 44px;
+    padding: 0 20px;
+    background: transparent;
+    border: 1px solid var(--ap-line);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #6A6A5C;
+    cursor: pointer;
+}
+
+.ap-btn-danger {
+    height: 44px;
+    padding: 0 22px;
+    background: #dc2626;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.ap-btn-danger:hover { background: #b91c1c; }
+
+/* Tombol aksi di tabel */
+.ap-actions { display: flex; justify-content: center; gap: 8px; }
+.ap-actions form { margin: 0; }
+
+.ap-icon-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    background: #F0F0E6;
+    color: #666;
+    font-size: 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .2s, color .2s;
+}
+.ap-icon-btn:hover { background: var(--ap-green); color: var(--ap-lime); }
+.ap-icon-btn.danger:hover { background: #fee2e2; color: #dc2626; }
+.ap-icon-btn.restore:hover { background: #E8F5E9; color: #2E7D32; }
+
+/* Pesan sukses / error */
+.ap-messages { margin-bottom: 18px; }
+.ap-msg {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    background: #E8F5E9;
+    color: #2E7D32;
+    margin-bottom: 8px;
+}
+.ap-msg.error { background: #fff3f0; color: #a33224; }
+
+/* Modal */
+.ap-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(13, 18, 28, .5);
+    align-items: center;
+    justify-content: center;
+}
+.ap-modal.open { display: flex; }
+
+.ap-modal-box {
+    background: #fff;
+    border-radius: 16px;
+    width: 540px;
+    max-width: 92%;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 28px;
+}
+.ap-modal-sm { width: 430px; text-align: center; }
+
+.ap-modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.ap-modal-head h3 { font-size: 18px; font-weight: 800; color: var(--ap-green); }
+.ap-modal-close { background: none; border: none; font-size: 24px; color: var(--ap-muted); cursor: pointer; }
+
+.ap-form label { display: block; font-size: 12px; font-weight: 700; color: #4A4A3F; margin: 14px 0 6px; }
+.ap-form input, .ap-form select {
+    width: 100%;
+    height: 44px;
+    padding: 0 16px;
+    background: #fff;
+    border: 1px solid var(--ap-line);
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--ap-green);
+    outline: none;
+}
+.ap-form input:focus, .ap-form select:focus { border-color: var(--ap-green); }
+.ap-form .ap-readonly { background: #F7F7F0; color: #8A8A7A; cursor: not-allowed; }
+.ap-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.ap-hint { font-weight: 500; color: var(--ap-muted); }
+
+.ap-modal-foot { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+.ap-modal-foot.ap-center { justify-content: center; }
+
+.ap-trash-ico {
+    width: 56px; height: 56px; margin: 0 auto 16px;
+    border-radius: 50%;
+    background: #fee2e2; color: #dc2626;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+}
+.ap-confirm-title { font-size: 18px; font-weight: 800; color: var(--ap-green); margin-bottom: 8px; }
+.ap-confirm-text { font-size: 13px; color: #6A6A5C; line-height: 1.6; }
+
+@media (max-width: 700px) {
+    .ap-search--white { width: 100%; }
+    .ap-form-row { grid-template-columns: 1fr; }
+}
+
+/* Syarat keamanan password */
+.ap-pw-rules {
+    margin-top: 12px;
+    padding: 16px 18px;
+    background: #173C3A;
+    border-radius: 12px;
+}
+.ap-pw-title {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 12px;
+    font-size: 13px; font-weight: 800; color: #fff;
+}
+.ap-pw-title i { color: var(--ap-lime); font-size: 14px; }
+.ap-pw-rules ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+.ap-pw-rules li {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 12px; font-weight: 600; color: #A9BDB5;
+    transition: color .2s;
+}
+.ap-pw-rules li::before {
+    content: "";
+    width: 9px; height: 9px; flex-shrink: 0;
+    border-radius: 50%;
+    background: #6b7f78;
+    transition: background .2s, box-shadow .2s;
+}
+.ap-pw-rules li.ok { color: var(--ap-lime); }
+.ap-pw-rules li.ok::before { background: var(--ap-lime); box-shadow: 0 0 8px rgba(212,248,56,.7); }
+.ap-btn-add:disabled { opacity: .45; cursor: not-allowed; }
+</style>
 {% endblock %}
 
 {% block content %}
 <div class="ap">
 
+  {% if messages %}
+  <div class="ap-messages">
+    {% for message in messages %}
+      <p role="alert" class="ap-msg {{ message.tags }}">{{ message }}</p>
+    {% endfor %}
+  </div>
+  {% endif %}
+
   <div class="ap-toolbar">
-    <div class="ap-search">
+    <div class="ap-search ap-search--white">
       <i class="fa-solid fa-magnifying-glass"></i>
-      <input type="text" id="ap-search" placeholder="Cari nama atau email...">
+      <input type="text" id="ap-search" placeholder="Cari nama, username, atau email...">
     </div>
+    <button type="button" class="ap-btn-add" id="btnTambah">
+      <i class="fa-solid fa-plus"></i> Tambah anggota
+    </button>
   </div>
 
   <div class="ap-tabs" id="ap-tabs">
@@ -25,7 +227,7 @@
     <button type="button" class="ap-tab" data-filter="nonaktif">Nonaktif</button>
   </div>
 
-  <div class="ap-card">
+  <div class="ap-card ap-card--tall">
     <div class="ap-card-head">
       <h3>Daftar anggota</h3>
       <span id="ap-count">{{ anggota|length }} anggota</span>
@@ -34,11 +236,13 @@
     <table class="ap-table">
       <thead>
         <tr>
-          <th style="width:30%;">Anggota</th>
+          <th style="width:26%;">Anggota</th>
+          <th>ID</th>
           <th>Email</th>
           <th>Bergabung</th>
           <th>Status</th>
           <th>Total Pinjaman</th>
+          <th>Aksi</th>
         </tr>
       </thead>
       <tbody>
@@ -49,36 +253,189 @@
               <span class="ap-avatar">
                 {% if a.foto_profil %}<img src="{{ a.foto_profil.url }}" alt="">{% else %}{{ a.nama_tampilan|default:a.username|slice:":2"|upper }}{% endif %}
               </span>
-              <span class="ap-user-name">{{ a.nama_tampilan|default:a.username }}</span>
+              <span>
+                <span class="ap-user-name">{{ a.nama_tampilan|default:a.username }}</span>
+                <span class="ap-user-sub">@{{ a.username }}</span>
+              </span>
             </div>
           </td>
+          <td>#{{ a.pk }}</td>
           <td>{{ a.email|default:"-" }}</td>
           <td>{{ a.date_joined|date:"Y" }}</td>
           <td>
             {% if a.is_active %}<span class="ap-pill aktif">Aktif</span>{% else %}<span class="ap-pill nonaktif">Nonaktif</span>{% endif %}
           </td>
           <td>{{ a.jumlah_pinjaman|default:0 }} buku</td>
+          <td>
+            <div class="ap-actions">
+              <button type="button" class="ap-icon-btn js-edit" title="Edit"
+                data-url="{% url 'edit_anggota' a.pk %}"
+                data-id="{{ a.pk }}"
+                data-username="{{ a.username }}"
+                data-nama="{{ a.nama_tampilan|default:'' }}"
+                data-email="{{ a.email }}"
+                data-active="{% if a.is_active %}1{% else %}0{% endif %}"
+                data-joined="{{ a.date_joined|date:'d M Y, H:i' }}"
+                data-pinjam="{{ a.jumlah_pinjaman|default:0 }}">
+                <i class="fa-regular fa-pen-to-square"></i>
+              </button>
+              {% if a.is_active %}
+              <button type="button" class="ap-icon-btn danger js-hapus" title="Hapus (nonaktifkan)"
+                data-url="{% url 'hapus_anggota' a.pk %}"
+                data-nama="{{ a.nama_tampilan|default:a.username }}">
+                <i class="fa-regular fa-trash-can"></i>
+              </button>
+              {% else %}
+              <form action="{% url 'aktifkan_anggota' a.pk %}" method="POST">
+                {% csrf_token %}
+                <button type="submit" class="ap-icon-btn restore" title="Aktifkan kembali">
+                  <i class="fa-solid fa-rotate-left"></i>
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
         </tr>
         {% endfor %}
         <tr id="ap-empty" {% if anggota %}hidden{% endif %}>
-          <td colspan="5" class="ap-empty">Tidak ada anggota yang cocok.</td>
+          <td colspan="7" class="ap-empty">Tidak ada anggota yang cocok.</td>
         </tr>
       </tbody>
     </table>
   </div>
 
 </div>
+
+<!-- ===== Modal tambah ===== -->
+<div class="ap-modal" id="modalTambah">
+  <div class="ap-modal-box">
+    <div class="ap-modal-head">
+      <h3>Tambah Anggota Baru</h3>
+      <button type="button" class="ap-modal-close" data-close>&times;</button>
+    </div>
+    <form action="{% url 'kelola_anggota' %}" method="POST" class="ap-form">
+      {% csrf_token %}
+      <label>Username</label>
+      <input type="text" name="username" required placeholder="Contoh: 2509106100">
+
+      <label>Nama Tampilan</label>
+      <input type="text" name="nama_tampilan" placeholder="Nama lengkap anggota">
+
+      <label>Email</label>
+      <input type="email" name="email" placeholder="nama@email.com">
+
+      <label>Password</label>
+      <input type="password" name="password" required maxlength="20" autocomplete="new-password" placeholder="Masukkan password" data-pw>
+      <div class="ap-pw-rules" data-pw-rules>
+        <div class="ap-pw-title"><i class="fa-solid fa-shield-halved"></i> Syarat Keamanan Password:</div>
+        <ul>
+          <li data-rule="len">8 - 20 Karakter</li>
+          <li data-rule="uniq">Min. 1 Karakter Unik</li>
+          <li data-rule="upper">Min. 1 Huruf Besar</li>
+        </ul>
+      </div>
+
+      <div class="ap-modal-foot">
+        <button type="button" class="ap-btn-cancel" data-close>Batal</button>
+        <button type="submit" class="ap-btn-add" data-pw-submit><i class="fa-solid fa-check"></i> Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== Modal edit ===== -->
+<div class="ap-modal" id="modalEdit">
+  <div class="ap-modal-box">
+    <div class="ap-modal-head">
+      <h3>Edit Anggota</h3>
+      <button type="button" class="ap-modal-close" data-close>&times;</button>
+    </div>
+    <form method="POST" class="ap-form" id="formEdit">
+      {% csrf_token %}
+      <div class="ap-form-row">
+        <div>
+          <label>ID Anggota</label>
+          <input type="text" id="e-id" readonly class="ap-readonly">
+        </div>
+        <div>
+          <label>Total Pinjaman</label>
+          <input type="text" id="e-pinjam" readonly class="ap-readonly">
+        </div>
+      </div>
+
+      <label>Bergabung</label>
+      <input type="text" id="e-joined" readonly class="ap-readonly">
+
+      <label>Username</label>
+      <input type="text" name="username" id="e-username" required>
+
+      <label>Nama Tampilan</label>
+      <input type="text" name="nama_tampilan" id="e-nama">
+
+      <label>Email</label>
+      <input type="email" name="email" id="e-email">
+
+      <label>Password Baru <span class="ap-hint">(kosongkan jika tidak diganti)</span></label>
+      <input type="password" name="password" maxlength="20" autocomplete="new-password" placeholder="Masukkan password baru" data-pw data-optional>
+      <div class="ap-pw-rules" data-pw-rules>
+        <div class="ap-pw-title"><i class="fa-solid fa-shield-halved"></i> Syarat Keamanan Password:</div>
+        <ul>
+          <li data-rule="len">8 - 20 Karakter</li>
+          <li data-rule="uniq">Min. 1 Karakter Unik</li>
+          <li data-rule="upper">Min. 1 Huruf Besar</li>
+        </ul>
+      </div>
+
+      <label>Status Akun</label>
+      <select name="is_active" id="e-active">
+        <option value="1">Aktif</option>
+        <option value="0">Nonaktif</option>
+      </select>
+
+      <div class="ap-modal-foot">
+        <button type="button" class="ap-btn-cancel" data-close>Batal</button>
+        <button type="submit" class="ap-btn-add" data-pw-submit><i class="fa-solid fa-check"></i> Simpan perubahan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ===== Modal hapus ===== -->
+<div class="ap-modal" id="modalHapus">
+  <div class="ap-modal-box ap-modal-sm">
+    <div class="ap-trash-ico"><i class="fa-regular fa-trash-can"></i></div>
+    <h3 class="ap-confirm-title">Hapus akun anggota?</h3>
+    <p class="ap-confirm-text">
+      Akun <b id="hapusNama"></b> akan dinonaktifkan dan dipindahkan ke tab <b>Nonaktif</b>.
+      Anggota tidak bisa login lagi, tetapi riwayat pinjamannya tetap tersimpan.
+    </p>
+    <form method="POST" id="formHapus" class="ap-modal-foot ap-center">
+      {% csrf_token %}
+      <button type="button" class="ap-btn-cancel" data-close>Batal</button>
+      <button type="submit" class="ap-btn-danger">Ya, hapus</button>
+    </form>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 (function () {
+  /* ---------- Cari + tab ---------- */
   var rows = Array.prototype.slice.call(document.querySelectorAll('[data-row]'));
   var input = document.getElementById('ap-search');
   var tabs = Array.prototype.slice.call(document.querySelectorAll('.ap-tab'));
   var empty = document.getElementById('ap-empty');
   var count = document.getElementById('ap-count');
+  var KEY = 'lentera-anggota-tab';
   var current = 'semua';
+  try {
+    var saved = sessionStorage.getItem(KEY);
+    if (saved === 'aktif' || saved === 'nonaktif' || saved === 'semua') current = saved;
+  } catch (e) {}
+  tabs.forEach(function (x) {
+    x.classList.toggle('active', x.getAttribute('data-filter') === current);
+  });
 
   function apply() {
     var q = input.value.trim().toLowerCase();
@@ -99,10 +456,82 @@
       tabs.forEach(function (x) { x.classList.remove('active'); });
       t.classList.add('active');
       current = t.getAttribute('data-filter');
+      try { sessionStorage.setItem(KEY, current); } catch (e) {}
       apply();
     });
   });
   apply();
+
+  /* ---------- Modal ---------- */
+  var mTambah = document.getElementById('modalTambah');
+  var mEdit = document.getElementById('modalEdit');
+  var mHapus = document.getElementById('modalHapus');
+  var modals = [mTambah, mEdit, mHapus];
+
+  function buka(m) { m.classList.add('open'); }
+  function tutupSemua() { modals.forEach(function (m) { m.classList.remove('open'); }); }
+
+  modals.forEach(function (m) {
+    m.addEventListener('click', function (e) { if (e.target === m) tutupSemua(); });
+    Array.prototype.forEach.call(m.querySelectorAll('[data-close]'), function (b) {
+      b.addEventListener('click', tutupSemua);
+    });
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') tutupSemua(); });
+
+
+  /* ---------- Syarat keamanan password ---------- */
+  function cekPassword(v) {
+    return {
+      len: v.length >= 8 && v.length <= 20,
+      uniq: /[^A-Za-z0-9\s]/.test(v),
+      upper: /[A-Z]/.test(v)
+    };
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('input[data-pw]'), function (inp) {
+    var form = inp.form;
+    var box = form.querySelector('[data-pw-rules]');
+    var btn = form.querySelector('[data-pw-submit]');
+    var optional = inp.hasAttribute('data-optional');
+
+    function update() {
+      var r = cekPassword(inp.value);
+      Array.prototype.forEach.call(box.querySelectorAll('li'), function (li) {
+        li.classList.toggle('ok', !!r[li.getAttribute('data-rule')]);
+      });
+      var lengkap = r.len && r.uniq && r.upper;
+      btn.disabled = optional ? (inp.value !== '' && !lengkap) : !lengkap;
+    }
+    inp.addEventListener('input', update);
+    form.addEventListener('reset', function () { setTimeout(update, 0); });
+    inp.updateRules = update;
+    update();
+  });
+
+  document.getElementById('btnTambah').addEventListener('click', function () { buka(mTambah); });
+
+  Array.prototype.forEach.call(document.querySelectorAll('.js-edit'), function (b) {
+    b.addEventListener('click', function () {
+      document.getElementById('formEdit').action = b.dataset.url;
+      document.getElementById('e-id').value = '#' + b.dataset.id;
+      document.getElementById('e-pinjam').value = b.dataset.pinjam + ' buku';
+      document.getElementById('e-joined').value = b.dataset.joined;
+      document.getElementById('e-username').value = b.dataset.username;
+      document.getElementById('e-nama').value = b.dataset.nama;
+      document.getElementById('e-email').value = b.dataset.email;
+      document.getElementById('e-active').value = b.dataset.active;
+      var pw = document.querySelector('#formEdit input[data-pw]'); pw.value = ''; pw.updateRules();
+      buka(mEdit);
+    });
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('.js-hapus'), function (b) {
+    b.addEventListener('click', function () {
+      document.getElementById('formHapus').action = b.dataset.url;
+      document.getElementById('hapusNama').textContent = '“' + b.dataset.nama + '”';
+      buka(mHapus);
+    });
+  });
 })();
 </script>
 {% endblock %}

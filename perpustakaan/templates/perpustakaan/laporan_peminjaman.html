@@ -6,7 +6,17 @@
 {% block page_subtitle %}Baca data penting untuk keputusan berikutnya{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'perpustakaan/css/admin.css' %}">
+<link rel="stylesheet" href="{% static 'perpustakaan/css/admin.css' %}?v=6">
+<style>
+/* Ukuran kartu statistik: angka dikecilkan. Dimuat langsung di halaman ini. */
+.ap-stat { min-height: 112px; padding: 18px 22px 20px; }
+.ap-stat h4 { font-size: 12px; }
+.ap-stat h2 { margin: 8px 0 10px; font-size: 30px; font-weight: 500; line-height: 1; }
+.ap-stat p { font-size: 12px; }
+
+/* Scrollbar selalu ada: foto profil di atas tidak geser. */
+.app-layout .main-content.adm-main { overflow-y: scroll; scrollbar-gutter: stable; }
+</style>
 {% endblock %}
 
 {% block content %}

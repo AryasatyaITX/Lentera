@@ -690,3 +690,162 @@ body.admin-body {
     .ap-stats { grid-template-columns: 1fr; }
     .ap-card { padding: 20px; }
 }
+
+
+/* =========================================================
+   KELOLA ANGGOTA: CRUD, modal, pencarian putih
+========================================================= */
+
+/* Scrollbar selalu disediakan, jadi foto profil di atas tidak geser
+   saat pindah tab (mis. ke Nonaktif yang daftarnya pendek). */
+.app-layout .main-content.adm-main {
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
+}
+
+.ap-card--tall { min-height: 420px; }
+
+.ap-search--white { width: 520px; }
+.ap-search--white input { background: #fff; }
+
+.ap-toolbar .ap-btn-add { margin-left: auto; }
+
+.ap-btn-add {
+    height: 46px;
+    padding: 0 22px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--ap-lime);
+    color: var(--ap-green);
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .2s;
+}
+.ap-btn-add:hover { background: #c0e628; }
+
+.ap-btn-cancel {
+    height: 44px;
+    padding: 0 20px;
+    background: transparent;
+    border: 1px solid var(--ap-line);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #6A6A5C;
+    cursor: pointer;
+}
+
+.ap-btn-danger {
+    height: 44px;
+    padding: 0 22px;
+    background: #dc2626;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.ap-btn-danger:hover { background: #b91c1c; }
+
+/* Tombol aksi di tabel */
+.ap-actions { display: flex; justify-content: center; gap: 8px; }
+.ap-actions form { margin: 0; }
+
+.ap-icon-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    background: #F0F0E6;
+    color: #666;
+    font-size: 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .2s, color .2s;
+}
+.ap-icon-btn:hover { background: var(--ap-green); color: var(--ap-lime); }
+.ap-icon-btn.danger:hover { background: #fee2e2; color: #dc2626; }
+.ap-icon-btn.restore:hover { background: #E8F5E9; color: #2E7D32; }
+
+/* Pesan sukses / error */
+.ap-messages { margin-bottom: 18px; }
+.ap-msg {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    background: #E8F5E9;
+    color: #2E7D32;
+    margin-bottom: 8px;
+}
+.ap-msg.error { background: #fff3f0; color: #a33224; }
+
+/* Modal */
+.ap-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(13, 18, 28, .5);
+    align-items: center;
+    justify-content: center;
+}
+.ap-modal.open { display: flex; }
+
+.ap-modal-box {
+    background: #fff;
+    border-radius: 16px;
+    width: 540px;
+    max-width: 92%;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 28px;
+}
+.ap-modal-sm { width: 430px; text-align: center; }
+
+.ap-modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.ap-modal-head h3 { font-size: 18px; font-weight: 800; color: var(--ap-green); }
+.ap-modal-close { background: none; border: none; font-size: 24px; color: var(--ap-muted); cursor: pointer; }
+
+.ap-form label { display: block; font-size: 12px; font-weight: 700; color: #4A4A3F; margin: 14px 0 6px; }
+.ap-form input, .ap-form select {
+    width: 100%;
+    height: 44px;
+    padding: 0 16px;
+    background: #fff;
+    border: 1px solid var(--ap-line);
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--ap-green);
+    outline: none;
+}
+.ap-form input:focus, .ap-form select:focus { border-color: var(--ap-green); }
+.ap-form .ap-readonly { background: #F7F7F0; color: #8A8A7A; cursor: not-allowed; }
+.ap-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.ap-hint { font-weight: 500; color: var(--ap-muted); }
+
+.ap-modal-foot { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+.ap-modal-foot.ap-center { justify-content: center; }
+
+.ap-trash-ico {
+    width: 56px; height: 56px; margin: 0 auto 16px;
+    border-radius: 50%;
+    background: #fee2e2; color: #dc2626;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+}
+.ap-confirm-title { font-size: 18px; font-weight: 800; color: var(--ap-green); margin-bottom: 8px; }
+.ap-confirm-text { font-size: 13px; color: #6A6A5C; line-height: 1.6; }
+
+@media (max-width: 700px) {
+    .ap-search--white { width: 100%; }
+    .ap-form-row { grid-template-columns: 1fr; }
+}
