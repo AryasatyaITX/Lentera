@@ -4,7 +4,83 @@
 {% block page_title %}Kelola Buku{% endblock %}
 {% block page_subtitle %}Atur koleksi buku yang tersedia di perpustakaan{% endblock %}
 
+{% block extra_css %}
+<style>
+  /* Search bar memanjang sampai mendekati tombol tambah */
+  .kelola-toolbar .search-filter-bar { max-width: none; }
+
+  /* ===== Modal tambah / edit (desain baru) ===== */
+  .nm-box { width: 560px; padding: 28px 32px 26px; border-radius: 18px; box-shadow: 0 24px 60px rgba(13,18,28,.25); }
+  .nm-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 22px; }
+  .nm-eyebrow { display: block; font-size: 13px; font-weight: 700; color: #8A8A7A; margin-bottom: 2px; }
+  .nm-title { font-size: 22px; font-weight: 800; color: #0d121c; line-height: 1.2; }
+  .nm-close {
+    width: 36px; height: 36px; flex: none; border: none; border-radius: 8px;
+    background: #EEF0EC; color: #6B7684; font-size: 16px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; transition: .2s;
+  }
+  .nm-close:hover { background: #173C3A; color: #D4F838; }
+
+  .nm-field { margin-bottom: 16px; }
+  .nm-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .nm-field label { display: block; font-size: 13px; font-weight: 600; color: #8A8A7A; margin-bottom: 8px; }
+  .nm-field input, .nm-field select, .nm-field textarea {
+    width: 100%; padding: 11px 14px; background: #fff; border: 1px solid #DDEBD3;
+    border-radius: 8px; font-family: inherit; font-size: 13px; color: #173C3A; outline: none; transition: .2s;
+  }
+  .nm-field input:focus, .nm-field select:focus, .nm-field textarea:focus {
+    border-color: #173C3A; background: #fff; box-shadow: 0 0 0 3px rgba(212,248,56,.35);
+  }
+  .nm-field textarea { resize: vertical; min-height: 84px; }
+  .nm-field input[type="file"] { padding: 9px 12px; cursor: pointer; }
+
+  .nm-foot { display: flex; justify-content: flex-end; gap: 12px; margin-top: 22px; }
+  .nm-btn-batal {
+    background: #fff; border: 1px solid #E5E5D8; padding: 12px 22px; border-radius: 10px;
+    font-family: inherit; font-size: 13px; font-weight: 700; color: #6B7684; cursor: pointer;
+  }
+  .nm-btn-batal:hover { background: #F5F7F2; }
+  .nm-btn-simpan {
+    background: #D4F838; border: none; padding: 12px 20px; border-radius: 10px;
+    font-family: inherit; font-size: 13px; font-weight: 800; color: #173C3A; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 10px; transition: .2s;
+  }
+  .nm-btn-simpan:hover { background: #c0e628; }
+  @media (max-width: 560px) { .nm-row { grid-template-columns: 1fr; } }
+
+  /* ===== Pesan berhasil / gagal ===== */
+  .kelola-alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; }
+  .kelola-alert.ok { background: #ecfbe3; color: #2f6b1f; }
+  .kelola-alert.err { background: #fff3f0; color: #a33224; }
+
+  /* ===== Kolom centang & bar hapus terpilih ===== */
+  .kelola-table th.col-check, .kelola-table td.kelola-check { width: 36px; padding-right: 0; }
+  .kelola-table input[type="checkbox"] { width: 16px; height: 16px; accent-color: #173C3A; cursor: pointer; }
+  .bulk-bar {
+    display: none; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    margin: 12px 0 4px; padding: 10px 14px; background: #F3FAD6; border: 1px solid #DDEB9A;
+    border-radius: 10px; font-size: 13px; color: #173C3A;
+  }
+  .bulk-bar.show { display: flex; }
+  .bulk-actions { display: flex; align-items: center; gap: 12px; }
+  .bulk-clear { background: none; border: none; font-family: inherit; font-size: 13px; font-weight: 700; color: #6A6A5C; cursor: pointer; }
+  .bulk-del, .nm-btn-hapus {
+    background: #dc2626; color: #fff; border: none; border-radius: 8px; padding: 10px 18px;
+    font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .bulk-del:hover, .nm-btn-hapus:hover { background: #b91c1c; }
+</style>
+{% endblock %}
+
 {% block content %}
+{% if messages %}
+  <div style="margin-bottom:16px;">
+    {% for message in messages %}
+      <p role="alert" class="kelola-alert {% if message.tags == 'success' %}ok{% else %}err{% endif %}">{{ message }}</p>
+    {% endfor %}
+  </div>
+{% endif %}
 <div class="kelola-toolbar">
   <form method="GET" action="{% url 'kelola_buku' %}" class="search-filter-bar">
     <div class="search-box">
@@ -22,10 +98,21 @@
     <h3>Daftar koleksi</h3>
     <span>{{ buku_list|length }} item</span>
   </div>
+
+  <div class="bulk-bar" id="bulkBar" data-satuan="buku">
+    <span><b id="bulkCount">0</b> buku dipilih</span>
+    <div class="bulk-actions">
+      <button type="button" class="bulk-clear" id="bulkClear">Batal pilih</button>
+      <button type="button" class="bulk-del" id="bulkDel"><i class="fa-regular fa-trash-can"></i> Hapus terpilih</button>
+    </div>
+  </div>
+  <form id="formHapusMassal" method="POST" action="{% url 'hapus_buku_massal' %}">{% csrf_token %}</form>
+
   <table class="kelola-table">
     <thead>
       <tr>
-        <th style="width:40%;">Buku</th>
+        <th class="col-check"><input type="checkbox" id="checkAll" aria-label="Pilih semua"></th>
+        <th style="width:38%;">Buku</th>
         <th>Kategori</th>
         <th>Tahun</th>
         <th>Pembaca</th>
@@ -35,12 +122,14 @@
     <tbody>
       {% for buku in buku_list %}
       <tr>
+        <td class="kelola-check"><input type="checkbox" class="row-check" name="ids" value="{{ buku.id_item }}" form="formHapusMassal" aria-label="Pilih {{ buku.judul }}"></td>
         <td>
           <div class="kelola-item">
             <img src="{{ buku.cover|default:'https://placehold.co/100x140?text=Cover' }}" alt="">
             <div>
               <span class="t">{{ buku.judul }}</span>
               <span class="s">{{ buku.penulis }}</span>
+              {% if buku.isbn %}<span class="s">ISBN {{ buku.isbn }}</span>{% endif %}
             </div>
           </div>
         </td>
@@ -49,7 +138,16 @@
         <td>{{ buku.total_pembaca|default:"0" }}</td>
         <td>
           <div class="kelola-actions">
-            <a href="{{ buku.link_unduh }}" target="_blank" class="kelola-icon-btn" title="Lihat PDF"><i class="fa-regular fa-pen-to-square"></i></a>
+            <a href="{{ buku.link_unduh }}" target="_blank" class="kelola-icon-btn" title="Baca"><i class="fa-solid fa-book-open"></i></a>
+            <button type="button" class="kelola-icon-btn btn-edit" title="Edit"
+                    data-url="{% url 'edit_buku' buku.id_item %}"
+                    data-judul="{{ buku.judul }}"
+                    data-penulis="{{ buku.penulis }}"
+                    data-isbn="{{ buku.isbn }}"
+                    data-tahun_terbit="{{ buku.tahun_terbit }}"
+                    data-kategori="{{ buku.kategori }}"
+                    data-cover="{{ buku.cover|default_if_none:'' }}"
+                    data-deskripsi="{{ buku.deskripsi }}"><i class="fa-regular fa-pen-to-square"></i></button>
             <form action="{% url 'hapus_buku' buku.id_item %}" method="POST" onsubmit="return confirm('Hapus buku ini?');">
               {% csrf_token %}
               <button type="submit" class="kelola-icon-btn danger" title="Hapus"><i class="fa-regular fa-trash-can"></i></button>
@@ -58,58 +156,122 @@
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="5" style="text-align:center; padding:40px; color:#8A8A7A;">Belum ada koleksi buku digital.</td></tr>
+      <tr><td colspan="6" style="text-align:center; padding:40px; color:#8A8A7A;">Belum ada koleksi buku digital.</td></tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
 
+<!-- MODAL TAMBAH BUKU -->
 <div class="kelola-modal" id="modalBuku">
-  <div class="kelola-modal-box">
-    <div class="kelola-modal-head">
-      <h3>Tambah Buku Digital Baru</h3>
-      <button class="kelola-modal-close" onclick="document.getElementById('modalBuku').classList.remove('open')">&times;</button>
+  <div class="kelola-modal-box nm-box">
+    <div class="nm-head">
+      <div>
+        <span class="nm-eyebrow">Koleksi baru</span>
+        <h3 class="nm-title">Tambah buku baru</h3>
+      </div>
+      <button type="button" class="nm-close" aria-label="Tutup" onclick="document.getElementById('modalBuku').classList.remove('open')"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <form action="{% url 'kelola_buku' %}" method="POST" enctype="multipart/form-data" class="kelola-form">
-      {% csrf_token %}
-      <label>Judul Buku</label>
-      <input type="text" name="judul" required placeholder="Contoh: O MDPL">
-      
-      <label>Penulis / Pengarang</label>
-      <input type="text" name="penulis" required placeholder="Contoh: Nurwina Sari">
 
-      <label>Kategori</label>
-      <select name="kategori" required>
-        <option value="" disabled selected>Pilih kategori</option>
-        <option value="engineering">Engineering</option>
-        <option value="computer_science">Computer Science</option>
-        <option value="matematika">Matematika</option>
-        <option value="fisika">Fisika</option>
-        <option value="bisnis">Bisnis</option>
-        <option value="fiksi">Fiksi</option>
-        <option value="sejarah">Sejarah</option>
-      </select>
-      
-      <label>Tahun Terbit</label>
-      <input type="text" name="tahun_terbit" maxlength="4" placeholder="2019">
-      
-      <label>URL Cover Sampul</label>
-      <input type="url" name="cover" placeholder="https://covers.openlibrary.org/...">
-      
-      <label>Upload File PDF Buku</label>
-      <input type="file" name="file_pdf" accept="application/pdf" required>
-      
-      <label>Deskripsi</label>
-      <textarea name="deskripsi" rows="3" placeholder="Ringkasan sinopsis..."></textarea>
-      
-      <div class="kelola-modal-foot">
-        <button type="button" class="btn-batal" onclick="document.getElementById('modalBuku').classList.remove('open')">Batal</button>
-        <button type="submit" class="btn-lime-add"><i class="fa-solid fa-check"></i> Simpan Buku</button>
+    <form action="{% url 'kelola_buku' %}" method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="nm-field">
+        <label>Judul buku</label>
+        <input type="text" name="judul" required placeholder="Contoh: O MDPL">
+      </div>
+      <div class="nm-field">
+        <label>Penulis / Pengarang</label>
+        <input type="text" name="penulis" required placeholder="Contoh: Nurwina Sari">
+      </div>
+      <div class="nm-field">
+        <label>ISBN</label>
+        <input type="text" name="isbn" maxlength="17" pattern="[0-9Xx\- ]{10,17}" title="10 atau 13 digit, boleh memakai tanda hubung" placeholder="Contoh: 978-602-03-1234-5">
+      </div>
+
+      <div class="nm-row">
+        <div class="nm-field">
+          <label>Tahun terbit</label>
+          <input type="text" name="tahun_terbit" maxlength="4" placeholder="2019">
+        </div>
+        <div class="nm-field">
+          <label>Kategori</label>
+          <select name="kategori" required>
+            <option value="" disabled selected>Pilih kategori</option>
+            <option value="engineering">Engineering</option>
+            <option value="computer_science">Computer Science</option>
+            <option value="matematika">Matematika</option>
+            <option value="fisika">Fisika</option>
+            <option value="bisnis">Bisnis</option>
+            <option value="fiksi">Fiksi</option>
+            <option value="sejarah">Sejarah</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="nm-field">
+        <label>URL cover sampul</label>
+        <input type="url" name="cover" placeholder="https://covers.openlibrary.org/...">
+      </div>
+      <div class="nm-field">
+        <label>Upload file PDF buku</label>
+        <input type="file" name="file_pdf" accept="application/pdf" required>
+      </div>
+      <div class="nm-field">
+        <label>Deskripsi</label>
+        <textarea name="deskripsi" rows="3" placeholder="Ringkasan sinopsis..."></textarea>
+      </div>
+
+      <div class="nm-foot">
+        <button type="button" class="nm-btn-batal" onclick="document.getElementById('modalBuku').classList.remove('open')">Batal</button>
+        <button type="submit" class="nm-btn-simpan">Tambah buku <i class="fa-solid fa-check"></i></button>
       </div>
     </form>
   </div>
 </div>
-<!-- tambah -->
+
+<!-- MODAL EDIT BUKU -->
+<div class="kelola-modal" id="modalEdit">
+  <div class="kelola-modal-box nm-box">
+    <div class="nm-head">
+      <div>
+        <span class="nm-eyebrow">Perbarui koleksi</span>
+        <h3 class="nm-title">Edit buku</h3>
+      </div>
+      <button type="button" class="nm-close" id="editTutup" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form id="formEdit" method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="nm-field"><label>Judul buku</label><input type="text" name="judul" required></div>
+      <div class="nm-field"><label>Penulis / Pengarang</label><input type="text" name="penulis" required></div>
+      <div class="nm-field"><label>ISBN</label><input type="text" name="isbn" maxlength="17" pattern="[0-9Xx\- ]{10,17}" title="10 atau 13 digit, boleh memakai tanda hubung"></div>
+      <div class="nm-row">
+        <div class="nm-field"><label>Tahun terbit</label><input type="text" name="tahun_terbit" maxlength="4"></div>
+        <div class="nm-field">
+          <label>Kategori</label>
+          <select name="kategori">
+            <option value="">Tanpa kategori</option>
+            <option value="engineering">Engineering</option>
+            <option value="computer_science">Computer Science</option>
+            <option value="matematika">Matematika</option>
+            <option value="fisika">Fisika</option>
+            <option value="bisnis">Bisnis</option>
+            <option value="fiksi">Fiksi</option>
+            <option value="sejarah">Sejarah</option>
+          </select>
+        </div>
+      </div>
+      <div class="nm-field"><label>URL cover sampul</label><input type="text" name="cover" inputmode="url"></div>
+      <div class="nm-field"><label>Ganti file PDF (opsional)</label><input type="file" name="file_pdf" accept="application/pdf"></div>
+      <div class="nm-field"><label>Deskripsi</label><textarea name="deskripsi" rows="3"></textarea></div>
+      <div class="nm-foot">
+        <button type="button" class="nm-btn-batal" id="editBatal">Batal</button>
+        <button type="submit" class="nm-btn-simpan">Simpan perubahan <i class="fa-solid fa-check"></i></button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL HAPUS (satuan) -->
 <div class="kelola-modal" id="modalHapus">
   <div class="kelola-modal-box" style="width:420px; text-align:center;">
     <div style="width:56px; height:56px; margin:0 auto 16px; border-radius:50%; background:#fee2e2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:22px;">
@@ -125,6 +287,21 @@
     </div>
   </div>
 </div>
+
+<!-- MODAL HAPUS TERPILIH -->
+<div class="kelola-modal" id="modalHapusMassal">
+  <div class="kelola-modal-box" style="width:420px; text-align:center;">
+    <div style="width:56px; height:56px; margin:0 auto 16px; border-radius:50%; background:#fee2e2; color:#dc2626; display:flex; align-items:center; justify-content:center; font-size:22px;">
+      <i class="fa-regular fa-trash-can"></i>
+    </div>
+    <h3 style="font-size:18px; font-weight:800; color:#173C3A; margin-bottom:8px;">Hapus item terpilih?</h3>
+    <p style="font-size:13px; color:#6A6A5C; line-height:1.6;"><b id="massalJumlah"></b> akan dihapus permanen dan tidak bisa dikembalikan.</p>
+    <div class="kelola-modal-foot" style="justify-content:center;">
+      <button type="button" class="btn-batal" id="massalBatal">Batal</button>
+      <button type="button" id="massalYa" class="nm-btn-hapus">Ya, hapus</button>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -134,7 +311,6 @@
     if (e.target === modal) modal.classList.remove("open");
   });
 </script>
-<!-- tambah -->
 <script>
 (function () {
   var modalHapus = document.getElementById("modalHapus");
@@ -161,6 +337,76 @@
   document.getElementById("hapusBatal").addEventListener("click", tutup);
   modalHapus.addEventListener("click", function (e) { if (e.target === modalHapus) tutup(); });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape") tutup(); });
+})();
+</script>
+<script>
+(function () {
+  /* ===== Edit: isi form dari atribut data-* tombol ===== */
+  var modalEdit = document.getElementById("modalEdit");
+  var formEdit = document.getElementById("formEdit");
+  function tutupEdit() { modalEdit.classList.remove("open"); }
+
+  document.querySelectorAll(".btn-edit").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      formEdit.reset();
+      Object.keys(btn.dataset).forEach(function (key) {
+        if (key === "url") { formEdit.action = btn.dataset.url; return; }
+        var el = formEdit.elements[key];
+        if (!el) return;
+        var nilai = btn.dataset[key];
+        if (el.tagName === "SELECT" && nilai &&
+            !Array.prototype.some.call(el.options, function (o) { return o.value === nilai; })) {
+          el.add(new Option(nilai, nilai));   // kategori lama yang tidak ada di daftar
+        }
+        el.value = nilai;
+      });
+      modalEdit.classList.add("open");
+    });
+  });
+  document.getElementById("editBatal").addEventListener("click", tutupEdit);
+  document.getElementById("editTutup").addEventListener("click", tutupEdit);
+  modalEdit.addEventListener("click", function (e) { if (e.target === modalEdit) tutupEdit(); });
+
+  /* ===== Pilih banyak + hapus terpilih ===== */
+  var semua = document.getElementById("checkAll");
+  var bar = document.getElementById("bulkBar");
+  var hitung = document.getElementById("bulkCount");
+  var modalMassal = document.getElementById("modalHapusMassal");
+
+  function barisCek() { return Array.prototype.slice.call(document.querySelectorAll(".row-check")); }
+  function segarkan() {
+    var cek = barisCek();
+    var n = cek.filter(function (c) { return c.checked; }).length;
+    bar.classList.toggle("show", n > 0);
+    hitung.textContent = n;
+    semua.checked = n > 0 && n === cek.length;
+    semua.indeterminate = n > 0 && n < cek.length;
+  }
+  semua.addEventListener("change", function () {
+    barisCek().forEach(function (c) { c.checked = semua.checked; });
+    segarkan();
+  });
+  barisCek().forEach(function (c) { c.addEventListener("change", segarkan); });
+  document.getElementById("bulkClear").addEventListener("click", function () {
+    barisCek().forEach(function (c) { c.checked = false; });
+    segarkan();
+  });
+
+  function tutupMassal() { modalMassal.classList.remove("open"); }
+  document.getElementById("bulkDel").addEventListener("click", function () {
+    document.getElementById("massalJumlah").textContent = hitung.textContent + " " + bar.dataset.satuan;
+    modalMassal.classList.add("open");
+  });
+  document.getElementById("massalYa").addEventListener("click", function () {
+    document.getElementById("formHapusMassal").submit();
+  });
+  document.getElementById("massalBatal").addEventListener("click", tutupMassal);
+  modalMassal.addEventListener("click", function (e) { if (e.target === modalMassal) tutupMassal(); });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { tutupEdit(); tutupMassal(); }
+  });
+  segarkan();
 })();
 </script>
 {% endblock %}

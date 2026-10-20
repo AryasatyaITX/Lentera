@@ -196,6 +196,7 @@ def kelola_buku(request):
         tahun_terbit = request.POST.get("tahun_terbit", "")
         cover_url = request.POST.get("cover", "")
         deskripsi = request.POST.get("deskripsi", "")
+        ISBN = request.POST.get("ISBN", "").strip()
 
         id_item = f"BK-{uuid.uuid4().hex[:8].upper()}"
 
@@ -215,6 +216,7 @@ def kelola_buku(request):
             judul=judul,
             penulis=penulis,
             kategori=kategori,
+            ISBN=ISBN,
             tahun_terbit=tahun_terbit,
             cover=cover_url,
             deskripsi=deskripsi,
@@ -249,6 +251,50 @@ def hapus_buku(request, id_item):
         buku.delete()
     return redirect("kelola_buku")
 
+@user_passes_test(_boleh_admin, login_url="login")
+def edit_buku(request, id_item):
+    buku = get_object_or_404(BukuDigital, id_item=id_item)
+    if request.method != "POST":
+        return redirect("kelola_buku")
+
+    judul = request.POST.get("judul", "").strip()
+    penulis = request.POST.get("penulis", "").strip()
+    if not judul or not penulis:
+        messages.error(request, "Judul dan penulis tidak boleh kosong.")
+        return redirect("kelola_buku")
+
+    if "file_pdf" in request.FILES:
+        file_pdf = request.FILES["file_pdf"]
+        if not file_pdf.name.lower().endswith(".pdf"):
+            messages.error(request, "File buku harus berformat PDF.")
+            return redirect("kelola_buku")
+        fs = FileSystemStorage()
+        filename = fs.save(f"buku_pdf/{file_pdf.name}", file_pdf)
+        buku.link_unduh = fs.url(filename)
+        buku.ukuran_file = round(file_pdf.size / (1024 * 1024), 2)
+
+    buku.judul = judul
+    buku.penulis = penulis
+    buku.isbn = request.POST.get("isbn", "").strip()
+    buku.kategori = request.POST.get("kategori", "").strip()
+    buku.tahun_terbit = request.POST.get("tahun_terbit", "").strip()
+    buku.cover = request.POST.get("cover", "").strip()
+    buku.deskripsi = request.POST.get("deskripsi", "")
+    buku.save()
+    messages.success(request, f"Buku '{buku.judul}' berhasil diperbarui.")
+    return redirect("kelola_buku")
+
+@user_passes_test(_boleh_admin, login_url="login")
+def hapus_buku_massal(request):
+    if request.method == "POST":
+        qs = BukuDigital.objects.filter(id_item__in=request.POST.getlist("ids"))
+        jumlah = qs.count()
+        if jumlah:
+            qs.delete()
+            messages.success(request, f"{jumlah} buku berhasil dihapus.")
+        else:
+            messages.error(request, "Belum ada buku yang dipilih.")
+    return redirect("kelola_buku")
 
 # ==========================================
 # KELOLA JURNAL (ADMIN)
@@ -263,6 +309,7 @@ def kelola_jurnal(request):
         tahun_terbit = request.POST.get("tahun_terbit", "")
         cover_url = request.POST.get("cover", "")
         link_akses = request.POST.get("link_akses", "")
+        ISSN = request.POST.get("ISSN", "").strip()
 
         id_item = f"JR-{uuid.uuid4().hex[:8].upper()}"
 
@@ -283,7 +330,8 @@ def kelola_jurnal(request):
         Jurnal.objects.create(
             id_item=id_item,
             judul=judul,
-            penulis=penulis,
+            penulis=penulis,\
+            ISSN=ISSN,            
             bidang_ilmu=bidang_ilmu,
             volume=volume,
             tahun_terbit=tahun_terbit,
@@ -317,6 +365,52 @@ def hapus_jurnal(request, id_item):
         jurnal.delete()
     return redirect("kelola_jurnal")
 
+@user_passes_test(_boleh_admin, login_url="login")
+def edit_jurnal(request, id_item):
+    jurnal = get_object_or_404(Jurnal, id_item=id_item)
+    if request.method != "POST":
+        return redirect("kelola_jurnal")
+
+    judul = request.POST.get("judul", "").strip()
+    penulis = request.POST.get("penulis", "").strip()
+    if not judul or not penulis:
+        messages.error(request, "Judul dan penulis tidak boleh kosong.")
+        return redirect("kelola_jurnal")
+
+    link_akses = request.POST.get("link_akses", "").strip()
+    if "file_pdf" in request.FILES:
+        file_pdf = request.FILES["file_pdf"]
+        if not file_pdf.name.lower().endswith(".pdf"):
+            messages.error(request, "File jurnal harus berformat PDF.")
+            return redirect("kelola_jurnal")
+        fs = FileSystemStorage()
+        filename = fs.save(f"jurnal_pdf/{file_pdf.name}", file_pdf)
+        link_akses = fs.url(filename)
+
+    jurnal.judul = judul
+    jurnal.penulis = penulis
+    jurnal.issn = request.POST.get("issn", "").strip()
+    jurnal.bidang_ilmu = request.POST.get("bidang_ilmu", "").strip()
+    jurnal.volume = request.POST.get("volume", "").strip()
+    jurnal.tahun_terbit = request.POST.get("tahun_terbit", "").strip()
+    jurnal.cover = request.POST.get("cover", "").strip()
+    if link_akses:                      # kosong = pertahankan link lama
+        jurnal.link_akses = link_akses
+    jurnal.save()
+    messages.success(request, f"Jurnal '{jurnal.judul}' berhasil diperbarui.")
+    return redirect("kelola_jurnal")
+
+@user_passes_test(_boleh_admin, login_url="login")
+def hapus_jurnal_massal(request):
+    if request.method == "POST":
+        qs = Jurnal.objects.filter(id_item__in=request.POST.getlist("ids"))
+        jumlah = qs.count()
+        if jumlah:
+            qs.delete()
+            messages.success(request, f"{jumlah} jurnal berhasil dihapus.")
+        else:
+            messages.error(request, "Belum ada jurnal yang dipilih.")
+    return redirect("kelola_jurnal")
 
 # ==========================================
 # KELOLA ANGGOTA (ADMIN)

@@ -33,6 +33,10 @@ urlpatterns = [
     path("dashboard-admin/buku/hapus/<str:id_item>/", views_admin.hapus_buku, name="hapus_buku",),
     path("dashboard-admin/jurnal/", views_admin.kelola_jurnal, name="kelola_jurnal",),
     path("dashboard-admin/jurnal/hapus/<str:id_item>/", views_admin.hapus_jurnal, name="hapus_jurnal",),
+    path("dashboard-admin/buku/edit/<str:id_item>/", views_admin.edit_buku, name="edit_buku"),
+    path("dashboard-admin/buku/hapus-terpilih/", views_admin.hapus_buku_massal, name="hapus_buku_massal"),
+    path("dashboard-admin/jurnal/edit/<str:id_item>/", views_admin.edit_jurnal, name="edit_jurnal"),
+    path("dashboard-admin/jurnal/hapus-terpilih/", views_admin.hapus_jurnal_massal, name="hapus_jurnal_massal"),
 
     # Kelola anggota, peminjaman, laporan (admin)
     path("dashboard-admin/anggota/", views_admin.kelola_anggota, name="kelola_anggota"),
