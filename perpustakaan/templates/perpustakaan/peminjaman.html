@@ -82,10 +82,25 @@
                 </div>
             </div>
 
+        {% if messages %}
+        <div class="toast-stack" id="toastStack">
+            {% for message in messages %}
+            <div class="alert-msg toast-msg {{ message.level_tag }}" role="status">
+                <i class="fas {% if message.level_tag == 'success' %}fa-circle-check{% else %}fa-circle-exclamation{% endif %}"></i>
+                <div class="toast-text">
+                    <strong>{% if message.extra_tags %}{{ message.extra_tags }}{% elif message.level_tag == 'success' %}Berhasil{% else %}Perhatian{% endif %}</strong>
+                    <span>{{ message }}</span>
+                </div>
+                <button type="button" class="toast-close" aria-label="Tutup">&times;</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         <div class="hero-banner-small">
             <h4>BUKU AKTIF</h4>
             <h2>{{ total_pinjaman }} buku sedang kamu pinjam</h2>
-            <p>Semua buku dapat dipinjam selama 7 hari.</p>
+            <p>Semua buku dapat dipinjam selama 14 hari.</p>
         </div>
 
         <div class="slot-info">
@@ -116,6 +131,7 @@
                     <div class="loan-status-row">
                         <span class="badge-aktif">Aktif</span>
                         <span class="due-date">Jatuh tempo {{ item.jatuh_tempo|date:"d M Y" }}</span>
+                        <span class="due-date">Diperpanjang {{ item.perpanjangan }}/{{maks_perpanjangan}}</span>
                     </div>
                     
                     <h3>{% if item.buku_digital %}{{ item.buku_digital.judul }}{% else %}{{ item.jurnal.judul }}{% endif %}</h3>
@@ -133,9 +149,13 @@
                     {% if item.buku_digital %}
                     <a href="{% url 'baca_buku' item.buku_digital.id_item %}" class="btn-baca"><i class="fas fa-book-open"></i> Baca</a>
                     {% endif %}
-                    <button class="btn-outline">Perpanjang</button>
+                    <form method="post" action="{% url 'perpanjang_buku' item.id %}" style="display:flex; margin:0;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-outline"{% if item.perpanjangan >= maks_perpanjang %} disabled title="Batas perpanjangan tercapai"{% endif %}>Perpanjang</button>
+                    </form>
                     
-                    <a href="{% url 'kembalikan_buku' item.id %}" class="btn-outline" style="border: 1px solid #dc2626; color: #dc2626;" onclick="confirmReturn(event, '{% if item.buku_digital %}{{ item.buku_digital.judul }}{% else %}{{ item.jurnal.judul }}{% endif %}')">Kembalikan</a>
+                    <a href="{% url 'kembalikan_buku' item.id %}" class="btn-outline" style="border: 1px solid #dc2626; color: #dc2626;" onclick="confirmReturn
+                    (event, '{% if item.buku_digital %}{{ item.buku_digital.judul }}{% else %}{{ item.jurnal.judul }}{% endif %}')">Kembalikan</a>
                 </div>
             </div>
             {% empty %}
@@ -150,5 +170,81 @@
         </div>
     </div>
 </div>
+
+<script>
+    // notifkasi perpanjangan
+    (function () {
+        var stack = document.getElementById('toastStack');
+        if (!stack) return;
+
+        function tutup(el) {
+            el.classList.add('hide');
+            setTimeout(function () { el.remove(); }, 300);
+        }
+
+        stack.querySelectorAll('.toast-msg').forEach(function (el) {
+            el.querySelector('.toast-close').addEventListener('click', function () { tutup(el); });
+            setTimeout(function () { tutup(el); }, 5000);
+        });
+    })();
+</script>
+
+<script>
+    (function () {
+        var kunci = 'peminjamanScroll';
+        var area = document.querySelector('.main-content');
+        if (!area) return;
+
+        // Pulihkan posisi gulir setelah perpanjangan
+        var tersimpan = sessionStorage.getItem(kunci);
+        if (tersimpan !== null) {
+            area.scrollTop = parseInt(tersimpan, 10) || 0;
+            sessionStorage.removeItem(kunci);
+        }
+
+        // Simpan posisi gulir sebelum form perpanjang dikirim
+        document.querySelectorAll('form[action*="perpanjang"]').forEach(function (form) {
+            form.addEventListener('submit', function (e) {
+                if (e.defaultPrevented) return;  // konfirmasi dibatalkan
+                sessionStorage.setItem(kunci, area.scrollTop);
+            });
+        });
+    })();
+</script>
+
+<!-- Modal Konfirmasi Kembalikan Buku -->
+<div class="modal-overlay" id="modalKembali" hidden>
+    <div class="modal-box">
+        <div class="modal-icon"><i class="fas fa-rotate-left"></i></div>
+        <h3>Kembalikan buku ini?</h3>
+        <p>Buku <strong id="modalJudul">...</strong> akan ditandai selesai dan keluar dari daftar pinjamanmu.</p>
+        <div class="modal-actions">
+            <button type="button" class="modal-btn-cancel" id="modalBatal">Batal</button>
+            <a href="#" class="modal-btn-confirm" id="modalYaKembali">Ya, Kembalikan</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const modal  = document.getElementById('modalKembali');
+        const judul  = document.getElementById('modalJudul');
+        const btnYa  = document.getElementById('modalYaKembali');
+        const btnBtl = document.getElementById('modalBatal');
+
+        // Dipanggil dari onclick tombol "Kembalikan" yang sudah ada
+        window.confirmReturn = function (e, judulBuku) {
+            e.preventDefault();                 // jangan langsung navigasi
+            judul.textContent = judulBuku;
+            btnYa.href = e.currentTarget.href;  // simpan URL kembalikan
+            modal.hidden = false;               // tampilkan 
+        };
+
+        btnBtl.addEventListener('click', () => { modal.hidden = true; });
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.hidden = true; });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') modal.hidden = true; });
+    })();
+</script>
+
 </body>
 </html>

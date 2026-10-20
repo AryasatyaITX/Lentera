@@ -4,11 +4,6 @@
 (function () {
     'use strict';
 
-    const OL = 'https://openlibrary.org';
-    const FIELDS = 'key,title,author_name,first_publish_year,cover_i,ia,ratings_average,want_to_read_count,ebook_access';
-    const NO_COVER = 'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=300';
-    const PDFJS_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
     // CSS pembaca PDF disuntikkan oleh JS sendiri, jadi tidak bergantung pada baca.html.
     const PV_CSS = `
 .reader-stage.pdf-mode{display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;background:#F3F4EE!important;overflow:hidden!important;min-height:0}
@@ -753,27 +748,6 @@
                 ${backLinks}
             </div>
         `);
-    }
-
-    // ---------- Dashboard: rekomendasi + pencarian ----------
-    const dash = document.getElementById('book-grid-container');
-    if (dash) {
-        olSearch('subject:"engineering"', 1, 4, 'rating').then(r => {
-            r.books.forEach(b => bookCache.set(b.olid, b));
-            dash.innerHTML = r.books.length
-                ? r.books.map(b => cardHtml(b, false)).join('')
-                : '<p>Buku tidak ditemukan.</p>';
-        }).catch(() => {
-            dash.innerHTML = '<p>Gagal memuat rekomendasi dari Open Library. Muat ulang halaman ini nanti.</p>';
-        });
-        const heroSearch = document.getElementById('hero-search');
-        if (heroSearch) {
-            heroSearch.addEventListener('keydown', (e) => {
-                if (e.key !== 'Enter') return;
-                const q = heroSearch.value.trim();
-                if (q) window.location.href = '/katalog/?q=' + encodeURIComponent(q);
-            });
-        }
     }
 
     // ---------- Halaman katalog ----------

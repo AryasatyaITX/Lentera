@@ -40,22 +40,25 @@
         </div>
 
         <main class="main-content">
-            <div class="top-nav" style="margin-bottom: 10px;">
-                <div class="top-nav-left">
-                    <button id="menuButton" class="menu-button" type="button" aria-label="Buka atau tutup menu"><i class="fas fa-bars"></i></button>
-                    <div class="top-divider"></div>
-                    <div class="greeting"><h4> Lentera / ANGGOTA</h4><h1 class="page-title-space">Bookmarks</h1></div>
+            <div class="bookmarks-header">
+                <div class="top-nav" style="margin-bottom: 10px;">
+                    <div class="top-nav-left">
+                        <button id="menuButton" class="menu-button" type="button" aria-label="Buka atau tutup menu"><i class="fas fa-bars"></i></button>
+                        <div class="top-divider"></div>
+                        <div class="greeting"><h4> Lentera / ANGGOTA</h4><h1 class="page-title-space">Bookmarks</h1></div>
+                    </div>
+                    <div class="nav-actions">
+                        <i class="far fa-bell"></i>
+                        <div class="avatar-circle">{{ user.nama_tampilan|default:user.username|slice:2|upper }}</div>
+                        <a href="{% url 'logout' %}" style="margin-left:15px; color:#dc2626; font-size: 20px;" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
+                    </div>
                 </div>
-                <div class="nav-actions">
-                    <i class="far fa-bell"></i>
-                    <div class="avatar-circle">{{ user.nama_tampilan|default:user.username|slice:2|upper }}</div>
-                    <a href="{% url 'logout' %}" style="margin-left:15px; color:#dc2626; font-size: 20px;" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
+                <div class="bookmark-header-info">
+                    <p>Koleksi buku yang ingin kamu baca nanti.</p>
+                    <div class="bookmark-count"><span id="bookmark-counter">{{ total_tersimpan }}</span> tersimpan</div>
                 </div>
             </div>
-            <div class="bookmark-header-info">
-                <p>Koleksi buku yang ingin kamu baca nanti.</p>
-                <div class="bookmark-count"><span id="bookmark-counter">{{ total_tersimpan }}</span> tersimpan</div>
-            </div>
+
             <div class="catalog-grid">
                 {% for mark in bookmarks %}
                 <div class="book-card"{% if mark.buku_digital %} data-olid="{{ mark.buku_digital.id_item }}" tabindex="0" role="link"{% endif %}>

@@ -12,6 +12,42 @@
     <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1052">
     <script src="{% static 'perpustakaan/js/script.js' %}?v=2" defer></script>
     <style>
+        /* Mengatur container agar sejajar flex-nya */
+        .profile-container {
+            display: flex;
+            align-items: stretch;
+            gap: 24px;
+        }
+
+        .profile-card {
+            background: white; 
+            border-radius: 24px; 
+            overflow: hidden; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06); 
+            width: 340px;
+            flex-shrink: 0;
+        }
+
+        /* Membuat card kanan menyesuaikan tinggi card kiri secara presisi */
+        .settings-card {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        @media (max-width: 1024px) {
+            .profile-container {
+                flex-direction: column;
+            }
+            .profile-card {
+                width: 100%;
+            }
+        }
+
         .profile-header-bg-dynamic {
             position: relative;
             background-color: #112222;
@@ -26,7 +62,6 @@
             transition: filter 0.2s ease-in-out;
         }
         
-        /* Efek Menggelap & Ikon Kamera saat Hover (Khusus Pemilik Akun) */
         .profile-editable {
             cursor: pointer;
         }
@@ -62,7 +97,6 @@
             font-size: 16px;
         }
 
-        /* Kotak Panduan Password Elegan */
         .password-policy-box {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -203,7 +237,6 @@
             to { transform: translateY(0) scale(1); opacity: 1; }
         }
 
-        /* Chip peringkat + streak, bar level, kalimat banding EXP */
         .profile-chips {
             display: flex;
             flex-wrap: wrap;
@@ -256,7 +289,6 @@
     </style>
 </head>
 <body>
-
     <div class="app-layout" id="appLayout">
 
         <!-- ===== Sidebar ===== -->
@@ -351,7 +383,7 @@
             <div class="profile-container">
 
                 <!-- ===== Kartu Profil Samping ===== -->
-                <div class="profile-card" style="background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06); height: fit-content;">
+                <div class="profile-card">
                     
                     <!-- Background Cover dengan Efek Hover Cond -->
                     <div id="previewBgContainer" class="profile-header-bg-dynamic {% if request.user == user %}profile-editable{% endif %}" {% if request.user == user %}onclick="openBgMenu()" title="Ketuk untuk ubah background cover"{% endif %} {% if user.foto_background %}style="background-image: url('{{ user.foto_background.url }}');"{% endif %}></div>
@@ -435,89 +467,96 @@
                 <!-- ===== Form Pengaturan Akun ===== -->
                 {% if request.user == user %}
                 <div class="settings-card">
-                    <div class="settings-header">
-                        <div>
-                            <h4>PENGATURAN AKUN</h4>
-                            <h2>Informasi pribadi</h2>
-                        </div>
-                        <div class="profile-status-badges" style="margin: 0;">
-                            <span class="p-badge active">Anggota aktif</span>
-                            <span class="p-badge count">{{ total_dibaca }} buku dibaca</span>
-                        </div>
-                    </div>
-
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert-msg {% if 'success' in message.tags %}success{% else %}error{% endif %}">
-                                <i class="fas {% if 'success' in message.tags %}fa-check-circle{% else %}fa-exclamation-circle{% endif %}"></i>
-                                {{ message }}
+                    <div>
+                        <div class="settings-header">
+                            <div>
+                                <h4>PENGATURAN AKUN</h4>
+                                <h2>Informasi pribadi</h2>
                             </div>
-                        {% endfor %}
-                    {% endif %}
-
-                    <form method="POST" class="settings-form" enctype="multipart/form-data" id="profileForm" onsubmit="return validatePassword(event)">
-                        {% csrf_token %}
-
-                        <!-- Input File Tersembunyi & Flag Hapus Foto Profil -->
-                        <input type="file" id="inputFotoProfil" name="foto_profil" accept="image/*" style="display: none;" onchange="previewProfileImage(this)">
-                        <input type="hidden" id="hapusFotoProfilInput" name="hapus_foto_profil" value="0">
-
-                        <!-- Input File Tersembunyi & Flag Hapus Background Cover -->
-                        <input type="file" id="inputFotoBg" name="foto_background" accept="image/*" style="display: none;" onchange="previewBgImage(this)">
-                        <input type="hidden" id="hapusFotoBgInput" name="hapus_foto_background" value="0">
-
-                        <div class="input-group">
-                            <label>NIM (Tidak dapat diubah)</label>
-                            <input type="text" value="{{ user.username }}" disabled style="background:#F0F4F8; color:#8A8A7A; cursor:not-allowed;">
+                            <div class="profile-status-badges" style="margin: 0;">
+                                <span class="p-badge active">Anggota aktif</span>
+                                <span class="p-badge count">{{ total_dibaca }} buku dibaca</span>
+                            </div>
                         </div>
 
-                        <div class="input-group">
-                            <label>Nama Tampilan (Display Name)</label>
-                            <input type="text" name="nama_tampilan" value="{{ user.nama_tampilan }}" maxlength="18" title="Maksimal 18 karakter" required>
-                        </div>
-
-                        <!-- Password Lama -->
-                        <div class="input-group">
-                            <label>Password lama</label>
-                            <input type="password" name="password_lama" id="passLama" maxlength="20" placeholder="Kosongkan jika tidak ingin mengubah password" oninput="clearInputError(this)">
-                            <i class="far fa-eye toggle-password" onclick="togglePassword('passLama', this)"></i>
-                        </div>
-
-                        <!-- Password Baru dengan Panduan & Pesan Error Inline -->
-                        <div class="input-group">
-                            <label>Password baru</label>
-                            <input type="password" name="password_baru" id="passBaru" maxlength="20" placeholder="Masukkan password baru" oninput="checkPasswordStrength(this.value)">
-                            <i class="far fa-eye toggle-password" onclick="togglePassword('passBaru', this)"></i>
-                            
-                            <!-- Kotak Panduan Persyaratan Password -->
-                            <div class="password-policy-box">
-                                <div class="password-policy-title">
-                                    <i class="fas fa-shield-alt" style="color: #0ea5e9;"></i> Syarat Keamanan Password:
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert-msg {% if 'success' in message.tags %}success{% else %}error{% endif %}">
+                                    <i class="fas {% if 'success' in message.tags %}fa-check-circle{% else %}fa-exclamation-circle{% endif %}"></i>
+                                    {{ message }}
                                 </div>
-                                <ul class="password-policy-list">
-                                    <li id="policy-length" class="password-policy-item">
-                                        <i class="fas fa-circle"></i> 8 - 20 Karakter
-                                    </li>
-                                    <li id="policy-special" class="password-policy-item">
-                                        <i class="fas fa-circle"></i> Min. 1 Karakter Unik
-                                    </li>
-                                    <li id="policy-upper" class="password-policy-item">
-                                        <i class="fas fa-circle"></i> Min. 1 Huruf Besar
-                                    </li>
-                                </ul>
+                            {% endfor %}
+                        {% endif %}
+
+                        <form method="POST" class="settings-form" enctype="multipart/form-data" id="profileForm" onsubmit="return validatePassword(event)">
+                            {% csrf_token %}
+
+                            <!-- Input File Tersembunyi & Flag Hapus Foto Profil -->
+                            <input type="file" id="inputFotoProfil" name="foto_profil" accept="image/*" style="display: none;" onchange="previewProfileImage(this)">
+                            <input type="hidden" id="hapusFotoProfilInput" name="hapus_foto_profil" value="0">
+
+                            <!-- Input File Tersembunyi & Flag Hapus Background Cover -->
+                            <input type="file" id="inputFotoBg" name="foto_background" accept="image/*" style="display: none;" onchange="previewBgImage(this)">
+                            <input type="hidden" id="hapusFotoBgInput" name="hapus_foto_background" value="0">
+
+                            <div class="input-group">
+                                <label>NIM (Tidak dapat diubah)</label>
+                                <input type="text" value="{{ user.username }}" disabled style="background:#F0F4F8; color:#8A8A7A; cursor:not-allowed;">
                             </div>
 
-                            <!-- Pesan Error Dinamis di Bawah Kotak Syarat -->
-                            <div id="passwordErrorMsg" class="password-inline-error">
-                                <i class="fas fa-exclamation-triangle"></i> <span id="errorText">Pesan error...</span>
+                            <div class="input-group">
+                                <label>Nama Tampilan (Display Name)</label>
+                                <input type="text" name="nama_tampilan" value="{{ user.nama_tampilan }}" maxlength="18" title="Maksimal 18 karakter" required>
                             </div>
-                        </div>
 
-                        <div class="form-actions">
-                            <a href="{% url 'dashboard' %}" class="btn-cancel">Batal</a>
-                            <button type="submit" class="btn-save">Simpan perubahan <i class="fas fa-check"></i></button>
-                        </div>
-                    </form>
+                            <div class="input-group">
+                                <label>Email</label>
+                                <input type="email" name="email" value="{{ user.email|default:'' }}" placeholder="nama@email.com" required>
+                            </div>
+
+                            <!-- Password Lama -->
+                            <div class="input-group">
+                                <label>Password lama</label>
+                                <input type="password" name="password_lama" id="passLama" maxlength="20" placeholder="Kosongkan jika tidak ingin mengubah password" oninput="clearInputError(this)">
+                                <i class="far fa-eye toggle-password" onclick="togglePassword('passLama', this)"></i>
+                            </div>
+
+                            <!-- Password Baru dengan Panduan & Pesan Error Inline -->
+                            <div class="input-group">
+                                <label>Password baru</label>
+                                <input type="password" name="password_baru" id="passBaru" maxlength="20" placeholder="Masukkan password baru" oninput="checkPasswordStrength(this.value)">
+                                <i class="far fa-eye toggle-password" onclick="togglePassword('passBaru', this)"></i>
+                                
+                                <!-- Kotak Panduan Persyaratan Password -->
+                                <div class="password-policy-box">
+                                    <div class="password-policy-title">
+                                        <i class="fas fa-shield-alt" style="color: #0ea5e9;"></i> Syarat Keamanan Password:
+                                    </div>
+                                    <ul class="password-policy-list">
+                                        <li id="policy-length" class="password-policy-item">
+                                            <i class="fas fa-circle"></i> 8 - 20 Karakter
+                                        </li>
+                                        <li id="policy-special" class="password-policy-item">
+                                            <i class="fas fa-circle"></i> Min. 1 Karakter Unik
+                                        </li>
+                                        <li id="policy-upper" class="password-policy-item">
+                                            <i class="fas fa-circle"></i> Min. 1 Huruf Besar
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <!-- Pesan Error Dinamis di Bawah Kotak Syarat -->
+                                <div id="passwordErrorMsg" class="password-inline-error">
+                                    <i class="fas fa-exclamation-triangle"></i> <span id="errorText">Pesan error...</span>
+                                </div>
+                            </div>
+
+                            <div class="form-actions" style="margin-top: 24px;">
+                                <a href="{% url 'dashboard' %}" class="btn-cancel">Batal</a>
+                                <button type="submit" class="btn-save">Simpan perubahan <i class="fas fa-check"></i></button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
                 {% endif %}
 
@@ -574,7 +613,6 @@
     </div>
 
     <script>
-        // Logika Modal Avatar
         function openAvatarMenu() {
             var modal = document.getElementById('avatarModal');
             if (modal) modal.style.display = 'flex';
@@ -621,7 +659,6 @@
             }
         }
 
-        // Logika Modal Background Cover
         function openBgMenu() {
             var modal = document.getElementById('bgModal');
             if (modal) modal.style.display = 'flex';

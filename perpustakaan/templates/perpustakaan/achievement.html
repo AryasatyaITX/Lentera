@@ -26,16 +26,22 @@
         .acv-chip.active { background: #173C3A; border-color: #173C3A; color: #D4F838; }
 
         .acv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; padding-bottom: 40px; }
-        .acv-card { position: relative; background: #fff; border: 1px solid #E5E5D8; border-radius: 16px; padding: 18px; }
-        .acv-card.terbuka { border-color: #D4F838; background: #FBFFE8; }
+        
+        /* Card Achievement */
+        .acv-card { position: relative; background: #fff; border: 2px solid #E5E5D8; border-radius: 16px; padding: 18px; transition: all 0.2s ease; }
+        .acv-card.terbuka { border-color: #D4F838; background: #FBFFE8; cursor: pointer; }
+        .acv-card.terbuka:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); border-color: #b8df25; }
+        
+        /* State saat card disematkan (Pinned) */
+        .acv-card.pinned { border-color: #173C3A !important; background: #f0fdf4 !important; box-shadow: 0 0 0 2px #173C3A; }
 
         .acv-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: #ECEFE4; color: #A0A89A; font-size: 15px; margin-bottom: 14px; }
         .acv-card.terbuka .acv-icon { background: #D4F838; color: #112222; }
 
-        .acv-status { position: absolute; top: 16px; right: 16px; font-size: 11px; font-weight: 600; color: #A0A89A; }
+        .acv-status { position: absolute; top: 16px; right: 16px; font-size: 11px; font-weight: 600; color: #A0A89A; display: flex; align-items: center; gap: 4px; }
         .acv-card.terbuka .acv-status { color: #435E00; }
 
-        .acv-name { font-size: 14px; font-weight: 700; color: #173C3A; margin-bottom: 4px; }
+        .acv-name { font-size: 14px; font-weight: 700; color: #173C3A; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .acv-need { font-size: 12px; color: #6A6A5C; line-height: 1.5; }
 
         .acv-bar { height: 6px; background: #ECEFE4; border-radius: 999px; overflow: hidden; margin-top: 14px; }
@@ -43,6 +49,12 @@
         .acv-progress { font-size: 11px; color: #8A8A7A; margin-top: 6px; }
 
         .acv-empty { grid-column: 1 / -1; text-align: center; color: #8A8A7A; padding: 40px 0; font-size: 14px; }
+
+        /* Toast Notifikasi Kecil */
+        #toastNotif {
+            position: fixed; bottom: 24px; right: 24px; background: #0f172a; color: #ffffff; padding: 12px 20px; border-radius: 12px; font-size: 13px; font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.2); display: none; z-index: 9999; animation: slideInUp 0.3s ease;
+        }
+        @keyframes slideInUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     </style>
 </head>
 <body>
@@ -90,23 +102,63 @@
             <div class="acv-head">
                 <div>
                     <p class="acv-eyebrow">Lencana perjalanan</p>
-                    <p class="acv-desc">Setiap ikon menjelaskan capaian yang akan terbuka saat kamu membaca dan menjelajahi Lentera.</p>
+                    <p class="acv-desc">Klik achievement yang sudah terbuka untuk menyematkannya di profil kamu (Maksimal 5).</p>
                 </div>
-                <p class="acv-count">{{ terbuka }} dari {{ total }} terbuka</p>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span id="pinnedCountBadge" style="background: #173C3A; color: #D4F838; padding: 6px 12px; border-radius: 999px; font-size: 11px; font-weight: 700;">Disematkan: <span id="numPinned">0</span>/5</span>
+                    <p class="acv-count" style="margin: 0;">{{ terbuka }} dari {{ total }} terbuka</p>
+                </div>
             </div>
 
+            <!-- Tombol Filter: Terbuka & Terkunci Dipindah ke Paling Kanan -->
             <div class="acv-filters">
                 <button type="button" class="acv-chip active" data-filter="semua">Semua</button>
+                <button type="button" class="acv-chip" data-filter="umum">Umum</button>
+                <button type="button" class="acv-chip" data-filter="langka">Langka</button>
+                <button type="button" class="acv-chip" data-filter="epik">Epik</button>
                 <button type="button" class="acv-chip" data-filter="terbuka">Terbuka</button>
                 <button type="button" class="acv-chip" data-filter="terkunci">Terkunci</button>
             </div>
 
             <div class="acv-grid">
                 {% for a in achievements %}
-                <div class="acv-card {% if a.didapat %}terbuka{% else %}terkunci{% endif %}" data-status="{% if a.didapat %}terbuka{% else %}terkunci{% endif %}">
-                    <span class="acv-status">{% if a.didapat %}Terbuka{% else %}Terkunci{% endif %}</span>
+                <div class="acv-card {% if a.didapat %}terbuka{% endif %} {% if a.nama in pinned_names %}pinned{% endif %}" 
+                    data-status="{% if a.didapat %}terbuka{% else %}terkunci{% endif %}"
+                    data-kategori="{{ a.kategori|lower|default:'umum' }}"
+                    data-name="{{ a.nama }}"
+                    data-unlocked="{{ a.didapat|lower }}"
+                    onclick="togglePinAchievement(this)">
+                    
+                    <span class="acv-status">
+                        {% if a.nama in pinned_names %}
+                            <i class="fas fa-thumbtack" style="color: #173C3A;"></i> Disematkan
+                        {% elif a.didapat %}
+                            Terbuka
+                        {% else %}
+                            Terkunci
+                        {% endif %}
+                    </span>
+
                     <div class="acv-icon"><i class="fas {{ a.ikon }}"></i></div>
-                    <h3 class="acv-name">{{ a.nama }}</h3>
+                    
+                    <h3 class="acv-name">
+                        <span>{{ a.nama }}</span>
+                        <!-- Label Kategori di Samping Nama -->
+                        {% if a.kategori == 'Epik' %}
+                            <span style="font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: #fbbf24; color: #78350f; display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0;">
+                                <i class="fas fa-crown" style="font-size: 7px;"></i> EPIK
+                            </span>
+                        {% elif a.kategori == 'Langka' %}
+                            <span style="font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: #38bdf8; color: #0c4a6e; display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0;">
+                                <i class="fas fa-gem" style="font-size: 7px;"></i> LANGKA
+                            </span>
+                        {% else %}
+                            <span style="font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: #e2e8f0; color: #475569; flex-shrink: 0;">
+                                UMUM
+                            </span>
+                        {% endif %}
+                    </h3>
+
                     <p class="acv-need">{{ a.syarat }}</p>
                     {% if a.target %}
                     <div class="acv-bar"><span style="--persen: {{ a.persen }}%;"></span></div>
@@ -120,7 +172,11 @@
         </div>
     </div>
 
+    <!-- Toast Notifikasi -->
+    <div id="toastNotif">Berhasil diperbarui!</div>
+
 <script>
+    // Filter Tab (Status & Kategori)
     (function () {
         var chips = document.querySelectorAll('.acv-chip');
         var cards = document.querySelectorAll('.acv-card');
@@ -133,15 +189,100 @@
 
                 var filter = chip.getAttribute('data-filter');
                 var tampil = 0;
+                
                 cards.forEach(function (card) {
-                    var cocok = filter === 'semua' || card.getAttribute('data-status') === filter;
+                    var status = card.getAttribute('data-status');
+                    var kategori = card.getAttribute('data-kategori');
+                    var cocok = false;
+
+                    if (filter === 'semua') {
+                        cocok = true;
+                    } else if (filter === 'terbuka' || filter === 'terkunci') {
+                        cocok = (status === filter);
+                    } else {
+                        cocok = (kategori === filter);
+                    }
+
                     card.style.display = cocok ? '' : 'none';
                     if (cocok) tampil++;
                 });
                 empty.hidden = tampil !== 0;
             });
         });
+        
+        updatePinnedCounter();
     })();
+
+    function updatePinnedCounter() {
+        var pinnedCards = document.querySelectorAll('.acv-card.pinned');
+        document.getElementById('numPinned').innerText = pinnedCards.length;
+    }
+
+    // Fungsi Klik Langsung untuk Pin / Unpin Achievement
+    function togglePinAchievement(cardElement) {
+        var isUnlocked = cardElement.getAttribute('data-unlocked') === 'true';
+        if (!isUnlocked) {
+            showToast("Achievement ini belum terbuka!");
+            return;
+        }
+
+        var isPinned = cardElement.classList.contains('pinned');
+        var currentPinnedCount = document.querySelectorAll('.acv-card.pinned').length;
+
+        if (!isPinned && currentPinnedCount >= 5) {
+            showToast("Maksimal hanya dapat menyematkan 5 achievement!");
+            return;
+        }
+
+        if (isPinned) {
+            cardElement.classList.remove('pinned');
+            var statusSpan = cardElement.querySelector('.acv-status');
+            statusSpan.innerHTML = 'Terbuka';
+            showToast("Achievement dilepas dari sematan.");
+        } else {
+            cardElement.classList.add('pinned');
+            var statusSpan = cardElement.querySelector('.acv-status');
+            statusSpan.innerHTML = '<i class="fas fa-thumbtack" style="color: #173C3A;"></i> Disematkan';
+            showToast("Achievement berhasil disematkan!");
+        }
+
+        updatePinnedCounter();
+        savePinnedToServer();
+    }
+
+    // Kirim data pilihan ke Backend secara asynchronous (AJAX)
+    function savePinnedToServer() {
+        var pinnedCards = document.querySelectorAll('.acv-card.pinned');
+        var pinnedNames = [];
+        pinnedCards.forEach(function(card) {
+            pinnedNames.push(card.getAttribute('data-name'));
+        });
+
+        fetch("{% url 'update_pinned_api' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({ pinned_achievements: pinnedNames })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status !== 'success') {
+                console.error("Gagal menyimpan pilihan");
+            }
+        })
+        .catch(error => console.error("Error:", error));
+    }
+
+    function showToast(msg) {
+        var toast = document.getElementById('toastNotif');
+        toast.innerText = msg;
+        toast.style.display = 'block';
+        setTimeout(function() {
+            toast.style.display = 'none';
+        }, 2500);
+    }
 </script>
 </body>
 </html>
