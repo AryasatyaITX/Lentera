@@ -27,7 +27,7 @@ class ItemKatalog(models.Model):
 # atribut khusus buku digital seperti ISBN, link_unduh, dan format_file.
 class BukuDigital(ItemKatalog):
     kategori = models.CharField(max_length=50, default="", blank=True)
-    ISBN = models.CharField(max_length=20, blank=True, default="") 
+    isbn = models.CharField(max_length=20, blank=True, default="") 
     link_unduh = models.URLField(default="https://example.com")
     ukuran_file = models.FloatField(default=2.5, help_text="dalam MB")
     format_file = models.CharField(max_length=10, default="PDF")
@@ -43,7 +43,7 @@ class BukuDigital(ItemKatalog):
 # dan link_akses.
 class Jurnal(ItemKatalog):
     kategori = models.CharField(max_length=50, default="", blank=True)
-    ISSN = models.CharField(max_length=9, blank=True, default="")
+    issn = models.CharField(max_length=9, blank=True, default="")
     volume = models.CharField(max_length=50, blank=True)
     bidang_ilmu = models.CharField(max_length=100, blank=True)
     link_akses = models.URLField(default="https://example.com")
