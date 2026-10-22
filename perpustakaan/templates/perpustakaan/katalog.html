@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1023">
-    <script src="{% static 'perpustakaan/js/script.js' %}?v=2" defer></script>
+    <script src="{% static 'perpustakaan/js/script.js' %}?v=6" defer></script>
 </head>
 <body>
 
@@ -157,8 +157,8 @@
                     {% if buku_lokal %}
                         <div class="grid-buku-5">
                             {% for buku in buku_lokal %}
-                            <a href="{% url 'buku_detail' buku.olid %}" style="text-decoration: none; color: inherit;">
-                                <div style="background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.06); display: flex; flex-direction: column; height: 100%; transition: transform 0.2s;">
+                            <div style="background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.06); display: flex; flex-direction: column; height: 100%; transition: transform 0.2s;">
+                                <a href="{% url 'buku_detail' buku.olid %}" style="text-decoration: none; color: inherit; flex: 1; display: flex; flex-direction: column;">
                                     <div class="book-cover-wrap" style="position:relative;">
                                         {% if buku.cover %}
                                             <img src="{{ buku.cover }}" alt="{{ buku.judul }}" style="width:100%; height:210px; object-fit:cover; display:block;">
@@ -177,15 +177,25 @@
                                         <p style="font-size: 12px; color: #64748b; margin: 0 0 12px 0; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;">
                                             {{ buku.penulis }}{% if buku.tahun %} • {{ buku.tahun }}{% endif %}
                                         </p>
-                                        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: auto; font-size: 12px;">
-                                            <span style="color: #f59e0b; font-weight: 600; display: flex; align-items: center; gap: 4px;">
-                                                <i class="fas fa-star" style="font-size: 11px;"></i> 4.5
-                                            </span>
-                                            <i class="far fa-heart" style="color: #cbd5e1; font-size: 16px;"></i>
-                                        </div>
+                                    </div>
+                                </a>
+                                <div style="display: flex; align-items: center; justify-content: flex-end; padding: 0 14px 14px; font-size: 12px;">
+                                    <button type="button"
+                                            class="catalog-bookmark"
+                                            data-url="{% url 'toggle_bookmark' buku.olid %}"
+                                            data-judul="{{ buku.judul }}"
+                                            data-penulis="{{ buku.penulis }}"
+                                            data-tahun="{{ buku.tahun }}"
+                                            data-cover="{{ buku.cover }}"
+                                            data-deskripsi="{{ buku.deskripsi }}"
+                                            onclick="toggleCatalogBookmark(this)"
+                                            aria-label="{% if buku.olid in tersimpan_ids %}Hapus dari bookmark{% else %}Simpan ke bookmark{% endif %}"
+                                            title="{% if buku.olid in tersimpan_ids %}Hapus dari bookmark{% else %}Simpan ke bookmark{% endif %}"
+                                            style="border: 0; background: transparent; padding: 4px; line-height: 1; cursor: pointer; color: {% if buku.olid in tersimpan_ids %}#D4F838{% else %}#cbd5e1{% endif %}; font-size: 16px;">
+                                        <i class="{% if buku.olid in tersimpan_ids %}fas active{% else %}far{% endif %} fa-heart" aria-hidden="true"></i>
+                                    </button>
                                 </div>
                             </div>
-                        </a>
                             {% endfor %}
                         </div>
                         {% else %}

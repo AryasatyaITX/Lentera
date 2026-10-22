@@ -46,13 +46,22 @@ OTP_MAKS_SALAH = 5
 
 KATEGORI = [
     ("engineering", "Engineering"),
-    ("computer science", "Computer Science"),
-    ("mathematics", "Matematika"),
-    ("physics", "Fisika"),
-    ("business", "Bisnis"),
-    ("fiction", "Fiksi"),
-    ("history", "Sejarah"),
+    ("computer_science", "Computer Science"),
+    ("matematika", "Matematika"),
+    ("fisika", "Fisika"),
+    ("bisnis", "Bisnis"),
+    ("fiksi", "Fiksi"),
+    ("sejarah", "Sejarah"),
 ]
+KATEGORI_FILTER_TERMS = {
+    "engineering": ("engineering",),
+    "computer_science": ("computer_science", "computer science"),
+    "matematika": ("matematika", "mathematics"),
+    "fisika": ("fisika", "physics"),
+    "bisnis": ("bisnis", "business"),
+    "fiksi": ("fiksi", "fiction"),
+    "sejarah": ("sejarah", "history"),
+}
 DEFAULT_KATEGORI = "engineering"
 BAHASA = [("", "Semua bahasa"), ("ind", "Indonesia"), ("eng", "Inggris")]
 
@@ -407,10 +416,13 @@ def katalog_view(request):
                 break
 
     if aktif_kategori and aktif_kategori.lower() != "semua":
-        buku_queryset = buku_queryset.filter(
-            Q(kategori__icontains=aktif_kategori) |
-            Q(kategori__iexact=aktif_kategori)
+        istilah_kategori = KATEGORI_FILTER_TERMS.get(
+            aktif_kategori.lower(), (aktif_kategori,)
         )
+        filter_kategori = Q()
+        for istilah in istilah_kategori:
+            filter_kategori |= Q(kategori__icontains=istilah)
+        buku_queryset = buku_queryset.filter(filter_kategori)
 
     if search_query:
         buku_queryset = buku_queryset.filter(
@@ -441,8 +453,6 @@ def katalog_view(request):
                 'cover_besar': buku.cover or '',
                 'rating': None,
                 'want': None,
-                'ia': buku.ia_id,
-                'ia_semua': [],
                 'akses': '',
                 'deskripsi': buku.deskripsi,
                 'kategori': buku.kategori or '',
@@ -473,12 +483,9 @@ def _pastikan_buku(request, olid):
         return None
 
     cover = _bersih(d.get("cover"), 200)
-    ia = _bersih(d.get("ia"), 100)
     tahun = "".join(ch for ch in _bersih(d.get("tahun"), 10) if ch.isdigit())[:4]
 
     link_baca = _bersih(d.get("link_baca"), 500)
-    if not link_baca:
-        link_baca = f"https://archive.org/details/{ia}" if ia else f"https://openlibrary.org/works/{olid}"
 
     return BukuDigital.objects.create(
         id_item=olid,
@@ -487,8 +494,7 @@ def _pastikan_buku(request, olid):
         tahun_terbit=tahun,
         cover=cover or None,
         deskripsi=_bersih(d.get("deskripsi"), 20000),
-        ia_id=ia,
-        link_unduh=link_baca,
+        link_unduh=link_baca or "https://example.com",
     )
 
 @login_required(login_url="login")
@@ -512,7 +518,6 @@ def buku_detail(request, olid):
                 "tahun": buku_db.tahun_terbit,
                 "cover": buku_db.cover or "",
                 "cover_besar": buku_db.cover or "",
-                "ia": buku_db.ia_id,
                 "deskripsi": buku_db.deskripsi,
                 "subjek": [],
                 "rating": None,
@@ -548,6 +553,8 @@ def baca_buku(request, olid):
     peminjaman.tanggal_pinjam = timezone.now()
     peminjaman.save(update_fields=["tanggal_pinjam"])
 
+    # Memanfaatkan perilaku yang dienkapsulasi di CustomUser. View tidak perlu
+    # tahu cara menghitung streak.
     request.user.update_streak()
 
     context = {
@@ -638,16 +645,21 @@ def ejournal_view(request):
         try:
             with file_json.open(encoding="utf-8") as file:
                 jurnal_json = json.load(file)
+            judul_terdaftar = {jurnal["judul"].casefold() for jurnal in jurnal_harian}
             for index, jurnal in enumerate(jurnal_json):
+                judul = jurnal.get("judul", "Tanpa judul")
+                if judul.casefold() in judul_terdaftar:
+                    continue
                 jurnal_harian.append({
                     "id": f"JSON-{index}",
-                    "judul": jurnal.get("judul", "Tanpa judul"),
+                    "judul": judul,
                     "penulis": jurnal.get("penulis", "Penulis tidak diketahui"),
                     "tahun": jurnal.get("tahun", "-"),
                     "nama_jurnal": jurnal.get("jurnal", ""),
                     "cover": jurnal.get("cover_url", ""),
                     "baca_url": f"/jurnal/JSON-{index}/baca/",
                 })
+                judul_terdaftar.add(judul.casefold())
         except (OSError, json.JSONDecodeError):
             pass
 
@@ -664,7 +676,6 @@ def ejournal_view(request):
     if jurnal_harian:
         offset = timezone.localdate().toordinal() % len(jurnal_harian)
         jurnal_harian = jurnal_harian[offset:] + jurnal_harian[:offset]
-    jurnal_harian = jurnal_harian[:6]
 
     return render(request, "perpustakaan/ejournal.html", {
         "user": request.user,
@@ -672,7 +683,6 @@ def ejournal_view(request):
         "search_query": query,
         "tanggal_jurnal": timezone.localdate(),
     })
-
 
 @login_required(login_url="login")
 @ensure_csrf_cookie
@@ -690,17 +700,33 @@ def baca_jurnal(request, jurnal_id):
         judul = jurnal.get("judul", "Tanpa judul")
         penulis = jurnal.get("penulis", "Penulis tidak diketahui")
         reader_url = jurnal.get("pdf_url") or ""
-        sumber_url = jurnal.get("sumber_url") or jurnal.get("doi_url") or ""
+        sumber_url = jurnal.get("doi_url") or jurnal.get("sumber_url") or ""
     else:
         jurnal = get_object_or_404(Jurnal, pk=jurnal_id)
         judul = jurnal.judul
         penulis = jurnal.penulis
         reader_url = jurnal.link_akses or ""
-        sumber_url = reader_url
+        sumber_url = ""
+        try:
+            with (settings.BASE_DIR / "jurnal_teknik.json").open(encoding="utf-8") as file:
+                semua_jurnal = json.load(file)
+            sumber_url = next(
+                (
+                    item.get("doi_url") or item.get("sumber_url", "")
+                    for item in semua_jurnal
+                    if item.get("judul", "").casefold() == judul.casefold()
+                ),
+                "",
+            )
+        except (OSError, json.JSONDecodeError):
+            pass
+        if not sumber_url and not urlparse(jurnal.link_akses or "").path.lower().endswith(".pdf"):
+            sumber_url = jurnal.link_akses
 
     is_pdf = urlparse(reader_url).path.lower().endswith(".pdf")
     return render(request, "perpustakaan/baca_jurnal.html", {
         "user": request.user,
+        "jurnal_id": jurnal_id,
         "judul": judul,
         "penulis": penulis,
         "reader_url": reader_url,
@@ -803,6 +829,9 @@ def hapus_bookmark_api(request, bookmark_id):
 @login_required(login_url="login")
 def riwayat_view(request):
     riwayat_list = Peminjaman.objects.filter(user=request.user).order_by("-tanggal_pinjam")
+
+    # Memakai classmethod Pengaturan untuk membaca masa pinjam yang bisa
+    # diubah admin, tanpa menulis query sendiri.
     masa = Pengaturan.muat().masa_pinjam_hari
     for p in riwayat_list:
         p.jatuh_tempo = p.tanggal_kembali or (p.tanggal_pinjam + timedelta(days=masa))
@@ -1067,16 +1096,6 @@ def profil_user_detail_view(request, username):
             
     if not pinned_achievements:
         pinned_achievements = [a for a in semua_achievement_target if a["didapat"]][:5]
-
-    semua_achievement = _achievements(request.user)
-    pinned_names = [n.strip() for n in request.user.pinned_achievements.split(",") if n.strip()]
-    ach_dict = {a["nama"]: a for a in semua_achievement}
-    pinned = [ach_dict[n] for n in pinned_names if n in ach_dict]
-    if not pinned:
-        # saat user belum mem-pin apa pun -> tampilkan 5 terbaru
-        pinned = [a for a in semua_achievement if a["didapat"]][:5]
-
-    context["achievements"] = pinned
 
     context = {
         "user": request.user,

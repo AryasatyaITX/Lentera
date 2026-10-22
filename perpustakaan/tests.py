@@ -3,7 +3,9 @@ from django.urls import reverse
 
 from .models import Bookmark, BukuDigital, CustomUser, Peminjaman
 
-
+# [PEWARISAN] Class tes mewarisi django.test.TestCase, yang menyediakan
+# client dan database tes. setUp() ditimpa (overriding) untuk menyiapkan
+# data awal tiap tes.
 class LocalCatalogLoanFlowTests(TestCase):
     def setUp(self):
         self.user = CustomUser.objects.create_user(
@@ -40,6 +42,35 @@ class LocalCatalogLoanFlowTests(TestCase):
         history = self.client.get(reverse('riwayat'))
         self.assertContains(history, 'Buku Tes Lokal')
         self.assertContains(history, 'Dikembalikan')
+
+    def test_catalog_category_filter_matches_admin_value_and_legacy_label(self):
+        current_category_book = BukuDigital.objects.create(
+            id_item='OL1234568W',
+            judul='Buku Computer Science',
+            penulis='Penulis Tes',
+            kategori='computer_science',
+        )
+        legacy_category_book = BukuDigital.objects.create(
+            id_item='OL1234569W',
+            judul='Buku Computer Science Lama',
+            penulis='Penulis Tes',
+            kategori='Computer Science',
+        )
+        BukuDigital.objects.create(
+            id_item='OL1234570W',
+            judul='Buku Sejarah',
+            penulis='Penulis Tes',
+            kategori='sejarah',
+        )
+
+        catalog = self.client.get(
+            reverse('katalog'), {'kategori': 'computer_science'}
+        )
+
+        self.assertEqual(
+            {book['olid'] for book in catalog.context['buku_lokal']},
+            {current_category_book.id_item, legacy_category_book.id_item},
+        )
 
 
 class CollectionPaginationTests(TestCase):
