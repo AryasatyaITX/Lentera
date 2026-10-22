@@ -67,7 +67,7 @@
                         </div>
                     </div>
                     <div class="nav-actions">
-                        <i class="far fa-bell"></i>
+                        {% include "perpustakaan/includes/notification_bell.html" %}
                         <div class="avatar-circle">
                             {% if user.foto_profil %}
                                 <img src="{{ user.foto_profil.url }}" alt="Avatar">

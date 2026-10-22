@@ -46,7 +46,7 @@
                         <div class="greeting"><h4>Lentera / Anggota</h4><h1 class="page-title-space">Riwayat Peminjaman</h1><p>Siap menemukan bacaan baru hari ini?</p></div>
                     </div>
                     <div class="nav-actions">
-                        <i class="far fa-bell"></i>
+                        {% include "perpustakaan/includes/notification_bell.html" %}
                         <div class="avatar-circle">
                             {% if user.foto_profil %}<img src="{{ user.foto_profil.url }}" alt="Avatar">
                             {% else %}{{ user.nama_tampilan|default:user.username|slice:2|upper }}{% endif %}

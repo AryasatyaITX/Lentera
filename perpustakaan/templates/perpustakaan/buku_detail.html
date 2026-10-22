@@ -60,7 +60,7 @@
             <!-- Top Nav dengan Tombol Profil / Sinkronisasi Foto -->
         <div class="top-nav" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 10px;">
             <div class="nav-actions">
-                <i class="far fa-bell" style="margin-right: 15px; cursor: pointer;"></i>
+                {% include "perpustakaan/includes/notification_bell.html" %}
                 <a href="{% url 'profil' %}" style="display: inline-block;">
                     {% if user.foto_profil %}
                         <img src="{{ user.foto_profil.url }}?v={{ user.last_login|date:'U' }}" alt="Avatar" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid #D4F838;">

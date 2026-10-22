@@ -1,0 +1,4 @@
+<a class="notification-bell" href="{% url 'notifikasi' %}" title="Notifikasi" aria-label="Notifikasi{% if jumlah_notifikasi_belum_dibaca %}, {{ jumlah_notifikasi_belum_dibaca }} belum dibaca{% endif %}">
+  <i class="far fa-bell"></i>
+  {% if jumlah_notifikasi_belum_dibaca %}<span class="notification-count">{% if jumlah_notifikasi_belum_dibaca > 99 %}99+{% else %}{{ jumlah_notifikasi_belum_dibaca }}{% endif %}</span>{% endif %}
+</a>
