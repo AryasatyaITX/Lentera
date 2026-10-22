@@ -33,12 +33,10 @@ _USER_FIELD = next(
     "user",
 )
 
-
 def _boleh_admin(user):
     return user.is_authenticated and (
         user.is_staff or user.is_superuser or user.is_admin
     )
-
 
 def _waktu_lalu(dt):
     detik = int((timezone.now() - dt).total_seconds())
@@ -52,11 +50,12 @@ def _waktu_lalu(dt):
         return f"{jam} jam yang lalu"
     return f"{jam // 24} hari yang lalu"
 
-
+# [POLIMORFISME lewat pewarisan] BukuDigital dan Jurnal sama-sama mewarisi
+# atribut judul dari ItemKatalog, jadi item.judul bisa dipakai untuk
+# keduanya tanpa memeriksa tipenya.
 def _judul_item(obj):
     item = obj.buku_digital or obj.jurnal
     return item.judul if item else "Item sudah dihapus"
-
 
 def _aktivitas_terbaru():
     """Selalu empat kartu: buku, jurnal, anggota, dikembalikan."""

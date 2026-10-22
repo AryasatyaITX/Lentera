@@ -4,15 +4,9 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
 
-
-# ================================================================
-# PENERAPAN OOP UTAMA ADA DI FILE INI.
-# Model Django adalah class; setiap baris data yang diambil dari database
-# menjadi object/instance dari class model yang bersangkutan.
-# ================================================================
-
-# ABSTRAKSI: ItemKatalog menjadi cetak biru untuk data umum semua item
-# katalog. Class ini abstract sehingga Django tidak membuat tabel tersendiri.
+# [ABSTRAKSI] ItemKatalog adalah abstract base class (Meta.abstract = True).
+# Class ini hanya cetak biru atribut umum item katalog dan tidak membuat tabel
+# sendiri. Objek langsung dari ItemKatalog tidak bisa dibuat, hanya subclass-nya.
 class ItemKatalog(models.Model):
     # ENKAPSULASI: atribut data item dikelompokkan sebagai field class model.
     # Setiap object ItemKatalog turunannya memiliki nilai field masing-masing.
@@ -26,10 +20,9 @@ class ItemKatalog(models.Model):
     class Meta:
         abstract = True
 
-
-# id_item diisi OLID dari Open Library (contoh: OL45883W)
-# PEWARISAN: BukuDigital mewarisi field umum dari ItemKatalog, lalu menambahkan
-# data yang khusus diperlukan oleh buku digital.
+# [PEWARISAN] BukuDigital adalah subclass ItemKatalog (is-a). Ia mewarisi
+# judul, penulis, tahun_terbit, cover, dan tanggal_ditambahkan, lalu menambah
+# atribut khusus buku digital seperti ISBN, link_unduh, dan format_file.
 class BukuDigital(ItemKatalog):
     kategori = models.CharField(max_length=50, default="", blank=True)
     ISBN = models.CharField(max_length=20, blank=True, default="") 
@@ -37,19 +30,15 @@ class BukuDigital(ItemKatalog):
     ukuran_file = models.FloatField(default=2.5, help_text="dalam MB")
     format_file = models.CharField(max_length=10, default="PDF")
     deskripsi = models.TextField(blank=True, default="")
-    ia_id = models.CharField(
-        max_length=100, blank=True, default=""
-    )  # ID archive.org, kalau ada
 
-    # POLIMORFISME (method overriding): implementasi __str__ milik Model
-    # ditimpa agar object buku digital memiliki representasi teks sendiri.
+    # [POLIMORFISME - overriding] Menimpa __str__ bawaan Model.
     def __str__(self):
         return f"[Digital] {self.judul}"
 
 
-# ====================== JURNAL ======================
-# PEWARISAN: Jurnal juga mewarisi struktur umum ItemKatalog. Dengan begitu,
-# buku dan jurnal berbagi atribut dasar tanpa menduplikasi deklarasinya.
+# [PEWARISAN] Jurnal juga subclass ItemKatalog, sehingga berbagi atribut
+# dasar dengan BukuDigital. Atribut khususnya: ISSN, volume, bidang_ilmu,
+# dan link_akses.
 class Jurnal(ItemKatalog):
     kategori = models.CharField(max_length=50, default="", blank=True)
     ISSN = models.CharField(max_length=9, blank=True, default="")
@@ -57,15 +46,14 @@ class Jurnal(ItemKatalog):
     bidang_ilmu = models.CharField(max_length=100, blank=True)
     link_akses = models.URLField(default="https://example.com")
 
-    # POLIMORFISME (method overriding): nama jurnal ditampilkan berbeda dari
-    # buku digital meskipun keduanya menyediakan method __str__ yang sama.
+    # [POLIMORFISME - overriding] Menimpa __str__ bawaan Model.
     def __str__(self):
         return f"[Jurnal] {self.judul}"
 
 
-# ASOSIASI ANTAROBJECT: peminjaman terhubung ke user dan dapat menunjuk ke
-# buku digital atau jurnal melalui ForeignKey. Relasi ini memungkinkan object
-# Peminjaman mengakses object terkait tanpa menyimpan salinan datanya.
+# [ASOSIASI ANTAROBJEK] Peminjaman menghubungkan satu CustomUser dengan satu
+# BukuDigital atau Jurnal lewat ForeignKey. Objek terkait diakses lewat
+# relasi, bukan disalin datanya.
 class Peminjaman(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
@@ -85,6 +73,7 @@ class Peminjaman(models.Model):
     waktu_baca_detik = models.IntegerField(default=0)  # BARU: detik membaca untuk peminjaman ini
     perpanjangan = models.PositiveIntegerField(default=0)
 
+    # [POLIMORFISME - overriding] Menimpa __str__ bawaan Model.
     def __str__(self):
         item = self.buku_digital or self.jurnal
         return f"{self.user.username} {item} ({self.status})"
@@ -103,6 +92,7 @@ class Bookmark(models.Model):
     )
     tanggal_disimpan = models.DateTimeField(auto_now_add=True)
 
+    # [POLIMORFISME - overriding] Menimpa __str__ bawaan Model.
     def __str__(self):
         item = self.buku_digital or self.jurnal
         return f"{self.user.username} saved {item}"
@@ -122,6 +112,7 @@ class Achievement(models.Model):
     ikon = models.CharField(max_length=50, default='fa-trophy') # Kelas icon FontAwesome/Material
     syarat = models.CharField(max_length=255, blank=True)
 
+    # [POLIMORFISME - overriding] Menimpa __str__ bawaan Model.
     def __str__(self):
         return f"[{self.kategori}] {self.nama}"
 
@@ -131,6 +122,7 @@ class UserAchievement(models.Model):
     achievement = models.ForeignKey(Achievement, on_delete=models.CASCADE)
     tanggal_didapat = models.DateTimeField(auto_now_add=True)
 
+    # [POLIMORFISME - overriding] Menimpa __str__ bawaan Model.
     def __str__(self):
         return f"{self.user.username} {self.achievement.nama}"
 
@@ -196,8 +188,7 @@ class CustomUser(AbstractUser):
         self.last_read_date = today
         self.save()
 
-    # POLIMORFISME (method overriding): representasi teks CustomUser dibuat
-    # berbeda dari representasi bawaan AbstractUser.
+    # [POLIMORFISME - overriding] Menimpa __str__ bawaan Model.
     def __str__(self):
         return self.username
 
@@ -208,6 +199,7 @@ class Pengaturan(models.Model):
     class Meta:
         verbose_name_plural = "Pengaturan"
 
+    # [POLIMORFISME - overriding] Menimpa __str__ bawaan Model.
     def __str__(self):
         return f"Masa pinjam: {self.masa_pinjam_hari} hari"
 

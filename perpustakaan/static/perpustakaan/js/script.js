@@ -50,6 +50,44 @@ function closeDetailModal() {
     document.getElementById('detail-modal').classList.remove('show');
 }
 
+function getCsrfToken() {
+    const match = document.cookie.match(/(?:^|; )csrftoken=([^;]*)/);
+    return match ? decodeURIComponent(match[1]) : '';
+}
+
+async function toggleCatalogBookmark(button) {
+    if (!button || button.dataset.busy) return;
+    button.dataset.busy = '1';
+    try {
+        const response = await fetch(button.dataset.url, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'X-CSRFToken': getCsrfToken() },
+            body: new URLSearchParams({
+                judul: button.dataset.judul || '',
+                penulis: button.dataset.penulis || '',
+                tahun: button.dataset.tahun || '',
+                cover: button.dataset.cover || '',
+                deskripsi: button.dataset.deskripsi || '',
+            }),
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+        const heart = button.querySelector('.fa-heart');
+        heart.classList.toggle('active', data.bookmarked);
+        heart.classList.toggle('fas', data.bookmarked);
+        heart.classList.toggle('far', !data.bookmarked);
+        button.style.color = data.bookmarked ? '#65a30d' : '#cbd5e1';
+        button.title = data.bookmarked ? 'Hapus dari bookmark' : 'Simpan ke bookmark';
+        button.setAttribute('aria-label', button.title);
+    } catch (error) {
+        alert('Bookmark gagal disimpan. Coba lagi sebentar lagi.');
+    } finally {
+        delete button.dataset.busy;
+    }
+}
+
 // Tutup modal jika klik di area gelap di luar kotak
 window.addEventListener('click', function(event) {
     const modal = document.getElementById('detail-modal');

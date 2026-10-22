@@ -4,47 +4,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Membaca: {{ judul }}</title>
+    <title>Membaca: {{ judul }} - Perpustakaan Digital</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
-        * { box-sizing: border-box; }
-        body { margin: 0; height: 100vh; display: flex; flex-direction: column; font-family: Arial, sans-serif; color: #173c3a; background: #f4f7f3; }
-        header { min-height: 76px; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; background: #173c3a; color: white; }
-        header h1 { margin: 0 0 5px; font-size: 18px; }
-        header p { margin: 0; color: #d4e2dc; font-size: 13px; }
-        a { color: inherit; }
-        .actions { display: flex; align-items: center; gap: 16px; white-space: nowrap; }
-        .open-link { padding: 10px 14px; border-radius: 8px; background: #d4f838; color: #173c3a; text-decoration: none; font-weight: 700; font-size: 13px; }
-        main { flex: 1; min-height: 0; display: grid; place-items: center; padding: 20px; }
-        iframe { width: min(100%, 1100px); height: 100%; border: 0; background: white; box-shadow: 0 4px 18px #173c3a1a; }
-        .no-pdf { max-width: 560px; padding: 32px; text-align: center; background: white; border-radius: 14px; box-shadow: 0 4px 18px #173c3a1a; }
-        .no-pdf h2 { margin-top: 0; }
-        .no-pdf p { color: #61736c; line-height: 1.6; }
-        @media (max-width: 600px) { header { align-items: flex-start; flex-direction: column; } main { padding: 10px; } }
+        html, body { height: 100%; }
+        body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: #121824; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        .header-baca { background: #173C3A; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2A3447; flex: none; }
+        .header-info h3 { margin: 0; font-size: 18px; color: white; font-weight: 700; }
+        .header-info p { margin: 5px 0 0 0; font-size: 12px; color: #A0AABF; }
+
+        .header-actions { display: flex; gap: 20px; align-items: center; }
+        .btn-kembali { color: #A0AABF; text-decoration: none; font-size: 13px; font-weight: 600; transition: 0.2s; }
+        .btn-kembali:hover { color: white; }
+        .btn-artikel { background: #D4F838; color: #121824; padding: 10px 16px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 13px; }
+
+        .reader-stage { flex: 1 1 0; min-height: 0; width: 100%; display: flex; justify-content: center; align-items: center; background: #FAFAEE; position: relative; overflow: hidden; }
+        .reader-msg { text-align: center; color: #121824; font-size: 16px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 15px; }
+
+        .spinner { border: 4px solid rgba(0,0,0,0.1); width: 40px; height: 40px; border-radius: 50%; border-left-color: #D4F838; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
+    <script src="{% static 'perpustakaan/js/buku.js' %}?v=11" defer></script>
 </head>
 <body>
-    <header>
-        <div><h1>{{ judul }}</h1><p>Penulis: {{ penulis }}</p></div>
-        <nav class="actions">
-            <a href="{% url 'ejournal' %}">← Kembali</a>
-            {% if sumber_url %}<a class="open-link" href="{{ sumber_url }}" target="_blank" rel="noopener noreferrer">Buka sumber ↗</a>{% endif %}
-        </nav>
+    <header class="header-baca">
+        <div class="header-info">
+            <h3>{{ judul }}</h3>
+            <p>Penulis: {{ penulis }} &nbsp;|&nbsp;</p>
+        </div>
+        <div class="header-actions">
+            {% if sumber_url %}<a href="{{ sumber_url }}" class="btn-artikel" target="_blank" rel="noopener noreferrer">Ke laman artikel</a>{% endif %}
+            <a href="{% url 'ejournal' %}" class="btn-kembali"><i class="fas fa-arrow-left"></i> Kembali</a>
+        </div>
     </header>
-    <main>
-        {% if is_pdf %}
-            <iframe src="{{ reader_url }}" title="PDF jurnal: {{ judul }}"></iframe>
-        {% else %}
-            <section class="no-pdf">
-                <h2>PDF belum tersedia</h2>
-                <p>Jurnal ini baru memiliki tautan ke laman artikel. Admin dapat mengunggah file PDF agar jurnal bisa dibaca langsung di sini.</p>
-                {% if sumber_url %}<a class="open-link" href="{{ sumber_url }}" target="_blank" rel="noopener noreferrer">Buka laman artikel ↗</a>{% endif %}
-            </section>
-        {% endif %}
+
+    <main class="reader-stage"
+        id="reader-stage"
+        data-olid="{{ jurnal_id }}"
+        data-link="{{ reader_url }}"
+        data-back-url="{% url 'ejournal' %}"
+        data-progress-key="lentera-jurnal-progress-{{ user.pk }}-{{ jurnal_id }}">
+        <div class="reader-msg">
+            {% if is_pdf %}
+                <span class="spinner"></span>
+                Menyiapkan jurnal...
+            {% else %}
+                <i class="fas fa-file-pdf fa-3x" style="color: #8A8A7A;"></i>
+                File PDF jurnal belum tersedia.
+            {% endif %}
+        </div>
     </main>
+
     <div id="read-ring"
         data-url="{% url 'waktu_baca' %}"
         data-detik="{{ user.waktu_baca_detik }}"
         data-total="120"></div>
-    <script src="{% static 'perpustakaan/js/baca-ring.js' %}?v=1" defer></script>
+    <script src="{% static 'perpustakaan/js/baca-ring.js' %}?v=3" defer></script>
 </body>
 </html>
