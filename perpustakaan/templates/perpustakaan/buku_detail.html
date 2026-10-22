@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1013">
     <script src="{% static 'perpustakaan/js/script.js' %}?v=4" defer></script>
-    <script src="{% static 'perpustakaan/js/buku.js' %}?v=3" defer></script>
+    <script src="{% static 'perpustakaan/js/buku.js' %}?v=4" defer></script>
 </head>
 <body>
 
@@ -120,7 +120,6 @@
                                     <input type="hidden" name="penulis" value="{{ buku_db.penulis }}">
                                     <input type="hidden" name="tahun" value="{{ buku_db.tahun }}">
                                     <input type="hidden" name="cover" value="{{ buku_db.cover }}">
-                                    <input type="hidden" name="ia" value="{{ buku_db.ia }}">
                                     <input type="hidden" name="deskripsi" value="{{ buku_db.deskripsi }}">
                                     <button type="submit" class="bd-btn bd-btn-primary" id="pinjam-btn" {% if not buku_db %}disabled{% endif %}><i class="fas fa-book-reader"></i> Pinjam buku</button>
                                 </form>
@@ -131,9 +130,6 @@
                                 <span>{% if bookmarked %}Tersimpan{% else %}Simpan{% endif %}</span>
                             </button>
 
-                            <a href="#" target="_blank" rel="noopener" class="bd-btn bd-btn-ghost" id="bd-ia" hidden>
-                                <i class="fas fa-up-right-from-square"></i> Lihat di Internet Archive
-                            </a>
                         </div>
 
                         <div style="margin-top: 20px; font-size: 14px; line-height: 1.6; color: rgba(255,255,255,.8);">

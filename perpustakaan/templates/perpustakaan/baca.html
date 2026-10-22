@@ -38,9 +38,9 @@
     </style>
 
     <!-- PDF.js harus dimuat SEBELUM buku.js. Masing-masing script hanya SATU kali. -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
     <script src="{% static 'perpustakaan/js/script.js' %}" defer></script>
-    <script src="{% static 'perpustakaan/js/buku.js' %}?v=8" defer></script>
+    <script src="{% static 'perpustakaan/js/buku.js' %}?v=10" defer></script>
 </head>
 <body>
 
@@ -58,10 +58,8 @@
     <main class="reader-stage"
         id="reader-stage"
         data-olid="{{ buku.id_item }}"
-        data-ia="{{ buku.ia_id }}"
-        data-judul="{{ buku.judul }}"
-        data-penulis="{{ buku.penulis }}"
         data-link="{{ buku.link_unduh }}"
+        data-progress-url="{% url 'simpan_progress' buku.id_item %}"
         data-progress="{{ pinjam.progress_baca }}">
 
         <div class="reader-msg">

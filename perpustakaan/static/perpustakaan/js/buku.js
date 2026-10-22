@@ -80,8 +80,6 @@
             want: typeof doc.want_to_read_count === 'number' && Number.isFinite(doc.want_to_read_count)
                 ? doc.want_to_read_count
                 : null,
-            ia: (doc.ia || [''])[0],
-            ia_semua: (doc.ia || []).slice(0, 8),
             akses: doc.ebook_access || '',          // 'public' = bisa dibaca gratis
             deskripsi: '',
             subjek: [],
@@ -168,7 +166,7 @@
     const tersimpan = new Set(readJson('tersimpan-ids') || []);
 
     function bookPayload(b) {
-        return { judul: b.judul, penulis: b.penulis, tahun: b.tahun, cover: b.cover, ia: b.ia, deskripsi: b.deskripsi || '' };
+        return { judul: b.judul, penulis: b.penulis, tahun: b.tahun, cover: b.cover, deskripsi: b.deskripsi || '' };
     }
     function setHeart(el, on) {
         el.classList.toggle('active', on);
@@ -295,11 +293,6 @@
                 tagsWrap.hidden = false;
             }
 
-            const ia = $('bd-ia');
-            if (ia && b.ia && /^[A-Za-z0-9._-]+$/.test(b.ia)) {
-                ia.href = `https://archive.org/details/${b.ia}`; ia.hidden = false;
-            }
-
             const form = $('pinjam-form');
             if (form) {
                 const p = bookPayload(b);
@@ -361,21 +354,6 @@
     const stage = document.getElementById('reader-stage');
     if (stage) initReader(stage);
 
-    // Cari Google Books berdasarkan judul + penulis untuk pratinjau bacaan
-    async function getGoogleBooksReader(judul, penulis) {
-        const query = encodeURIComponent(`intitle:${judul} inauthor:${penulis}`);
-        const url = `https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=1`;
-        try {
-            const res = await fetch(url);
-            const data = await res.json();
-            if (data.items && data.items.length > 0) {
-                const access = data.items[0].accessInfo || {};
-                return access.webReaderLink || (data.items[0].volumeInfo || {}).previewLink || null;
-            }
-        } catch (e) { return null; }
-        return null;
-    }
-
     // Notifikasi kecil "+N EXP" saat progres baca menambah EXP.
     function showExpToast(n) {
         const t = document.createElement('div');
@@ -390,8 +368,9 @@
     }
 
     // Pembaca PDF bawaan website (PDF.js): scroll bersambung, slider zoom, progres tersimpan.
-    async function initPdfReader(stage, url, olid, savedProgress) {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
+    async function initPdfReader(stage, url, olid, savedProgress, progressUrl, progressKey) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
         injectPdfStyles();
         document.body.style.overflow = 'hidden';
@@ -423,6 +402,7 @@
         const $ = (id) => document.getElementById(id);
         const scroller = $('pv-scroll');
         const pagesBox = $('pv-pages');
+        const backUrl = stage.dataset.backUrl || `/buku/${olid}/`;
 
         // Batasi tinggi area scroll sampai dasar layar, supaya pasti bisa di-scroll.
         function fitHeight() {
@@ -441,7 +421,7 @@
             console.error('Gagal memuat PDF:', e);
             stage.classList.remove('pdf-mode');
             stage.innerHTML = `<div class="reader-msg">Gagal memuat file PDF.<br>
-                <a class="btn-kembali" href="/buku/${olid}/">Kembali ke detail buku</a></div>`;
+                <a class="btn-kembali" href="${escHtml(backUrl)}">Kembali</a></div>`;
             return;
         }
         const total = pdf.numPages;
@@ -550,9 +530,13 @@
         function scheduleSave(pct) {
             clearTimeout(saveTimer);
             saveTimer = setTimeout(() => {
-                postForm(`/buku/${olid}/progress/`, { progress: pct })
-                    .then((r) => { if (r && r.exp_gain > 0) showExpToast(r.exp_gain); })
-                    .catch(() => {});
+                if (progressUrl) {
+                    postForm(progressUrl, { progress: pct })
+                        .then((r) => { if (r && r.exp_gain > 0) showExpToast(r.exp_gain); })
+                        .catch(() => {});
+                } else if (progressKey) {
+                    try { localStorage.setItem(progressKey, String(pct)); } catch (e) { /* penyimpanan lokal opsional */ }
+                }
             }, 1500);
         }
         function updateUi() {
@@ -671,22 +655,27 @@
         }
     }
 
-    async function initReader(stage) {
+    function initReader(stage) {
         const olid = stage.dataset.olid;
-        const iaId = stage.dataset.ia;
-        const judulBuku = stage.dataset.judul || 'Buku';
-        const penulisBuku = stage.dataset.penulis || '';
         const directLink = stage.dataset.link || '';
+        const progressUrl = stage.dataset.progressUrl || '';
+        const progressKey = stage.dataset.progressKey || '';
+        let savedProgress = parseInt(stage.dataset.progress || '0', 10) || 0;
+        if (progressKey) {
+            try {
+                savedProgress = parseInt(localStorage.getItem(progressKey) || '', 10) || savedProgress;
+            } catch (e) { /* progres lokal opsional */ }
+        }
 
         const show = (html) => { stage.innerHTML = `<div class="reader-msg">${html}</div>`; };
-        const googleLink = (url) => `<a class="btn-selesai" style="background:#4285F4; color:white; border:none;" href="${escHtml(url)}" target="_blank" rel="noopener"><i class="fab fa-google"></i> Baca di Google Books</a>`;
-        const backLinks = `<br><br><a class="btn-kembali" href="/buku/${olid}/">Detail buku</a> &nbsp;&middot;&nbsp; <a class="btn-kembali" href="/katalog/">Katalog</a>`;
+        const backUrl = stage.dataset.backUrl || `/buku/${olid}/`;
+        const backLinks = `<br><br><a class="btn-kembali" href="${escHtml(backUrl)}">Kembali</a>`;
 
         // JALUR 0: PDF yang diupload manual oleh admin -> pembaca bawaan website (PDF.js)
-        const isPdf = directLink.split('?')[0].toLowerCase().endsWith('.pdf');
+        const isPdf = directLink.split(/[?#]/)[0].toLowerCase().endsWith('.pdf');
         if (isPdf) {
             if (window.pdfjsLib) {
-                initPdfReader(stage, directLink, olid, parseInt(stage.dataset.progress || '0', 10) || 0);
+                initPdfReader(stage, directLink, olid, savedProgress, progressUrl, progressKey);
             } else {
                 // PDF.js gagal dimuat (offline / diblokir): pakai pembaca bawaan browser.
                 stage.innerHTML = `<iframe src="${escHtml(directLink)}#view=FitH" title="Pembaca PDF" style="width:100%; height:100%; border:none;"></iframe>`;
@@ -694,57 +683,11 @@
             return;
         }
 
-        // JALUR 1: buku punya ID Internet Archive
-        if (iaId && iaId.trim() !== '') {
-            stage.innerHTML = `<iframe src="https://archive.org/embed/${encodeURIComponent(iaId)}" title="Pembaca buku" allowfullscreen style="width:100%; height:100%; border:none;"></iframe>`;
-            return;
-        }
-
-        // JALUR 2: sudah punya link Google Books
-        if (directLink && directLink.includes('google.com')) {
-            show(`
-                <div style="text-align: center; padding: 40px; color: #121824;">
-                    <i class="fab fa-google fa-3x" style="color: #4285F4; margin-bottom: 15px;"></i>
-                    <h2>Buku Ditemukan di Google Books</h2>
-                    <p style="color: #6A6A5C; margin: 10px 0 20px;">Silakan baca pratinjau buku ini melalui Google Web Reader.</p>
-                    ${googleLink(directLink)}
-                    ${backLinks}
-                </div>
-            `);
-            return;
-        }
-
-        // JALUR 3: cari di Google Books, batas waktu 3 detik
-        show('<span class="spinner"></span> Menyiapkan pratinjau buku...');
-        try {
-            const gUrl = await Promise.race([
-                getGoogleBooksReader(judulBuku, penulisBuku),
-                new Promise(resolve => setTimeout(() => resolve(null), 3000)),
-            ]);
-            if (gUrl) {
-                show(`
-                    <div style="text-align: center; padding: 40px; color: #121824;">
-                        <i class="fab fa-google fa-3x" style="color: #4285F4; margin-bottom: 15px;"></i>
-                        <h2>Buku Ditemukan di Google Books</h2>
-                        <p style="color: #6A6A5C; margin: 10px 0 20px;">Silakan klik tombol di bawah untuk membaca pratinjau buku.</p>
-                        ${googleLink(gUrl)}
-                        ${backLinks}
-                    </div>
-                `);
-                return;
-            }
-        } catch (e) {
-            console.warn('API check timed out/failed:', e);
-        }
-
-        // FALLBACK
-        const safeLink = directLink && directLink !== 'https://example.com' ? directLink : '';
         show(`
             <div style="text-align: center; padding: 40px; color: #121824;">
-                <i class="fas fa-book-open fa-3x" style="color: #8A8A7A; margin-bottom: 15px;"></i>
-                <h2>Buku Berhak Cipta / Terproteksi</h2>
-                <p style="color: #6A6A5C; margin: 10px 0 20px;">Pratinjau langsung tidak tersedia secara publik.</p>
-                ${safeLink ? `<a class="btn-selesai" style="background:#121824; color:white; border:none;" href="${escHtml(safeLink)}" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i> Buka Sumber Buku</a>` : ''}
+                <i class="fas fa-file-pdf fa-3x" style="color: #8A8A7A; margin-bottom: 15px;"></i>
+                <h2>File PDF belum tersedia</h2>
+                <p style="color: #6A6A5C; margin: 10px 0 20px;">PDF belum tersedia untuk dibaca di perpustakaan.</p>
                 ${backLinks}
             </div>
         `);

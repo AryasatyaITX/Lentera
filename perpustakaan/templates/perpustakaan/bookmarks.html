@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1006">
     <script src="{% static 'perpustakaan/js/script.js' %}?v=2" defer></script>
-    <script src="{% static 'perpustakaan/js/buku.js' %}?v=3" defer></script>
+    <script src="{% static 'perpustakaan/js/buku.js' %}?v=4" defer></script>
 </head>
 <body>
     <div class="app-layout" id="appLayout">
@@ -71,9 +71,7 @@
                         <p class="type">{% if mark.buku_digital %}Buku Digital{% else %}E-Journal{% endif %}</p>
                         <h3>{% if mark.buku_digital %}{{ mark.buku_digital.judul }}{% else %}{{ mark.jurnal.judul }}{% endif %}</h3>
                         <p class="author">{% if mark.buku_digital %}{{ mark.buku_digital.penulis }}{% else %}{{ mark.jurnal.penulis }}{% endif %}</p>
-                        {% if mark.buku_digital %}
-                        <span class="book-rating" data-bookmark-stats data-olid="{{ mark.buku_digital.id_item }}"><i class="fas fa-star"></i> <span data-book-rating>Memuat rating...</span><span data-book-want></span></span>
-                        {% endif %}
+                        
                         <i class="fas fa-heart heart active" data-id="{{ mark.id }}" onclick="removeBookmark(this)" title="Hapus dari Bookmark"></i>
                     </div>
                 </div>
