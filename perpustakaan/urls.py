@@ -7,6 +7,8 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('register/', views.register_view, name='register'),
     path('logout/', views.logout_view, name='logout'),
+    path('notifikasi/', views.notifikasi_view, name='notifikasi'),
+    path('notifikasi/<int:notifikasi_id>/', views.buka_notifikasi, name='buka_notifikasi'),
 
     # Katalog + detail buku
     path('katalog/', views.katalog_view, name='katalog'),
@@ -43,7 +45,9 @@ urlpatterns = [
     path("dashboard-admin/achievement/", views_admin.kelola_achievement, name="kelola_achievement"),
     path("dashboard-admin/achievement/edit/<int:pk>/", views_admin.edit_achievement, name="edit_achievement"),
     path("dashboard-admin/achievement/hapus/<int:pk>/", views_admin.hapus_achievement, name="hapus_achievement"),
-    path("dashboard-admin/achievement/hapus-terpilih/", views_admin.hapus_achievement_massal, name="hapus_achievement_massal"),
+    path("dashboard-admin/achievement/hapus-terpilih/", views_admin.hapus_achievement_massal, name="hapus_achievement_massal"),    
+    path("dashboard-admin/notifikasi/", views_admin.buat_pengumuman, name="buat_pengumuman"),
+
 
     # Kelola anggota, peminjaman, laporan (admin)
     path("dashboard-admin/anggota/", views_admin.kelola_anggota, name="kelola_anggota"),

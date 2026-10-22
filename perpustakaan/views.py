@@ -17,7 +17,7 @@ from django.contrib import messages
 from django.http import JsonResponse, Http404
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import ensure_csrf_cookie
-from .models import CustomUser, BukuDigital, Jurnal, Peminjaman, Bookmark, Pengaturan, Achievement, UserAchievement
+from .models import CustomUser, BukuDigital, Jurnal, Peminjaman, Bookmark, Pengaturan, Achievement, UserAchievement, Notifikasi
 from django.db.models import Count, Q
 import json
 import os
@@ -218,6 +218,53 @@ def _jatuh_tempo(pinjaman):
 
 def is_admin(user):
     return user.is_authenticated and (user.is_admin or user.is_staff)
+
+
+def _notifikasi(user, jenis, judul, isi, url=""):
+    return Notifikasi.objects.create(user=user, jenis=jenis, judul=judul, isi=isi, url=url)
+
+
+@login_required(login_url="login")
+def notifikasi_view(request):
+    hari_ini = timezone.localdate()
+    def simpan_pengingat(jenis, judul, isi, url):
+        if request.session.get("notifikasi_dihapus_hari_ini") == hari_ini.isoformat():
+            return
+        if not Notifikasi.objects.filter(user=request.user, jenis=jenis, judul=judul, dibuat__date=hari_ini).exists():
+            _notifikasi(request.user, jenis, judul, isi, url)
+
+    for p in Peminjaman.objects.filter(user=request.user, status="Dibaca").select_related("buku_digital", "jurnal"):
+        due = timezone.localtime(p.tanggal_kembali or _jatuh_tempo(p)).date()
+        delta = (due - hari_ini).days
+        title = p.buku_digital.judul if p.buku_digital else (p.jurnal.judul if p.jurnal else "Peminjaman")
+        if delta in (3, 1, 0):
+            simpan_pengingat("tenggat", f"Jatuh tempo {title}", f"{('Hari ini' if delta == 0 else f'H-{delta}')} adalah batas pengembalian buku ini.", "/peminjaman/")
+        elif delta < 0:
+            telat = abs(delta)
+            simpan_pengingat("tenggat", f"{title} terlambat", f"Buku sudah lewat {telat} hari dari tanggal jatuh tempo.", "/peminjaman/")
+    target = 30 * 60
+    dibaca = request.user.detik_baca_hari_ini if request.user.tanggal_baca_harian == hari_ini else 0
+    if dibaca < target:
+        simpan_pengingat("gamifikasi", "Target harian membaca", f"Kamu sudah membaca {dibaca // 60} dari 30 menit hari ini. Lanjutkan agar target tercapai.", "/")
+    if request.user.streak_days and request.user.last_read_date == hari_ini - timedelta(days=1) and dibaca < target:
+        simpan_pengingat("gamifikasi", "Streak kamu hampir putus", "Baca sebentar hari ini untuk mempertahankan streak-mu.", "/")
+    if request.method == "POST":
+        if request.POST.get("aksi") == "hapus_semua":
+            Notifikasi.objects.filter(user=request.user).delete()
+            request.session["notifikasi_dihapus_hari_ini"] = hari_ini.isoformat()
+        else:
+            Notifikasi.objects.filter(user=request.user, dibaca=False).update(dibaca=True)
+        return redirect("notifikasi")
+    items = Notifikasi.objects.filter(user=request.user)[:50]
+    return render(request, "perpustakaan/notifikasi.html", {"notifikasi_list": items, "belum_dibaca": Notifikasi.objects.filter(user=request.user, dibaca=False).count()})
+
+
+@login_required(login_url="login")
+def buka_notifikasi(request, notifikasi_id):
+    item = get_object_or_404(Notifikasi, pk=notifikasi_id, user=request.user)
+    item.dibaca = True
+    item.save(update_fields=["dibaca"])
+    return redirect(item.url or "notifikasi")
 
 
 def login_view(request):
@@ -555,7 +602,10 @@ def baca_buku(request, olid):
 
     # Memanfaatkan perilaku yang dienkapsulasi di CustomUser. View tidak perlu
     # tahu cara menghitung streak.
+    streak_lama = request.user.streak_days
     request.user.update_streak()
+    if request.user.streak_days > streak_lama and request.user.streak_days in (3, 7, 14, 30):
+        _notifikasi(request.user, "gamifikasi", f"Streak {request.user.streak_days} hari!", "Lanjutkan kebiasaan membaca besok.", "dashboard")
 
     context = {
         "buku": buku,
@@ -605,6 +655,7 @@ def pinjam_buku(request, olid):
         return redirect("buku_detail", olid=olid)
 
     Peminjaman.objects.create(user=user, buku_digital=buku)
+    _notifikasi(user, "peminjaman", "Peminjaman tercatat", f'Peminjaman "{buku.judul}" berhasil dikonfirmasi.', "peminjaman")
     messages.success(request, f'"{buku.judul}" berhasil dipinjam selama {MASA_PINJAM_HARI} hari.')
     return redirect("peminjaman")
 
@@ -742,7 +793,7 @@ def peminjaman_view(request):
     ).order_by("-tanggal_pinjam")
 
     for pinjaman in daftar_pinjaman:
-        pinjaman.jatuh_tempo = pinjaman.tanggal_pinjam + timedelta(days=MASA_PINJAM_HARI)
+        pinjaman.jatuh_tempo = pinjaman.tanggal_kembali or _jatuh_tempo(pinjaman)
 
     batas_pinjam = request.user.max_loans
     jumlah_aktif = Peminjaman.objects.filter(user=request.user, status="Dibaca").count()
@@ -766,10 +817,16 @@ def kembalikan_buku(request, pinjaman_id):
     pinjaman = get_object_or_404(Peminjaman, id=pinjaman_id, user=request.user)
 
     if pinjaman.status == "Dibaca":
+        selesai_sebelumnya = Peminjaman.objects.filter(user=request.user, status="Selesai").count()
         pinjaman.status = "Selesai"
         pinjaman.progress_baca = 100
         pinjaman.tanggal_kembali = timezone.now()
         pinjaman.save()
+        judul = pinjaman.buku_digital.judul if pinjaman.buku_digital else (pinjaman.jurnal.judul if pinjaman.jurnal else "Buku")
+        _notifikasi(request.user, "peminjaman", "Pengembalian diterima", f'Pengembalian "{judul}" sudah diterima.', "riwayat")
+        total_selesai = selesai_sebelumnya + 1
+        if total_selesai in (5, 10, 25, 50):
+            _notifikasi(request.user, "gamifikasi", f"Pencapaian baru: {total_selesai} buku selesai dibaca", "Teruskan kebiasaan membaca dan kumpulkan pencapaian berikutnya.", "achievement")
 
     return redirect("peminjaman")
 
@@ -788,9 +845,22 @@ def perpanjang_buku(request, pinjaman_id):
             )
         return redirect("peminjaman")
 
+    # tanggal_kembali menyimpan jatuh tempo selama peminjaman masih aktif.
+    # Hitung jatuh tempo lama sebelum menaikkan counter, lalu tambahkan
+    # tepat satu kali masa perpanjangan.
+    jatuh_tempo = pinjaman.tanggal_kembali or _jatuh_tempo(pinjaman)
     pinjaman.perpanjangan += 1
-    pinjaman.save(update_fields=["perpanjangan"])
-    jatuh_tempo = timezone.localtime(_jatuh_tempo(pinjaman))
+    pinjaman.tanggal_kembali = jatuh_tempo + timedelta(days=MASA_PERPANJANG_HARI)
+    pinjaman.save(update_fields=["perpanjangan", "tanggal_kembali"])
+    jatuh_tempo = timezone.localtime(pinjaman.tanggal_kembali)
+    item_judul = pinjaman.buku_digital.judul if pinjaman.buku_digital else (pinjaman.jurnal.judul if pinjaman.jurnal else "Buku")
+    _notifikasi(
+        request.user,
+        "peminjaman",
+        "Peminjaman berhasil diperpanjang",
+        f'Peminjaman "{item_judul}" diperpanjang {MASA_PERPANJANG_HARI} hari. Jatuh tempo baru {jatuh_tempo:%d %b %Y}.',
+        "peminjaman",
+    )
     messages.success(
         request,
         f"Peminjaman diperpanjang {MASA_PERPANJANG_HARI} hari. "
@@ -832,9 +902,8 @@ def riwayat_view(request):
 
     # Memakai classmethod Pengaturan untuk membaca masa pinjam yang bisa
     # diubah admin, tanpa menulis query sendiri.
-    masa = Pengaturan.muat().masa_pinjam_hari
     for p in riwayat_list:
-        p.jatuh_tempo = p.tanggal_kembali or (p.tanggal_pinjam + timedelta(days=masa))
+        p.jatuh_tempo = p.tanggal_kembali or _jatuh_tempo(p)
 
     context = {
         "daftar_riwayat": riwayat_list,
@@ -1142,6 +1211,8 @@ def waktu_baca(request):
             p.save(update_fields=['waktu_baca_detik'])
 
     user = request.user
+    exp_sebelum = user.exp
+    peringkat_sebelum = 1 + CustomUser.objects.filter(is_member=True, is_admin=False, exp__gt=exp_sebelum).count()
     pool = user.waktu_baca_detik + klaim
     exp_gain = 0
     while pool >= RING_DETIK_PENUH:
@@ -1159,6 +1230,14 @@ def waktu_baca(request):
     user.detik_baca_hari_ini += klaim
 
     user.save(update_fields=["waktu_baca_detik", "exp", "detik_baca_hari_ini", "tanggal_baca_harian"])
+
+    if exp_gain:
+        _notifikasi(user, "gamifikasi", "EXP bertambah", f"Kamu mendapatkan {exp_gain} EXP dari membaca.", "profil")
+        if user.exp // 100 > exp_sebelum // 100:
+            _notifikasi(user, "gamifikasi", "Level meningkat", f"Kamu mencapai level {user.exp // 100 + 1}.", "profil")
+        peringkat_baru = 1 + CustomUser.objects.filter(is_member=True, is_admin=False, exp__gt=user.exp).count()
+        if peringkat_baru < peringkat_sebelum:
+            _notifikasi(user, "gamifikasi", "Peringkat naik", f"Kamu naik ke peringkat #{peringkat_baru}.", "leaderboard")
 
     return JsonResponse({"detik": pool, "exp_gain": exp_gain, "exp": user.exp})
 

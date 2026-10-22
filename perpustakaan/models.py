@@ -129,6 +129,25 @@ class UserAchievement(models.Model):
         return f"{self.user.username} {self.achievement.nama}"
 
 
+class Notifikasi(models.Model):
+    JENIS = [(key, key.replace("_", " ").title()) for key in (
+        "katalog", "pengumuman", "peminjaman", "tenggat", "gamifikasi"
+    )]
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifikasi")
+    jenis = models.CharField(max_length=20, choices=JENIS, default="pengumuman")
+    judul = models.CharField(max_length=180)
+    isi = models.TextField()
+    url = models.CharField(max_length=500, blank=True)
+    dibuat = models.DateTimeField(default=timezone.now)
+    dibaca = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["-dibuat", "-pk"]
+
+    def __str__(self):
+        return f"{self.user.username}: {self.judul}"
+
+
 # PEWARISAN: CustomUser memperluas class AbstractUser dari Django dengan
 # atribut dan perilaku khusus aplikasi Lentera.
 class CustomUser(AbstractUser):

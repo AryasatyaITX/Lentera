@@ -12,8 +12,8 @@ from django.db.models import Count
 from django.db.models.functions import TruncDate
 from django.shortcuts import render
 from django.utils import timezone
+from .models import AchievementGambar, BukuDigital, CustomUser, Jurnal, Peminjaman, Notifikasi
 
-from .models import AchievementGambar, Bookmark, BukuDigital, CustomUser, Jurnal, Peminjaman
 
 BULAN = [
     "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli",
@@ -211,7 +211,7 @@ def kelola_buku(request):
             link_unduh = fs.url(filename)
             ukuran_mb = round(file_pdf.size / (1024 * 1024), 2)
 
-        BukuDigital.objects.create(
+        buku = BukuDigital.objects.create(
             id_item=id_item,
             judul=judul,
             penulis=penulis,
@@ -224,6 +224,11 @@ def kelola_buku(request):
             ukuran_file=ukuran_mb,
             format_file="PDF",
         )
+        judul_notif = f"Buku baru: {buku.judul}"
+        for anggota in CustomUser.objects.filter(is_member=True, is_admin=False):
+            Notifikasi.objects.create(user=anggota, jenis="katalog", judul=judul_notif,
+                isi=f"Buku {buku.judul} baru masuk di kategori {buku.kategori or 'Umum'}.",
+                url=f"/buku/{buku.id_item}/")
         return redirect("kelola_buku")
 
     q = request.GET.get("q", "")
@@ -327,7 +332,7 @@ def kelola_jurnal(request):
             messages.error(request, "Isi tautan laman jurnal atau unggah file PDF.")
             return redirect("kelola_jurnal")
 
-        Jurnal.objects.create(
+        jurnal = Jurnal.objects.create(
             id_item=id_item,
             judul=judul,
             penulis=penulis,\
@@ -338,6 +343,10 @@ def kelola_jurnal(request):
             cover=cover_url,
             link_akses=link_akses,
         )
+        for anggota in CustomUser.objects.filter(is_member=True, is_admin=False):
+            Notifikasi.objects.create(user=anggota, jenis="katalog", judul="E-journal baru",
+                isi=f"E-journal {jurnal.judul} baru ditambahkan ke koleksi.",
+                url=f"/jurnal/{jurnal.id_item}/baca/")
         return redirect("kelola_jurnal")
 
     q = request.GET.get("q", "")
@@ -356,6 +365,28 @@ def kelola_jurnal(request):
         "search_query": q,
     }
     return render(request, "perpustakaan/kelola_jurnal.html", context)
+
+
+@user_passes_test(_boleh_admin, login_url="login")
+def buat_pengumuman(request):
+    if request.method == "POST":
+        jenis = request.POST.get("jenis", "pengumuman")
+        judul = request.POST.get("judul", "").strip()
+        isi = request.POST.get("isi", "").strip()
+        if jenis not in ("pengumuman", "gamifikasi") or not judul or not isi:
+            messages.error(request, "Jenis, judul, dan isi notifikasi wajib diisi.")
+            return redirect("buat_pengumuman")
+        if jenis == "gamifikasi":
+            judul = f"Pilihan admin minggu ini: {judul}"
+        anggota = CustomUser.objects.filter(is_member=True, is_admin=False)
+        Notifikasi.objects.bulk_create([
+            Notifikasi(user=user, jenis=jenis, judul=judul, isi=isi,
+                       url=request.POST.get("url", "").strip())
+            for user in anggota
+        ])
+        messages.success(request, f"Notifikasi terkirim ke {anggota.count()} anggota.")
+        return redirect("buat_pengumuman")
+    return render(request, "perpustakaan/admin/buat_pengumuman.html")
 
 
 @user_passes_test(_boleh_admin, login_url="login")
@@ -648,6 +679,17 @@ def edit_anggota(request, pk):
         elif password and _cek_password(password):
             messages.error(request, _cek_password(password))
         else:
+            perubahan = []
+            if user.nama_tampilan != nama:
+                perubahan.append(f"nama tampilan menjadi {nama or username}")
+            if user.username != username:
+                perubahan.append("username diperbarui")
+            if user.email != email:
+                perubahan.append("alamat email diperbarui")
+            if user.is_active != aktif:
+                perubahan.append("status akun diaktifkan" if aktif else "status akun dinonaktifkan")
+            if password:
+                perubahan.append("kata sandi diperbarui")
             user.username = username
             user.nama_tampilan = nama
             user.email = email
@@ -655,6 +697,14 @@ def edit_anggota(request, pk):
             if password:
                 user.set_password(password)
             user.save()
+            if perubahan:
+                Notifikasi.objects.create(
+                    user=user,
+                    jenis="pengumuman",
+                    judul="Informasi akun diperbarui oleh admin",
+                    isi="Admin memperbarui " + ", ".join(perubahan) + ". Jika perubahan ini tidak kamu minta, hubungi admin perpustakaan.",
+                    url="/profil/",
+                )
             messages.success(request, "Data anggota berhasil diperbarui.")
     return redirect("kelola_anggota")
 
