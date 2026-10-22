@@ -48,7 +48,7 @@
                         <div class="greeting"><h4> Lentera / ANGGOTA</h4><h1 class="page-title-space">Bookmarks</h1></div>
                     </div>
                     <div class="nav-actions">
-                        <i class="far fa-bell"></i>
+                        {% include "perpustakaan/includes/notification_bell.html" %}
                         <div class="avatar-circle">{{ user.nama_tampilan|default:user.username|slice:2|upper }}</div>
                         <a href="{% url 'logout' %}" style="margin-left:15px; color:#dc2626; font-size: 20px;" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
                     </div>

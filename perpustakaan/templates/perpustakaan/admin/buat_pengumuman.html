@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kirim Notifikasi Anggota</title>
+<style>body{font:15px Arial,sans-serif;background:#f3f8f4;color:#173c3a;margin:0;padding:32px}.box{max-width:680px;margin:auto;background:white;padding:28px;border-radius:14px;box-shadow:0 5px 24px #173c3a12}h1{margin-top:0}label{display:block;font-weight:700;margin:18px 0 7px}input,select,textarea{box-sizing:border-box;width:100%;padding:12px;border:1px solid #dce5de;border-radius:8px;font:inherit}button{margin-top:20px;background:#d4f838;border:0;border-radius:8px;padding:12px 18px;font-weight:700;cursor:pointer}.msg{padding:10px;background:#eff8dc;border-radius:8px;margin:8px 0}</style></head>
+<body><main class="box"><h1>Kirim Notifikasi Anggota</h1><p>Kirim pengumuman perpustakaan atau rekomendasi admin ke seluruh anggota aktif.</p>
+{% for message in messages %}<div class="msg">{{ message }}</div>{% endfor %}
+<form method="post">{% csrf_token %}<label for="jenis">Jenis notifikasi</label><select name="jenis" id="jenis"><option value="pengumuman">Pengumuman perpustakaan</option><option value="gamifikasi">Pilihan admin minggu ini</option></select>
+<label for="judul">Judul atau pilihan buku</label><input id="judul" name="judul" required maxlength="180" placeholder="Contoh: Perubahan jadwal layanan">
+<label for="isi">Isi notifikasi</label><textarea id="isi" name="isi" required rows="5" placeholder="Tulis detail pengumuman atau rekomendasi"></textarea>
+<label for="url">Tautan tujuan (opsional)</label><input id="url" name="url" placeholder="/katalog/"><button type="submit">Kirim ke anggota</button></form></main></body></html>

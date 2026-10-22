@@ -7,6 +7,8 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('register/', views.register_view, name='register'),
     path('logout/', views.logout_view, name='logout'),
+    path('notifikasi/', views.notifikasi_view, name='notifikasi'),
+    path('notifikasi/<int:notifikasi_id>/', views.buka_notifikasi, name='buka_notifikasi'),
 
     # Katalog + detail buku
     path('katalog/', views.katalog_view, name='katalog'),
@@ -40,6 +42,7 @@ urlpatterns = [
     path("dashboard-admin/buku/hapus-terpilih/", views_admin.hapus_buku_massal, name="hapus_buku_massal"),
     path("dashboard-admin/jurnal/edit/<str:id_item>/", views_admin.edit_jurnal, name="edit_jurnal"),
     path("dashboard-admin/jurnal/hapus-terpilih/", views_admin.hapus_jurnal_massal, name="hapus_jurnal_massal"),
+    path("dashboard-admin/notifikasi/", views_admin.buat_pengumuman, name="buat_pengumuman"),
 
     # Kelola anggota, peminjaman, laporan (admin)
     path("dashboard-admin/anggota/", views_admin.kelola_anggota, name="kelola_anggota"),

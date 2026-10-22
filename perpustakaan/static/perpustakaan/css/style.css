@@ -2533,6 +2533,8 @@ body {
     grid-template-columns: repeat(5, 1fr);
     gap: 20px;
 }
+.notification-bell { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+.notification-bell .notification-count { position: absolute; top: -7px; right: -9px; min-width: 17px; height: 17px; padding: 0 4px; box-sizing: border-box; border-radius: 999px; display: grid; place-items: center; background: #ef4444; color: #fff; border: 2px solid #f5faf6; font-size: 10px; line-height: 1; font-weight: 800; }
 @media (max-width: 1200px) { .grid-buku-5 { grid-template-columns: repeat(4, 1fr); } }
 @media (max-width: 900px)  { .grid-buku-5 { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 640px)  { .grid-buku-5 { grid-template-columns: repeat(2, 1fr); } }

@@ -364,7 +364,7 @@
                     </div>
                 </div>
                 <div class="nav-actions">
-                    <i class="far fa-bell"></i>
+                    {% include "perpustakaan/includes/notification_bell.html" %}
                     <a href="{% url 'profil' %}" style="display: inline-block;">
                         <div class="avatar-circle">
                             {% if request.user.foto_profil %}
