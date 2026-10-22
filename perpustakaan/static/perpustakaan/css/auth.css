@@ -1,0 +1,618 @@
+/* =====================================================================
+   auth.css — gaya halaman Login dan Register (Lentera)
+   Dimuat oleh login.html dan register.html.
+   Responsive: desktop (>900px), tablet (<=900px), HP (<=600px), HP landscape.
+
+   Gambar hutan (sisi form) dipilih lewat class di <body>:
+     auth-login    -> static/perpustakaan/img/hu.jpg
+     auth-register -> static/perpustakaan/img/tra.jpg
+   Kalau file gambar belum ada, otomatis tampil gradasi hijau tua.
+   ===================================================================== */
+:root {
+    --hijau-tua: #173C3A;
+    --lime: #D4F838;
+}
+
+body.auth-login    { --forest-img: url('../img/hu.jpg'); }
+body.auth-register { --forest-img: url('../img/tra.jpg'); }
+
+/* ===== Foto slider panel kiri (dulu inline di HTML) ===== */
+.slide-1 { background-image: url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=1200&auto=format&fit=crop'); }
+.slide-2 { background-image: url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=1200&auto=format&fit=crop'); }
+.slide-3 { background-image: url('https://images.unsplash.com/photo-1521587760476-6c12a4b040da?q=80&w=1200&auto=format&fit=crop'); }
+.slide-4 { background-image: url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?q=80&w=1200&auto=format&fit=crop'); }
+
+/* ===== Utilitas pengganti style="" inline ===== */
+.is-hidden { display: none !important; }
+.inline-form { display: inline; }
+.fallback-icon { color: var(--lime); }
+.btn-submit--spaced { margin-top: 8px; }
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body.auth-body {
+    background-color: var(--hijau-tua);
+    height: 100vh;
+    height: 100dvh;
+    width: 100vw;
+    overflow: hidden;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Judul memakai Space Grotesk (style.css memaksa font lain dengan !important) */
+.left-panel h2,
+.brand-logo span,
+.form-box h1.title {
+    font-family: 'Space Grotesk', 'Plus Jakarta Sans', sans-serif !important;
+}
+
+/* CONTAINER FULLSCREEN (100vw x 100vh) */
+.page-container {
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: hidden;
+}
+
+/* =====================================================
+   PANEL KIRI (SLIDER)
+===================================================== */
+.left-panel {
+    flex: 1.2;
+    position: relative;
+    margin: 0;
+    border-radius: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: space-between;
+    padding: 48px clamp(32px, 7vw, 90px);
+    background-color: var(--hijau-tua);
+}
+
+.slider-wrapper {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+
+.slide-item {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+    background-size: cover;
+    background-position: center;
+}
+
+.slide-item.active {
+    opacity: 1;
+}
+
+/* Lapisan hijau tua supaya mirip desain, foto tetap samar terlihat */
+.slide-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(23, 60, 58, 0.78) 0%, rgba(23, 60, 58, 0.93) 100%);
+}
+
+/* Dekorasi lingkaran di pojok kanan bawah */
+.deco-circle {
+    position: absolute;
+    right: -140px;
+    bottom: -170px;
+    width: 520px;
+    height: 520px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    z-index: 1;
+    pointer-events: none;
+}
+
+.deco-circle::after {
+    content: "";
+    position: absolute;
+    inset: 48px;
+    border-radius: 50%;
+    border: 1px solid rgba(212, 248, 56, 0.28);
+}
+
+.brand-logo {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #ffffff;
+}
+
+.brand-logo img {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+}
+
+.brand-logo span {
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+}
+
+.brand-logo .logo-dot {
+    color: var(--lime);
+}
+
+.banner-quote {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.quote-content {
+    display: none;
+    animation: fadeInUp 0.8s ease forwards;
+}
+
+.quote-content.active {
+    display: block;
+}
+
+.quote-kicker {
+    color: var(--lime);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    margin-bottom: 14px;
+}
+
+.banner-quote h2 {
+    color: #ffffff;
+    font-size: clamp(2rem, 3.6vw, 3.4rem);
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+}
+
+.banner-quote h2 .accent {
+    color: var(--lime);
+}
+
+.banner-quote p {
+    color: #B7C4C1;
+    font-size: 0.85rem;
+    font-weight: 500;
+    line-height: 1.6;
+    max-width: 340px;
+}
+
+.slider-dots {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    gap: 8px;
+}
+
+.dot {
+    border: 0;
+    padding: 0;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 30px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.dot.active {
+    background: var(--lime);
+    width: 45px;
+}
+
+/* =====================================================
+   PANEL KANAN (FORM) - latar hutan dari sudut bawah
+===================================================== */
+.right-panel {
+    flex: 1;
+    padding: 60px 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    overflow-y: auto;
+    background-color: #0f2a24;
+    background-image:
+        linear-gradient(180deg, rgba(8, 28, 22, 0.40) 0%, rgba(8, 28, 22, 0.78) 100%),
+        var(--forest-img),
+        linear-gradient(160deg, #1d5a3f 0%, #0f2a24 100%);
+    background-size: cover, cover, cover;
+    background-position: center, center, center;
+    background-repeat: no-repeat;
+}
+
+.form-box {
+    width: 100%;
+    max-width: 400px;
+    animation: fadeIn 0.4s ease-in-out;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
+}
+
+.subtitle {
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.title {
+    color: #ffffff;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 28px;
+}
+
+.input-group {
+    margin-bottom: 18px;
+    position: relative;
+}
+
+.input-group label {
+    display: block;
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+/* INPUT TRANSPARAN (efek kaca di atas gambar hutan) */
+.input-group input[type="text"],
+.input-group input[type="email"],
+.input-group input[type="password"] {
+    width: 100%;
+    padding: 13px 16px;
+    background-color: rgba(255, 255, 255, 0.08);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 10px;
+    color: #ffffff;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+.input-group input::placeholder {
+    color: rgba(255, 255, 255, 0.62);
+}
+
+.input-group input:focus {
+    border-color: var(--lime);
+    background-color: rgba(255, 255, 255, 0.14);
+}
+
+.input-group input.is-invalid {
+    border-color: #ff6b6b !important;
+}
+
+.password-wrapper input {
+    padding-right: 46px !important;
+}
+
+/* Autofill browser jangan mengubah latar jadi putih/kuning */
+.input-group input:-webkit-autofill,
+.input-group input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #ffffff;
+    caret-color: #ffffff;
+    transition: background-color 9999s ease-in-out 0s;
+}
+
+.password-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    padding: 5px;
+    font-size: 1.05rem;
+    transition: color 0.2s;
+}
+
+.toggle-password:hover {
+    color: var(--lime);
+}
+
+/* ALERT PESAN ERROR / SUCCESS */
+.alert-error-below {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #ff8a8a;
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 10px;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.alert-success-below {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--lime);
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 18px;
+    padding: 10px 14px;
+    background: rgba(212, 248, 56, 0.12);
+    border: 1px solid rgba(212, 248, 56, 0.35);
+    border-radius: 8px;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* REMEMBER ME & LUPA PASSWORD ROW */
+.form-options {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    margin-bottom: 24px;
+}
+
+.remember-me {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.remember-me input[type="checkbox"] {
+    accent-color: var(--lime);
+    width: 17px;
+    height: 17px;
+    cursor: pointer;
+}
+
+.remember-me span {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.forgot-password, .back-to-login {
+    color: var(--lime);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: opacity 0.2s;
+    cursor: pointer;
+}
+
+.forgot-password:hover, .back-to-login:hover {
+    opacity: 0.8;
+    text-decoration: underline;
+}
+
+.btn-submit {
+    width: 100%;
+    padding: 14px;
+    background-color: var(--lime);
+    color: var(--hijau-tua);
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-shadow: none;
+}
+
+.btn-submit:hover {
+    background-color: #c0e628;
+    transform: translateY(-2px);
+}
+
+.register-text {
+    text-align: center;
+    margin-top: 18px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.register-text a {
+    color: var(--lime);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.register-text a:hover {
+    text-decoration: underline;
+}
+
+.back-to-login-wrapper {
+    text-align: center;
+    margin-top: 20px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+
+/* ===== Petunjuk password, OTP, dan tombol tambahan ===== */
+.pw-rules {
+    margin: -6px 0 18px;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 10px;
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+}
+.pw-rules-title {
+    display: flex; align-items: center; gap: 8px;
+    color: #ffffff; font-size: 12px; font-weight: 800; margin-bottom: 10px;
+}
+.pw-rules-title i { color: var(--lime); }
+.pw-rules ul { list-style: none; display: grid; gap: 7px; }
+.pw-rules li {
+    display: flex; align-items: center; gap: 9px;
+    color: rgba(255, 255, 255, 0.72); font-size: 12px; font-weight: 500;
+    transition: color 0.2s;
+}
+.pw-rules li::before {
+    content: ""; width: 10px; height: 10px; flex: none; border-radius: 50%;
+    background: rgba(255, 255, 255, 0.35); transition: background 0.2s, box-shadow 0.2s;
+}
+.pw-rules li.ok { color: var(--lime); }
+.pw-rules li.ok::before { background: var(--lime); box-shadow: 0 0 0 3px rgba(212, 248, 56, 0.2); }
+
+.input-group input.otp-input {
+    text-align: center; letter-spacing: 0.6em; font-size: 22px; font-weight: 700;
+    padding-left: 0.6em;
+}
+.reset-desc {
+    color: rgba(255, 255, 255, 0.82); font-size: 13px; line-height: 1.6; margin: -12px 0 22px;
+}
+.reset-desc b { color: #ffffff; }
+.link-btn {
+    background: none; border: none; padding: 0; cursor: pointer;
+    color: var(--lime); font-size: 13px; font-weight: 700; font-family: inherit;
+}
+.link-btn:hover { text-decoration: underline; }
+.link-btn:disabled { color: rgba(255, 255, 255, 0.5); cursor: not-allowed; text-decoration: none; }
+.reset-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; }
+.reset-actions form { margin: 0; }
+.alert-error-box {
+    display: flex; align-items: center; gap: 8px; color: #ff8a8a; font-size: 13px; font-weight: 600;
+    margin-bottom: 18px; padding: 10px 14px; background: rgba(255, 107, 107, 0.12);
+    border: 1px solid rgba(255, 107, 107, 0.4); border-radius: 8px; animation: fadeIn 0.3s ease-in-out;
+}
+
+/* =====================================================================
+   RESPONSIVE
+   ===================================================================== */
+
+/* ---- Laptop kecil / tablet landscape ---- */
+@media (max-width: 1100px) {
+    .right-panel { padding: 48px 40px; }
+    .left-panel { padding: 40px clamp(28px, 5vw, 60px); }
+}
+
+/* ---- Tablet portrait & HP: susunan vertikal, halaman bisa di-scroll ---- */
+@media (max-width: 900px) {
+    body.auth-body {
+        height: auto;
+        min-height: 100vh;
+        min-height: 100dvh;
+        width: 100%;
+        overflow-x: hidden;
+        overflow-y: auto;
+        align-items: stretch;
+    }
+    .page-container {
+        width: 100%;
+        height: auto;
+        min-height: 100vh;
+        min-height: 100dvh;
+        flex-direction: column;
+    }
+    .left-panel {
+        flex: none;
+        min-height: 230px;
+        padding: 26px 28px 22px;
+        gap: 18px;
+    }
+    .banner-quote { flex: none; }
+    .banner-quote h2 { font-size: clamp(1.5rem, 4.6vw, 2.1rem); margin-bottom: 10px; }
+    .quote-kicker { display: none; }
+    .deco-circle { display: none; }
+    .right-panel {
+        flex: 1;
+        overflow: visible;
+        align-items: flex-start;
+        padding: 36px 28px calc(48px + env(safe-area-inset-bottom));
+    }
+    .form-box { margin: 0 auto; }
+}
+
+/* ---- HP: panel kiri jadi header ringkas (hemat tinggi layar & data) ---- */
+@media (max-width: 600px) {
+    .left-panel {
+        min-height: 0;
+        padding: 16px 20px;
+        flex-direction: row;
+        align-items: center;
+    }
+    .slider-wrapper,
+    .banner-quote,
+    .slider-dots { display: none; }
+    .brand-logo img { width: 30px; height: 30px; }
+    .brand-logo span { font-size: 1.4rem; }
+
+    .right-panel { padding: 28px 20px calc(40px + env(safe-area-inset-bottom)); }
+    .form-box { max-width: 100%; }
+    .title { font-size: 1.65rem; margin-bottom: 22px; }
+
+    /* 16px mencegah iOS memperbesar layar saat kolom difokus */
+    .input-group input[type="text"],
+    .input-group input[type="email"],
+    .input-group input[type="password"] { font-size: 16px; padding: 14px 16px; }
+    .btn-submit { padding: 15px; font-size: 15px; }
+    .toggle-password { padding: 10px; }
+
+    .form-options { flex-wrap: wrap; gap: 10px 16px; }
+    .reset-actions { flex-wrap: wrap; gap: 8px 16px; }
+    .pw-rules { padding: 12px 14px; }
+}
+
+/* ---- HP sangat kecil ---- */
+@media (max-width: 360px) {
+    .right-panel { padding: 24px 16px 36px; }
+    .title { font-size: 1.45rem; }
+    .input-group input.otp-input { font-size: 20px; letter-spacing: 0.4em; }
+}
+
+/* ---- HP landscape (layar pendek): form didahulukan ---- */
+@media (max-height: 520px) and (orientation: landscape) {
+    .left-panel { min-height: 0; padding: 12px 24px; flex-direction: row; align-items: center; }
+    .slider-wrapper, .banner-quote, .slider-dots { display: none; }
+    .right-panel { padding: 24px 24px 32px; }
+    .title { margin-bottom: 16px; }
+}
+
+/* ---- Hormati pengaturan "kurangi gerakan" ---- */
+@media (prefers-reduced-motion: reduce) {
+    .slide-item, .quote-content, .form-box, .alert-error-below, .alert-success-below, .alert-error-box {
+        animation: none !important;
+        transition: none !important;
+    }
+}

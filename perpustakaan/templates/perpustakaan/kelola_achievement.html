@@ -1,0 +1,243 @@
+{% extends 'perpustakaan/base_admin.html' %}
+
+{% block title %}Kelola Achievement · Lentera{% endblock %}
+{% block page_title %}Kelola Achievement{% endblock %}
+{% block page_subtitle %}Buat dan atur lencana yang bisa diraih anggota{% endblock %}
+
+{% block content %}
+{% if messages %}
+  <div class="kelola-messages">
+    {% for message in messages %}
+      <p role="alert" class="kelola-alert {% if message.tags == 'success' %}ok{% else %}err{% endif %}">{{ message }}</p>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<div class="kelola-toolbar">
+  <form method="GET" action="{% url 'kelola_achievement' %}" class="search-filter-bar">
+    {% if kategori_aktif %}<input type="hidden" name="kategori" value="{{ kategori_aktif }}">{% endif %}
+    <div class="search-box">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" name="q" value="{{ search_query }}" placeholder="Cari nama atau deskripsi..">
+    </div>
+  </form>
+  <button type="button" class="btn-lime-add" data-modal-open="modalAchievement">
+    <i class="fa-solid fa-plus"></i> Tambah achievement
+  </button>
+</div>
+
+<!-- Filter kategori: Umum (hijau), Langka (biru), Epik (ungu) -->
+<nav class="kelola-filters" aria-label="Filter kategori">
+  <a href="{% url 'kelola_achievement' %}{% if search_query %}?q={{ search_query|urlencode }}{% endif %}" class="kelola-chip{% if not kategori_aktif %} active{% endif %}">Semua <b>{{ total }}</b></a>
+  <a href="?kategori=Umum{% if search_query %}&amp;q={{ search_query|urlencode }}{% endif %}" class="kelola-chip umum{% if kategori_aktif == 'Umum' %} active{% endif %}">Umum <b>{{ n_umum }}</b></a>
+  <a href="?kategori=Langka{% if search_query %}&amp;q={{ search_query|urlencode }}{% endif %}" class="kelola-chip langka{% if kategori_aktif == 'Langka' %} active{% endif %}">Langka <b>{{ n_langka }}</b></a>
+  <a href="?kategori=Epik{% if search_query %}&amp;q={{ search_query|urlencode }}{% endif %}" class="kelola-chip epik{% if kategori_aktif == 'Epik' %} active{% endif %}">Epik <b>{{ n_epik }}</b></a>
+</nav>
+
+<div class="kelola-card">
+  <div class="kelola-card-head">
+    <h3>Daftar achievement</h3>
+    <span>{{ achievement_list|length }} item</span>
+  </div>
+
+  <div class="bulk-bar" id="bulkBar" data-satuan="achievement">
+    <span><b id="bulkCount">0</b> achievement dipilih</span>
+    <div class="bulk-actions">
+      <button type="button" class="bulk-clear" id="bulkClear">Batal pilih</button>
+      <button type="button" class="bulk-del" id="bulkDel"><i class="fa-regular fa-trash-can"></i> Hapus terpilih</button>
+    </div>
+  </div>
+  <form id="formHapusMassal" method="POST" action="{% url 'hapus_achievement_massal' %}">{% csrf_token %}</form>
+
+  <table class="kelola-table">
+    <thead>
+      <tr>
+        <th class="col-check"><input type="checkbox" id="checkAll" aria-label="Pilih semua"></th>
+        <th class="col-main">Achievement</th>
+        <th>Kategori</th>
+        <th>Gambar terkunci</th>
+        <th>Gambar terbuka</th>
+        <th class="col-aksi">Aksi</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in achievement_list %}
+      <tr data-kat="{{ a.kategori|lower }}">
+        <td class="kelola-check"><input type="checkbox" class="row-check" name="ids" value="{{ a.pk }}" form="formHapusMassal" aria-label="Pilih {{ a.nama }}"></td>
+        <td class="kelola-itemcell">
+          <div class="kelola-item">
+            <div>
+              <span class="t">{{ a.nama }}</span>
+              <span class="s acv-clip">{% if a.deskripsi %}{{ a.deskripsi }}{% else %}Belum ada deskripsi{% endif %}</span>
+            </div>
+          </div>
+        </td>
+        <td data-label="Kategori">
+          <span class="acv-badge {{ a.kategori|lower }}">
+            {% if a.kategori == 'Epik' %}<i class="fa-solid fa-crown"></i>{% elif a.kategori == 'Langka' %}<i class="fa-solid fa-gem"></i>{% else %}<i class="fa-solid fa-leaf"></i>{% endif %}
+            {{ a.kategori }}
+          </span>
+        </td>
+        <td data-label="Terkunci">
+          {% if a.gambar_terkunci %}<img class="acv-thumb" src="{{ a.gambar_terkunci.url }}" alt="Gambar terkunci {{ a.nama }}" width="48" height="48" loading="lazy">{% else %}<span class="acv-thumb acv-thumb--kosong"><i class="fa-solid fa-lock"></i></span>{% endif %}
+        </td>
+        <td data-label="Terbuka">
+          {% if a.gambar_terbuka %}<img class="acv-thumb" src="{{ a.gambar_terbuka.url }}" alt="Gambar terbuka {{ a.nama }}" width="48" height="48" loading="lazy">{% else %}<span class="acv-thumb acv-thumb--kosong"><i class="fa-solid fa-lock-open"></i></span>{% endif %}
+        </td>
+        <td class="kelola-aksi">
+          <div class="kelola-actions">
+            <button type="button" class="kelola-icon-btn btn-edit" title="Edit"
+                    data-url="{% url 'edit_achievement' a.pk %}"
+                    data-nama="{{ a.nama }}"
+                    data-kategori="{{ a.kategori }}"
+                    data-deskripsi="{{ a.deskripsi }}"
+                    data-gambar_terkunci="{% if a.gambar_terkunci %}{{ a.gambar_terkunci.url }}{% endif %}"
+                    data-gambar_terbuka="{% if a.gambar_terbuka %}{{ a.gambar_terbuka.url }}{% endif %}"><i class="fa-regular fa-pen-to-square"></i></button>
+            <form action="{% url 'hapus_achievement' a.pk %}" method="POST" data-confirm-delete>
+              {% csrf_token %}
+              <button type="submit" class="kelola-icon-btn danger" title="Hapus"><i class="fa-regular fa-trash-can"></i></button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="kelola-empty">{% if search_query or kategori_aktif %}Tidak ada achievement yang cocok.{% else %}Belum ada achievement. Klik “Tambah achievement” untuk membuat yang pertama.{% endif %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- MODAL TAMBAH ACHIEVEMENT -->
+<div class="kelola-modal" id="modalAchievement" role="dialog" aria-modal="true" aria-labelledby="modalAchievementJudul">
+  <div class="kelola-modal-box nm-box">
+    <div class="nm-head">
+      <div>
+        <span class="nm-eyebrow">Lencana baru</span>
+        <h3 class="nm-title" id="modalAchievementJudul">Tambah achievement baru</h3>
+      </div>
+      <button type="button" class="nm-close" aria-label="Tutup" data-modal-close><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <form action="{% url 'kelola_achievement' %}" method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="nm-field">
+        <label for="achNama">Nama achievement</label>
+        <input type="text" id="achNama" name="nama" maxlength="100" required placeholder="Contoh: Pembaca Tekun">
+      </div>
+
+      <div class="nm-field">
+        <label id="achKategoriLabel">Kategori</label>
+        <div class="acv-kat-pick" role="radiogroup" aria-labelledby="achKategoriLabel">
+          <label class="acv-kat umum"><input type="radio" name="kategori" value="Umum" checked><span><i class="fa-solid fa-leaf"></i> Umum</span></label>
+          <label class="acv-kat langka"><input type="radio" name="kategori" value="Langka"><span><i class="fa-solid fa-gem"></i> Langka</span></label>
+          <label class="acv-kat epik"><input type="radio" name="kategori" value="Epik"><span><i class="fa-solid fa-crown"></i> Epik</span></label>
+        </div>
+      </div>
+
+      <div class="nm-field">
+        <label for="achDeskripsi">Deskripsi</label>
+        <textarea id="achDeskripsi" name="deskripsi" rows="3" placeholder="Cara mendapatkan achievement ini..."></textarea>
+      </div>
+
+      <div class="nm-row">
+        <div class="nm-field acv-upload">
+          <label for="achTerkunci">Gambar terkunci</label>
+          <div class="acv-upload-box"><img class="acv-preview is-hidden" alt=""><i class="fa-solid fa-lock acv-ph"></i></div>
+          <input type="file" id="achTerkunci" name="gambar_terkunci" accept="image/png,image/jpeg,image/webp,image/gif" required>
+        </div>
+        <div class="nm-field acv-upload">
+          <label for="achTerbuka">Gambar terbuka</label>
+          <div class="acv-upload-box"><img class="acv-preview is-hidden" alt=""><i class="fa-solid fa-lock-open acv-ph"></i></div>
+          <input type="file" id="achTerbuka" name="gambar_terbuka" accept="image/png,image/jpeg,image/webp,image/gif" required>
+        </div>
+      </div>
+      <p class="acv-hint">PNG, JPG, WEBP, atau GIF. Maksimal 2 MB per gambar, disarankan persegi.</p>
+
+      <div class="nm-foot">
+        <button type="button" class="nm-btn-batal" data-modal-close>Batal</button>
+        <button type="submit" class="nm-btn-simpan">Tambah achievement <i class="fa-solid fa-check"></i></button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL EDIT ACHIEVEMENT -->
+<div class="kelola-modal" id="modalEdit" role="dialog" aria-modal="true" aria-labelledby="modalEditJudul">
+  <div class="kelola-modal-box nm-box">
+    <div class="nm-head">
+      <div>
+        <span class="nm-eyebrow">Perbarui lencana</span>
+        <h3 class="nm-title" id="modalEditJudul">Edit achievement</h3>
+      </div>
+      <button type="button" class="nm-close" data-modal-close aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <form id="formEdit" method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="nm-field">
+        <label for="editNama">Nama achievement</label>
+        <input type="text" id="editNama" name="nama" maxlength="100" required>
+      </div>
+
+      <div class="nm-field">
+        <label id="editKategoriLabel">Kategori</label>
+        <div class="acv-kat-pick" role="radiogroup" aria-labelledby="editKategoriLabel">
+          <label class="acv-kat umum"><input type="radio" name="kategori" value="Umum" checked><span><i class="fa-solid fa-leaf"></i> Umum</span></label>
+          <label class="acv-kat langka"><input type="radio" name="kategori" value="Langka"><span><i class="fa-solid fa-gem"></i> Langka</span></label>
+          <label class="acv-kat epik"><input type="radio" name="kategori" value="Epik"><span><i class="fa-solid fa-crown"></i> Epik</span></label>
+        </div>
+      </div>
+
+      <div class="nm-field">
+        <label for="editDeskripsi">Deskripsi</label>
+        <textarea id="editDeskripsi" name="deskripsi" rows="3"></textarea>
+      </div>
+
+      <div class="nm-row">
+        <div class="nm-field acv-upload">
+          <label for="editTerkunci">Gambar terkunci</label>
+          <div class="acv-upload-box"><img class="acv-preview is-hidden" alt=""><i class="fa-solid fa-lock acv-ph"></i></div>
+          <input type="file" id="editTerkunci" name="gambar_terkunci" accept="image/png,image/jpeg,image/webp,image/gif">
+        </div>
+        <div class="nm-field acv-upload">
+          <label for="editTerbuka">Gambar terbuka</label>
+          <div class="acv-upload-box"><img class="acv-preview is-hidden" alt=""><i class="fa-solid fa-lock-open acv-ph"></i></div>
+          <input type="file" id="editTerbuka" name="gambar_terbuka" accept="image/png,image/jpeg,image/webp,image/gif">
+        </div>
+      </div>
+      <p class="acv-hint">Kosongkan pilihan file jika gambar tidak ingin diganti.</p>
+
+      <div class="nm-foot">
+        <button type="button" class="nm-btn-batal" data-modal-close>Batal</button>
+        <button type="submit" class="nm-btn-simpan">Simpan perubahan <i class="fa-solid fa-check"></i></button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL HAPUS (satuan) -->
+<div class="kelola-modal" id="modalHapus" role="dialog" aria-modal="true" aria-labelledby="hapusJudul">
+  <div class="kelola-modal-box confirm-box">
+    <div class="confirm-icon"><i class="fa-regular fa-trash-can"></i></div>
+    <h3 class="confirm-title" id="hapusJudul">Hapus item ini?</h3>
+    <p class="confirm-text"><b id="hapusNama"></b> akan dihapus permanen dan tidak bisa dikembalikan.</p>
+    <div class="kelola-modal-foot confirm-foot">
+      <button type="button" class="btn-batal" data-modal-close>Batal</button>
+      <button type="button" id="hapusYa" class="nm-btn-hapus">Ya, hapus</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL HAPUS TERPILIH -->
+<div class="kelola-modal" id="modalHapusMassal" role="dialog" aria-modal="true" aria-labelledby="massalJudul">
+  <div class="kelola-modal-box confirm-box">
+    <div class="confirm-icon"><i class="fa-regular fa-trash-can"></i></div>
+    <h3 class="confirm-title" id="massalJudul">Hapus item terpilih?</h3>
+    <p class="confirm-text"><b id="massalJumlah"></b> akan dihapus permanen dan tidak bisa dikembalikan.</p>
+    <div class="kelola-modal-foot confirm-foot">
+      <button type="button" class="btn-batal" data-modal-close>Batal</button>
+      <button type="button" id="massalYa" class="nm-btn-hapus">Ya, hapus</button>
+    </div>
+  </div>
+</div>
+{% endblock %}

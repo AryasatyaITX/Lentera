@@ -1,3 +1,5 @@
+import os
+import uuid
 from datetime import date, timedelta
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
@@ -211,3 +213,24 @@ class Pengaturan(models.Model):
     def muat(cls):
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+
+def path_gambar_terkunci(instance, filename):
+    return f"achievement/terkunci/{uuid.uuid4().hex}{os.path.splitext(filename)[1].lower()}"
+
+def path_gambar_terbuka(instance, filename):
+    return f"achievement/terbuka/{uuid.uuid4().hex}{os.path.splitext(filename)[1].lower()}"
+class AchievementGambar(models.Model):
+    KATEGORI_CHOICES = [("Umum", "Umum"), ("Langka", "Langka"), ("Epik", "Epik")]
+
+    nama = models.CharField(max_length=100, unique=True)
+    kategori = models.CharField(max_length=10, choices=KATEGORI_CHOICES, default="Umum")
+    deskripsi = models.TextField(blank=True, default="")
+    gambar_terkunci = models.ImageField(upload_to=path_gambar_terkunci)
+    gambar_terbuka = models.ImageField(upload_to=path_gambar_terbuka)
+    dibuat = models.DateTimeField(default=timezone.now)
+    class Meta:
+        ordering = ["-dibuat", "-id"]
+
+    def __str__(self):
+        return f"[{self.kategori}] {self.nama}"
