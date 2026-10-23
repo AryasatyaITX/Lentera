@@ -24,7 +24,8 @@ import os
 import random
 import re
 import time
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlencode
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.conf import settings
 
 MASA_PINJAM_HARI = 14   #masa pinjam buku
@@ -226,6 +227,9 @@ def _notifikasi(user, jenis, judul, isi, url=""):
 
 @login_required(login_url="login")
 def notifikasi_view(request):
+    return_url = request.GET.get("next") or request.POST.get("next") or ""
+    if not url_has_allowed_host_and_scheme(return_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        return_url = ""
     hari_ini = timezone.localdate()
     def simpan_pengingat(jenis, judul, isi, url):
         if request.session.get("notifikasi_dihapus_hari_ini") == hari_ini.isoformat():
@@ -254,9 +258,10 @@ def notifikasi_view(request):
             request.session["notifikasi_dihapus_hari_ini"] = hari_ini.isoformat()
         else:
             Notifikasi.objects.filter(user=request.user, dibaca=False).update(dibaca=True)
-        return redirect("notifikasi")
+        query = urlencode({"next": return_url}) if return_url else ""
+        return redirect(f"{request.path}?{query}" if query else request.path)
     items = Notifikasi.objects.filter(user=request.user)[:50]
-    return render(request, "perpustakaan/notifikasi.html", {"notifikasi_list": items, "belum_dibaca": Notifikasi.objects.filter(user=request.user, dibaca=False).count()})
+    return render(request, "perpustakaan/notifikasi.html", {"notifikasi_list": items, "belum_dibaca": Notifikasi.objects.filter(user=request.user, dibaca=False).count(), "return_url": return_url or "dashboard"})
 
 
 @login_required(login_url="login")

@@ -1,4 +1,40 @@
-<a class="notification-bell" href="{% url 'notifikasi' %}" title="Notifikasi" aria-label="Notifikasi{% if jumlah_notifikasi_belum_dibaca %}, {{ jumlah_notifikasi_belum_dibaca }} belum dibaca{% endif %}">
-  <i class="far fa-bell"></i>
-  {% if jumlah_notifikasi_belum_dibaca %}<span class="notification-count">{% if jumlah_notifikasi_belum_dibaca > 99 %}99+{% else %}{{ jumlah_notifikasi_belum_dibaca }}{% endif %}</span>{% endif %}
-</a>
+{% load static %}
+<link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=notification-panel-1">
+<script src="{% static 'perpustakaan/js/notifikasi.js' %}?v=1" defer></script>
+<div class="notification-widget">
+  <button class="notification-bell" type="button" title="Notifikasi" aria-label="Notifikasi{% if jumlah_notifikasi_belum_dibaca %}, {{ jumlah_notifikasi_belum_dibaca }} belum dibaca{% endif %}" aria-expanded="false" aria-controls="notificationPanel">
+    <i class="far fa-bell"></i>
+    {% if jumlah_notifikasi_belum_dibaca %}<span class="notification-count">{% if jumlah_notifikasi_belum_dibaca > 99 %}99+{% else %}{{ jumlah_notifikasi_belum_dibaca }}{% endif %}</span>{% endif %}
+  </button>
+  <section class="notification-panel" id="notificationPanel" aria-label="Notifikasi terbaru" hidden>
+    <div class="notification-panel-head"><div><strong>Notifikasi</strong><span>{% if jumlah_notifikasi_belum_dibaca %}{{ jumlah_notifikasi_belum_dibaca }} belum dibaca{% else %}Semua sudah dibaca{% endif %}</span></div><button class="notification-close" type="button" aria-label="Tutup notifikasi"><i class="fas fa-times"></i></button></div>
+    <div class="notification-panel-list">
+      {% for item in notifikasi_terbaru %}
+        <a class="notification-panel-item {% if not item.dibaca %}is-unread{% endif %}" href="{% url 'buka_notifikasi' item.id %}">
+          <span class="notification-panel-icon"><i class="fas fa-{% if item.jenis == 'tenggat' %}clock{% elif item.jenis == 'gamifikasi' %}fire{% elif item.jenis == 'katalog' %}book{% else %}bell{% endif %}"></i></span>
+          <span class="notification-panel-copy"><strong>{{ item.judul }}</strong><span>{{ item.isi }}</span><time class="notification-relative-time" datetime="{{ item.dibuat|date:'c' }}" data-relative-time></time></span>
+          {% if not item.dibaca %}<span class="notification-unread-dot" aria-label="Belum dibaca"></span>{% endif %}
+        </a>
+      {% empty %}<p class="notification-empty">Belum ada notifikasi.</p>{% endfor %}
+    </div>
+    <a class="notification-panel-all" href="{% url 'notifikasi' %}?next={{ request.get_full_path|urlencode }}">Lihat semua notifikasi <i class="fas fa-arrow-right"></i></a>
+  </section>
+</div>
+<script>
+(() => {
+  const widget = document.currentScript.previousElementSibling;
+  if (!widget || widget.dataset.ready) return;
+  widget.dataset.ready = 'true';
+  const button = widget.querySelector('.notification-bell');
+  const panel = widget.querySelector('.notification-panel');
+  const close = () => { panel.hidden = true; button.setAttribute('aria-expanded', 'false'); };
+  button.addEventListener('click', (event) => {
+    event.stopPropagation();
+    panel.hidden = !panel.hidden;
+    button.setAttribute('aria-expanded', String(!panel.hidden));
+  });
+  widget.querySelector('.notification-close').addEventListener('click', close);
+  document.addEventListener('click', (event) => { if (!widget.contains(event.target)) close(); });
+  document.addEventListener('keydown', (event) => { if (event.key === 'Escape') close(); });
+})();
+</script>
