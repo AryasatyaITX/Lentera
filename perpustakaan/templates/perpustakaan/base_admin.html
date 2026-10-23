@@ -3,7 +3,8 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#173C3A">
   <title>{% block title %}Lentera Admin{% endblock %}</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,64 +12,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}">
+  <link rel="stylesheet" href="{% static 'perpustakaan/css/admin-dashboard.css' %}?v=1">
 
-  <style>
-    /* ===== Komponen halaman Kelola (dipakai buku & jurnal) ===== */
-    .kelola-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 24px; flex-wrap: wrap; }
-    .kelola-toolbar .search-filter-bar { margin-bottom: 0; flex-grow: 1; max-width: 500px; }
-
-    .btn-lime-add {
-      background: #D4F838; color: #173C3A; border: none;
-      padding: 12px 22px; border-radius: 10px; font-size: 13px; font-weight: 700;
-      display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: .2s;
-    }
-    .btn-lime-add:hover { background: #c0e628; }
-
-    .kelola-card { background: #fff; border-radius: 16px; padding: 24px 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
-    .kelola-card-head { display: flex; justify-content: space-between; align-items: center; padding-bottom: 14px; border-bottom: 2px solid #173C3A; margin-bottom: 6px; }
-    .kelola-card-head h3 { font-size: 15px; font-weight: 800; color: #173C3A; }
-    .kelola-card-head span { font-size: 12px; color: #8A8A7A; font-weight: 600; }
-
-    .kelola-table { width: 100%; border-collapse: collapse; }
-    .kelola-table th { text-align: left; font-size: 12px; font-weight: 700; color: #4A4A3F; padding: 14px 10px; border-bottom: 1px solid #eee; }
-    .kelola-table th:first-child, .kelola-table td:first-child { padding-left: 0; }
-    .kelola-table td { padding: 14px 10px; font-size: 13px; color: #6A6A5C; border-bottom: 1px solid #F0F0E6; vertical-align: middle; }
-    .kelola-table tr:last-child td { border-bottom: none; }
-    .kelola-table tr:hover td { background: #fafaf5; }
-
-    .kelola-item { display: flex; align-items: center; gap: 14px; }
-    .kelola-item img { width: 50px; height: 70px; border-radius: 6px; object-fit: cover; background: #ddd; box-shadow: 0 2px 6px rgba(0,0,0,.1); }
-    .kelola-item .t { font-size: 13px; font-weight: 700; color: #173C3A; display: block; }
-    .kelola-item .s { font-size: 12px; color: #8A8A7A; display: block; margin-top: 3px; }
-
-    .kelola-actions { display: flex; gap: 8px; justify-content: flex-end; }
-    .kelola-icon-btn {
-      width: 30px; height: 30px; border: none; border-radius: 6px;
-      background: #F0F0E6; color: #666; font-size: 12px; cursor: pointer;
-      display: inline-flex; align-items: center; justify-content: center; text-decoration: none; transition: .2s;
-    }
-    .kelola-icon-btn:hover { background: #173C3A; color: #D4F838; }
-    .kelola-icon-btn.danger:hover { background: #fee2e2; color: #dc2626; }
-
-    .kelola-modal { display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(13,18,28,.5); align-items: center; justify-content: center; }
-    .kelola-modal.open { display: flex; }
-    .kelola-modal-box { background: #fff; border-radius: 16px; width: 540px; max-width: 92%; max-height: 90vh; overflow-y: auto; padding: 28px; }
-    .kelola-modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .kelola-modal-head h3 { font-size: 18px; font-weight: 800; color: #173C3A; }
-    .kelola-modal-close { background: none; border: none; font-size: 22px; color: #8A8A7A; cursor: pointer; }
-
-    .kelola-form label { display: block; font-size: 12px; font-weight: 700; color: #4A4A3F; margin: 14px 0 6px; }
-    .kelola-form input, .kelola-form textarea { width: 100%; padding: 12px 16px; background: #fff; border: 1px solid #E5E5D8; border-radius: 8px; font-size: 13px; color: #173C3A; outline: none; }
-    .kelola-form input:focus, .kelola-form textarea:focus { border-color: #173C3A; }
-    .kelola-modal-foot { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
-    .btn-batal { background: transparent; border: 1px solid #E5E5D8; padding: 12px 20px; border-radius: 8px; font-size: 13px; font-weight: 700; color: #6A6A5C; cursor: pointer; }
-  </style>
   {% block extra_css %}{% endblock %}
 </head>
 <body>
 
 {% with nama_user=request.user.nama_tampilan|default:request.user.username %}
 <div class="app-layout sidebar-open no-anim" id="app-layout">
+
+  <!-- Latar gelap di belakang sidebar saat dibuka di tablet/HP -->
+  <div class="adm-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
 
   <!-- ===== SIDEBAR ADMIN (satu-satunya, dipakai semua halaman) ===== -->
   <aside class="sidebar adm-sidebar" id="sidebar">
@@ -95,6 +49,12 @@
         <a href="{% url 'kelola_jurnal' %}" class="{% if url_now == 'kelola_jurnal' %}active{% endif %}">
           <i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14v16H5z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg></i>
           <span>Kelola Jurnal</span>
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'kelola_achievement' %}" class="{% if url_now == 'kelola_achievement' %}active{% endif %}">
+          <i><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg></i>
+          <span>Kelola Achievement</span>
         </a>
       </li>
       <li>
@@ -167,26 +127,7 @@
 </div>
 {% endwith %}
 
-<script>
-/* Toggle sidebar. Status buka/tutup disimpan, jadi tetap sama saat pindah halaman. */
-(function () {
-  var layout = document.getElementById("app-layout");
-  var btn = document.getElementById("menu-button");
-  var KEY = "lentera-admin-sidebar";
-
-  if (localStorage.getItem(KEY) === "closed") {
-    layout.classList.remove("sidebar-open");
-    btn.setAttribute("aria-expanded", "false");
-  }
-  requestAnimationFrame(function () { layout.classList.remove("no-anim"); });
-
-  btn.addEventListener("click", function () {
-    var open = layout.classList.toggle("sidebar-open");
-    btn.setAttribute("aria-expanded", String(open));
-    localStorage.setItem(KEY, open ? "open" : "closed");
-  });
-})();
-</script>
 {% block extra_js %}{% endblock %}
+<script src="{% static 'perpustakaan/js/admin-dashboard.js' %}?v=1"></script>
 </body>
 </html>

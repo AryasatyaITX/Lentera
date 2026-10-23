@@ -1,3 +1,5 @@
+import os
+import uuid
 from datetime import date, timedelta
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
@@ -25,7 +27,7 @@ class ItemKatalog(models.Model):
 # atribut khusus buku digital seperti ISBN, link_unduh, dan format_file.
 class BukuDigital(ItemKatalog):
     kategori = models.CharField(max_length=50, default="", blank=True)
-    ISBN = models.CharField(max_length=20, blank=True, default="") 
+    isbn = models.CharField(max_length=20, blank=True, default="") 
     link_unduh = models.URLField(default="https://example.com")
     ukuran_file = models.FloatField(default=2.5, help_text="dalam MB")
     format_file = models.CharField(max_length=10, default="PDF")
@@ -41,7 +43,7 @@ class BukuDigital(ItemKatalog):
 # dan link_akses.
 class Jurnal(ItemKatalog):
     kategori = models.CharField(max_length=50, default="", blank=True)
-    ISSN = models.CharField(max_length=9, blank=True, default="")
+    issn = models.CharField(max_length=9, blank=True, default="")
     volume = models.CharField(max_length=50, blank=True)
     bidang_ilmu = models.CharField(max_length=100, blank=True)
     link_akses = models.URLField(default="https://example.com")
@@ -230,3 +232,24 @@ class Pengaturan(models.Model):
     def muat(cls):
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+
+def path_gambar_terkunci(instance, filename):
+    return f"achievement/terkunci/{uuid.uuid4().hex}{os.path.splitext(filename)[1].lower()}"
+
+def path_gambar_terbuka(instance, filename):
+    return f"achievement/terbuka/{uuid.uuid4().hex}{os.path.splitext(filename)[1].lower()}"
+class AchievementGambar(models.Model):
+    KATEGORI_CHOICES = [("Umum", "Umum"), ("Langka", "Langka"), ("Epik", "Epik")]
+
+    nama = models.CharField(max_length=100, unique=True)
+    kategori = models.CharField(max_length=10, choices=KATEGORI_CHOICES, default="Umum")
+    deskripsi = models.TextField(blank=True, default="")
+    gambar_terkunci = models.ImageField(upload_to=path_gambar_terkunci)
+    gambar_terbuka = models.ImageField(upload_to=path_gambar_terbuka)
+    dibuat = models.DateTimeField(default=timezone.now)
+    class Meta:
+        ordering = ["-dibuat", "-id"]
+
+    def __str__(self):
+        return f"[{self.kategori}] {self.nama}"

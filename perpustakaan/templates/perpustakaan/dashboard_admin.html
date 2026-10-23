@@ -5,20 +5,6 @@
 {% block page_title %}Pusat Kendali Perpustakaan{% endblock %}
 {% block page_subtitle %}Ringkasan aktivitas hari ini.{% endblock %}
 
-{% block extra_css %}
-<style>
-  .adm-event--buku    .adm-event-icon { background: #E3F9C3; color: #173C3A; }
-  .adm-event--jurnal  .adm-event-icon { background: #E0EEFF; color: #173C3A; }
-  .adm-event--anggota .adm-event-icon { background: #FCE4EC; color: #C2185B; }
-  .adm-event--kembali .adm-event-icon { background: #E4DDFB; color: #4A3AA7; }
-  .adm-stats .stat-card svg.stat-icon {
-    box-sizing: border-box;
-    padding: 10px;
-    border-radius: 50%;
-  }
-</style>
-{% endblock %}
-
 {% block content %}
 <section class="hero-banner adm-hero">
   <h3>Ringkasan hari ini • {{ tanggal_teks }}</h3>
@@ -80,7 +66,7 @@
           <span class="adm-popular-title">{{ b.judul }}</span>
           <span class="adm-popular-count">{{ b.jumlah }}×</span>
         </div>
-        <div class="adm-bar"><span style="--width: {{ b.persen }}%"></span></div>
+        <div class="adm-bar"><span data-width="{{ b.persen }}"></span></div>
       </li>
       {% endfor %}
     </ol>
@@ -124,5 +110,4 @@
 {% block extra_js %}
 {{ grafik|json_script:"data-grafik" }}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="{% static 'perpustakaan/js/admin-dashboard.js' %}"></script>
 {% endblock %}

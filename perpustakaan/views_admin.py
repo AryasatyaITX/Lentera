@@ -1,7 +1,8 @@
 import csv
 from datetime import timedelta
 import uuid
-from django.core.files.storage import FileSystemStorage
+from django import forms
+from django.core.files.storage import FileSystemStorage, default_storage
 from django.contrib import messages
 from django.db.models import Q
 from django.http import HttpResponse
@@ -11,8 +12,8 @@ from django.db.models import Count
 from django.db.models.functions import TruncDate
 from django.shortcuts import render
 from django.utils import timezone
+from .models import AchievementGambar, BukuDigital, CustomUser, Jurnal, Peminjaman, Notifikasi
 
-from .models import Bookmark, BukuDigital, CustomUser, Jurnal, Peminjaman, Notifikasi
 
 BULAN = [
     "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli",
@@ -21,7 +22,7 @@ BULAN = [
 HARI_SINGKAT = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"]
 
 # Dipakai kalau model Peminjaman tidak punya field jatuh_tempo.
-LAMA_PINJAM_HARI = 7
+LAMA_PINJAM_HARI = 14
 
 # Nama field di Peminjaman yang menunjuk ke CustomUser (otomatis terdeteksi).
 _USER_FIELD = next(
@@ -195,7 +196,7 @@ def kelola_buku(request):
         tahun_terbit = request.POST.get("tahun_terbit", "")
         cover_url = request.POST.get("cover", "")
         deskripsi = request.POST.get("deskripsi", "")
-        ISBN = request.POST.get("ISBN", "").strip()
+        isbn = request.POST.get("isbn", "").strip()
 
         id_item = f"BK-{uuid.uuid4().hex[:8].upper()}"
 
@@ -215,7 +216,7 @@ def kelola_buku(request):
             judul=judul,
             penulis=penulis,
             kategori=kategori,
-            ISBN=ISBN,
+            isbn=isbn,
             tahun_terbit=tahun_terbit,
             cover=cover_url,
             deskripsi=deskripsi,
@@ -313,7 +314,7 @@ def kelola_jurnal(request):
         tahun_terbit = request.POST.get("tahun_terbit", "")
         cover_url = request.POST.get("cover", "")
         link_akses = request.POST.get("link_akses", "")
-        ISSN = request.POST.get("ISSN", "").strip()
+        issn = request.POST.get("issn", "").strip()
 
         id_item = f"JR-{uuid.uuid4().hex[:8].upper()}"
 
@@ -335,7 +336,7 @@ def kelola_jurnal(request):
             id_item=id_item,
             judul=judul,
             penulis=penulis,\
-            ISSN=ISSN,            
+            issn=issn,            
             bidang_ilmu=bidang_ilmu,
             volume=volume,
             tahun_terbit=tahun_terbit,
@@ -441,6 +442,150 @@ def hapus_jurnal_massal(request):
         else:
             messages.error(request, "Belum ada jurnal yang dipilih.")
     return redirect("kelola_jurnal")
+
+# ==========================================
+# KELOLA ACHIEVEMENT (ADMIN)
+# ==========================================
+BATAS_GAMBAR_MB = 2
+KATEGORI_ACHIEVEMENT = ["Umum", "Langka", "Epik"]
+
+
+class AchievementForm(forms.ModelForm):
+    class Meta:
+        model = AchievementGambar
+        fields = ["nama", "kategori", "deskripsi", "gambar_terkunci", "gambar_terbuka"]
+        labels = {
+            "nama": "Nama",
+            "kategori": "Kategori",
+            "deskripsi": "Deskripsi",
+            "gambar_terkunci": "Gambar terkunci",
+            "gambar_terbuka": "Gambar terbuka",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["nama"].error_messages["required"] = "wajib diisi."
+        self.fields["kategori"].error_messages["invalid_choice"] = "pilih Umum, Langka, atau Epik."
+        for nama in ("gambar_terkunci", "gambar_terbuka"):
+            self.fields[nama].error_messages["required"] = "wajib diunggah."
+            self.fields[nama].error_messages["invalid_image"] = "harus berupa gambar (PNG, JPG, WEBP, atau GIF)."
+
+    def clean_nama(self):
+        nama = self.cleaned_data["nama"].strip()
+        ada = AchievementGambar.objects.filter(nama__iexact=nama)
+        if self.instance.pk:
+            ada = ada.exclude(pk=self.instance.pk)
+        if ada.exists():
+            raise forms.ValidationError("sudah dipakai achievement lain.")
+        return nama
+
+    def _cek_ukuran(self, field):
+        berkas = self.cleaned_data.get(field)
+        # hanya file yang baru diunggah yang punya content_type
+        if getattr(berkas, "content_type", None) and berkas.size > BATAS_GAMBAR_MB * 1024 * 1024:
+            raise forms.ValidationError(f"maksimal {BATAS_GAMBAR_MB} MB.")
+        return berkas
+
+    def clean_gambar_terkunci(self):
+        return self._cek_ukuran("gambar_terkunci")
+
+    def clean_gambar_terbuka(self):
+        return self._cek_ukuran("gambar_terbuka")
+
+
+def _galat_form(form):
+    teks = []
+    for nama, daftar in form.errors.items():
+        label = form.fields[nama].label if nama in form.fields else ""
+        teks.append(f"{label} {' '.join(daftar)}".strip())
+    return " · ".join(teks)
+
+
+def _hapus_berkas(ach):
+    for berkas in (ach.gambar_terkunci, ach.gambar_terbuka):
+        if berkas:
+            berkas.delete(save=False)
+
+
+@user_passes_test(_boleh_admin, login_url="login")
+def kelola_achievement(request):
+    if request.method == "POST":
+        form = AchievementForm(request.POST, request.FILES)
+        if form.is_valid():
+            ach = form.save()
+            messages.success(request, f"Achievement '{ach.nama}' berhasil ditambahkan.")
+        else:
+            messages.error(request, _galat_form(form))
+        return redirect("kelola_achievement")
+
+    q = request.GET.get("q", "").strip()
+    kategori = request.GET.get("kategori", "")
+    if kategori not in KATEGORI_ACHIEVEMENT:
+        kategori = ""
+
+    qs = AchievementGambar.objects.all()
+    if kategori:
+        qs = qs.filter(kategori=kategori)
+    if q:
+        qs = qs.filter(Q(nama__icontains=q) | Q(deskripsi__icontains=q))
+
+    hitung = dict(AchievementGambar.objects.values_list("kategori").annotate(Count("id")))
+    context = {
+        "achievement_list": qs,
+        "search_query": q,
+        "kategori_aktif": kategori,
+        "total": sum(hitung.values()),
+        "n_umum": hitung.get("Umum", 0),
+        "n_langka": hitung.get("Langka", 0),
+        "n_epik": hitung.get("Epik", 0),
+    }
+    return render(request, "perpustakaan/kelola_achievement.html", context)
+
+
+@user_passes_test(_boleh_admin, login_url="login")
+def edit_achievement(request, pk):
+    ach = get_object_or_404(AchievementGambar, pk=pk)
+    if request.method != "POST":
+        return redirect("kelola_achievement")
+
+    nama_lama = (ach.gambar_terkunci.name, ach.gambar_terbuka.name)
+    form = AchievementForm(request.POST, request.FILES, instance=ach)
+    if form.is_valid():
+        ach = form.save()
+        nama_baru = (ach.gambar_terkunci.name, ach.gambar_terbuka.name)
+        for lama, baru in zip(nama_lama, nama_baru):
+            if lama and lama != baru:          # gambar diganti: hapus file lama
+                default_storage.delete(lama)
+        messages.success(request, f"Achievement '{ach.nama}' berhasil diperbarui.")
+    else:
+        messages.error(request, _galat_form(form))
+    return redirect("kelola_achievement")
+
+
+@user_passes_test(_boleh_admin, login_url="login")
+def hapus_achievement(request, pk):
+    if request.method == "POST":
+        ach = get_object_or_404(AchievementGambar, pk=pk)
+        nama = ach.nama
+        _hapus_berkas(ach)
+        ach.delete()
+        messages.success(request, f"Achievement '{nama}' berhasil dihapus.")
+    return redirect("kelola_achievement")
+
+
+@user_passes_test(_boleh_admin, login_url="login")
+def hapus_achievement_massal(request):
+    if request.method == "POST":
+        ids = [int(i) for i in request.POST.getlist("ids") if i.isdigit()]
+        daftar = list(AchievementGambar.objects.filter(pk__in=ids))
+        if daftar:
+            for ach in daftar:
+                _hapus_berkas(ach)
+                ach.delete()
+            messages.success(request, f"{len(daftar)} achievement berhasil dihapus.")
+        else:
+            messages.error(request, "Belum ada achievement yang dipilih.")
+    return redirect("kelola_achievement")
 
 # ==========================================
 # KELOLA ANGGOTA (ADMIN)
