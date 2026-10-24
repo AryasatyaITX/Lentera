@@ -9,9 +9,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1013">
+    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1014">
     <script src="{% static 'perpustakaan/js/script.js' %}?v=4" defer></script>
-    <script src="{% static 'perpustakaan/js/buku.js' %}?v=4" defer></script>
+    <script src="{% static 'perpustakaan/js/buku.js' %}?v=5" defer></script>
 </head>
 <body>
 
@@ -44,11 +44,11 @@
                     {% if user.foto_profil %}
                         <img src="{{ user.foto_profil.url }}" alt="Avatar">
                     {% else %}
-                        {{ user.nama_tampilan|default:user.username|make_list|first|upper }}
+                        {{ user.nama_asli|make_list|first|upper }}
                     {% endif %}
                 </div>
                 <div>
-                    <h4>{{ user.nama_tampilan|default:user.username }}</h4>
+                    <h4>{{ user.nama_asli }}</h4>
                     <p>User / Anggota</p>
                 </div>
             </div>
@@ -101,10 +101,8 @@
                         <h1 class="bd-title" id="bd-title">{{ buku_db.judul|default:"Memuat buku..." }}</h1>
                         <p class="bd-author" id="bd-author">{% if buku_db %}{{ buku_db.penulis }}{% if buku_db.tahun %}, pertama terbit {{ buku_db.tahun }}{% endif %}{% else %}&nbsp;{% endif %}</p>
 
-                        <div class="bd-stats" id="bd-stats">
-                            {% if buku_db.tahun %}
-                            <span><i class="fas fa-calendar"></i> Tahun {{ buku_db.tahun }}</span>
-                            {% endif %}
+                        <div class="bd-stats" id="bd-stats" data-read-count="{{ jumlah_dibaca }}">
+                            <span><i class="fas fa-eye"></i> {{ jumlah_dibaca }}x Dibaca</span>
                         </div>
 
                         <div class="bd-actions">

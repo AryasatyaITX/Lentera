@@ -43,6 +43,37 @@ class LocalCatalogLoanFlowTests(TestCase):
         self.assertContains(history, 'Buku Tes Lokal')
         self.assertContains(history, 'Dikembalikan')
 
+    def test_catalog_lists_the_ten_prodi_without_machine_category(self):
+        catalog = self.client.get(reverse("katalog"))
+        self.assertEqual(
+            [label for _, label in catalog.context["kategori_list"]],
+            [
+                "Teknik Elektro",
+                "Teknik Sipil",
+                "Teknik Industri",
+                "Teknik Pertambangan",
+                "Teknik Kimia",
+                "Teknik Geologi",
+                "Arsitektur",
+                "Informatika",
+                "Sistem Informasi",
+                "Teknik Lingkungan",
+            ],
+        )
+        self.assertNotContains(catalog, "teknik_mesin")
+
+    def test_catalog_categories_scroll_and_card_category_sits_by_bookmark(self):
+        self.book.kategori = "teknik_sipil"
+        self.book.save(update_fields=["kategori"])
+
+        catalog = self.client.get(reverse("katalog"))
+
+        self.assertContains(catalog, 'data-scroll-kategori="-1"')
+        self.assertContains(catalog, 'data-scroll-kategori="1"')
+        self.assertContains(catalog, '<div class="catalog-card-footer">')
+        self.assertContains(catalog, '<span class="genre-chip">Teknik Sipil</span>')
+        self.assertContains(catalog, 'class="catalog-bookmark"')
+
     def test_catalog_category_filter_matches_admin_value_and_legacy_label(self):
         current_category_book = BukuDigital.objects.create(
             id_item='OL1234568W',
@@ -126,3 +157,95 @@ class CollectionPaginationTests(TestCase):
         second_page = self.client.get(reverse('riwayat'), {'page': 2})
         self.assertEqual(len(second_page.context['riwayat_list']), 2)
         self.assertContains(second_page, 'Halaman 2 dari 2')
+
+
+class ProfileAndAdminRegressionTests(TestCase):
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(
+            username="real-name-user",
+            password="test-password",
+            nama_tampilan="Nama Asli",
+        )
+        self.book = BukuDigital.objects.create(
+            id_item="OL9876543W",
+            judul="Buku Statistik",
+            penulis="Penulis",
+            kategori="sistem_informasi",
+        )
+
+    def test_profile_and_achievement_pages_render(self):
+        self.client.force_login(self.user)
+        profile = self.client.get(reverse("profil"))
+        self.assertEqual(profile.status_code, 200)
+
+        admin = CustomUser.objects.create_user(
+            username="achievement-admin",
+            password="test-password",
+            is_admin=True,
+        )
+        self.client.force_login(admin)
+        achievements = self.client.get(reverse("kelola_achievement"))
+        self.assertEqual(achievements.status_code, 200)
+
+    def test_book_detail_counts_reads_and_bookmark_toggle_persists(self):
+        self.client.force_login(self.user)
+        detail = self.client.get(reverse("buku_detail", args=[self.book.id_item]))
+        self.assertEqual(detail.context["jumlah_dibaca"], 0)
+        self.assertContains(detail, "fa-eye")
+        self.assertContains(detail, "0x Dibaca")
+
+        Peminjaman.objects.create(user=self.user, buku_digital=self.book)
+        detail = self.client.get(reverse("buku_detail", args=[self.book.id_item]))
+        self.assertEqual(detail.context["jumlah_dibaca"], 1)
+        self.assertContains(detail, "1x Dibaca")
+
+        bookmark_url = reverse("toggle_bookmark", args=[self.book.id_item])
+        saved = self.client.post(bookmark_url)
+        self.assertJSONEqual(saved.content, {"bookmarked": True})
+        self.assertTrue(Bookmark.objects.filter(user=self.user, buku_digital=self.book).exists())
+        bookmark_list = self.client.get(reverse("bookmarks"))
+        self.assertContains(bookmark_list, "Buku Statistik")
+
+        Bookmark.objects.create(user=self.user, buku_digital=self.book)
+        removed = self.client.post(bookmark_url)
+        self.assertJSONEqual(removed.content, {"bookmarked": False})
+        self.assertFalse(Bookmark.objects.filter(user=self.user, buku_digital=self.book).exists())
+
+    def test_admin_report_excludes_admin_loans(self):
+        admin = CustomUser.objects.create_user(
+            username="report-admin",
+            password="test-password",
+            is_admin=True,
+        )
+        Peminjaman.objects.create(user=self.user, buku_digital=self.book)
+        Peminjaman.objects.create(user=admin, buku_digital=self.book)
+
+        self.client.force_login(admin)
+        report = self.client.get(reverse("laporan_peminjaman"))
+        self.assertEqual(report.context["peminjaman_bulan_ini"], 1)
+        self.assertEqual(report.context["anggota_aktif"], 1)
+        self.assertEqual(report.context["total_pembaca"], 1)
+        self.assertEqual(
+            report.context["kategori_list"],
+            [{"nama": "Sistem Informasi", "jumlah": 1, "persen": 100}],
+        )
+
+    def test_leaderboard_assigns_rank_one_to_highest_exp(self):
+        first = CustomUser.objects.create_user(
+            username="leader-first",
+            password="test-password",
+            nama_tampilan="Reader First",
+            exp=500,
+        )
+        CustomUser.objects.create_user(
+            username="leader-second",
+            password="test-password",
+            nama_tampilan="Reader Second",
+            exp=250,
+        )
+        self.client.force_login(self.user)
+
+        leaderboard = self.client.get(reverse("leaderboard"))
+
+        self.assertEqual(leaderboard.context["podium"]["rank1"], first)
+        self.assertContains(leaderboard, "podium-avatar-initial")

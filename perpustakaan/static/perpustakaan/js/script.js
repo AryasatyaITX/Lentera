@@ -111,6 +111,35 @@ function togglePassword(inputId, iconElement) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+    const categoryStrip = document.getElementById("chip-scroll-area");
+    const categoryButtons = document.querySelectorAll("[data-scroll-kategori]");
+
+    function updateCategoryButtons() {
+        if (!categoryStrip) return;
+        const maxScroll = categoryStrip.scrollWidth - categoryStrip.clientWidth;
+        categoryButtons.forEach(function (button) {
+            const direction = Number(button.dataset.scrollKategori);
+            button.disabled = direction < 0
+                ? categoryStrip.scrollLeft <= 0
+                : categoryStrip.scrollLeft >= maxScroll - 1;
+        });
+    }
+
+    categoryButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+            if (!categoryStrip) return;
+            categoryStrip.scrollBy({
+                left: categoryStrip.clientWidth * Number(button.dataset.scrollKategori) * 0.75,
+                behavior: "smooth",
+            });
+        });
+    });
+    if (categoryStrip) {
+        categoryStrip.addEventListener("scroll", updateCategoryButtons, { passive: true });
+        window.addEventListener("resize", updateCategoryButtons);
+        updateCategoryButtons();
+    }
+
     const appLayout = document.getElementById("appLayout");
     const menuButton = document.getElementById("menuButton");
 

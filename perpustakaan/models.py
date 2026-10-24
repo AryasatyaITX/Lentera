@@ -6,6 +6,25 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
 
+KATEGORI_PRODI = [
+    ("teknik_elektro", "Teknik Elektro"),
+    ("teknik_sipil", "Teknik Sipil"),
+    ("teknik_industri", "Teknik Industri"),
+    ("teknik_pertambangan", "Teknik Pertambangan"),
+    ("teknik_kimia", "Teknik Kimia"),
+    ("teknik_geologi", "Teknik Geologi"),
+    ("arsitektur", "Arsitektur"),
+    ("informatika", "Informatika"),
+    ("sistem_informasi", "Sistem Informasi"),
+    ("teknik_lingkungan", "Teknik Lingkungan"),
+]
+
+
+def label_kategori(kategori):
+    label = dict(KATEGORI_PRODI).get(kategori)
+    return label or (kategori or "").replace("_", " ").title()
+
+
 # [ABSTRAKSI] ItemKatalog adalah abstract base class (Meta.abstract = True).
 # Class ini hanya cetak biru atribut umum item katalog dan tidak membuat tabel
 # sendiri. Objek langsung dari ItemKatalog tidak bisa dibuat, hanya subclass-nya.
@@ -32,6 +51,10 @@ class BukuDigital(ItemKatalog):
     ukuran_file = models.FloatField(default=2.5, help_text="dalam MB")
     format_file = models.CharField(max_length=10, default="PDF")
     deskripsi = models.TextField(blank=True, default="")
+
+    @property
+    def kategori_label(self):
+        return label_kategori(self.kategori)
 
     # [POLIMORFISME - overriding] Menimpa __str__ bawaan Model.
     def __str__(self):
@@ -178,14 +201,19 @@ class CustomUser(AbstractUser):
     pinned_achievements = models.TextField(blank=True, default="")
 
     # POLIMORFISME (method overriding): save() mengganti/menambahkan perilaku
-    # penyimpanan bawaan dengan membuat nama_tampilan sebelum menyimpan object.
+    # penyimpanan bawaan tanpa menghasilkan nama tampilan dari NIM.
     def save(self, *args, **kwargs):
-        if not self.nama_tampilan and self.username:
-            tiga_digit = (
-                self.username[-3:] if len(self.username) >= 3 else self.username
-            )
-            self.nama_tampilan = f"User_{tiga_digit}"
         super().save(*args, **kwargs)
+
+    @property
+    def nama_asli(self):
+        nama_lengkap = self.get_full_name().strip()
+        if nama_lengkap:
+            return nama_lengkap
+        nama = (self.nama_tampilan or "").strip()
+        if nama.startswith("User_") and nama[5:].isdigit():
+            return self.username
+        return nama or self.username
 
     # ENKAPSULASI PERILAKU: operasi perubahan EXP diletakkan pada object user,
     # sehingga aturan perubahan state tidak perlu ditulis ulang pemanggilnya.

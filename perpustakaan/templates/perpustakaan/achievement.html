@@ -99,11 +99,11 @@
                     {% if user.foto_profil %}
                         <img src="{{ user.foto_profil.url }}" alt="Avatar">
                     {% else %}
-                        {{ user.nama_tampilan|default:user.username|slice:2|upper }}
+                        {{ user.nama_asli|slice:2|upper }}
                     {% endif %}
                 </div>
                 <div>
-                    <h4>{{ user.nama_tampilan|default:user.username }}</h4>
+                    <h4>{{ user.nama_asli }}</h4>
                     <p>User / Anggota</p>
                 </div>
             </div>

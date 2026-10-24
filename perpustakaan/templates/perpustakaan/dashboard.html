@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1021">
+    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1022">
     <script src="{% static 'perpustakaan/js/script.js' %}?v=5" defer></script>
     <script src="{% static 'perpustakaan/js/buku.js' %}?v=14" defer></script>
 </head>
@@ -45,11 +45,11 @@
                     {% if user.foto_profil %}
                         <img src="{{ user.foto_profil.url }}" alt="Avatar">
                     {% else %}
-                        {{ user.nama_tampilan|default:user.username|slice:2|upper }}
+                        {{ user.nama_asli|slice:2|upper }}
                     {% endif %}
                 </div>
                 <div>
-                    <h4>{{ user.nama_tampilan|default:user.username }}</h4>
+                    <h4>{{ user.nama_asli }}</h4>
                     <p>User / Anggota</p>
                 </div>
             </div>
@@ -65,7 +65,7 @@
                     <div class="greeting">
                         <h4>Lentera / Anggota</h4>
                         <h1 class="page-title-space">
-                            <span id="salam">Selamat Datang</span>, {{ user.nama_tampilan|default:user.username }}
+                            <span id="salam">Selamat Datang</span>, {{ user.nama_asli }}
                         </h1>
                         <p>Siap menemukan bacaan baru hari ini?</p>
                     </div>
@@ -76,7 +76,7 @@
                         {% if user.foto_profil %}
                             <img src="{{ user.foto_profil.url }}" alt="Avatar">
                         {% else %}
-                            {{ user.nama_tampilan|default:user.username|slice:2|upper }}
+                            {{ user.nama_asli|slice:2|upper }}
                         {% endif %}
                     </div>
                     <a href="{% url 'logout' %}"
@@ -207,13 +207,15 @@
                                     <div class="book-cover book-cover-empty">No Cover</div>
                                 {% endif %}
                                 {% if buku.kategori %}
-                                    <span class="genre-chip">{{ buku.kategori }}</span>
+                                    <span class="genre-chip">{{ buku.kategori_label }}</span>
                                 {% endif %}
                             </div>
                             <div class="book-info">
                                 <p class="type">Buku Digital</p>
                                 <h3>{{ buku.judul|truncatechars:50 }}</h3>
-                                <p class="author">{{ buku.penulis }}{% if buku.tahun_terbit %} • {{ buku.tahun_terbit }}{% endif %}</p>
+                                <p class="author book-author-row">
+                                    <span class="book-author" title="{{ buku.penulis }}">{{ buku.penulis }}</span>{% if buku.tahun_terbit %}<span class="book-year">• {{ buku.tahun_terbit }}</span>{% endif %}
+                                </p>
                             </div>
                         </a>
                         {% empty %}

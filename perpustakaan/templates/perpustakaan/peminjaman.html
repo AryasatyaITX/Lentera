@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Peminjaman</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.google s.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -44,11 +44,11 @@
                     {% if user.foto_profil %}
                         <img src="{{ user.foto_profil.url }}" alt="Avatar">
                     {% else %}
-                        {{ user.nama_tampilan|default:user.username|slice:2|upper }}
+                        {{ user.nama_asli|slice:2|upper }}
                     {% endif %}
                 </div>
                 <div>
-                    <h4>{{ user.nama_tampilan|default:user.username }}</h4>
+                    <h4>{{ user.nama_asli }}</h4>
                     <p>User / Anggota</p>
                 </div>
             </div>
@@ -74,7 +74,7 @@
                             {% if user.foto_profil %}
                                 <img src="{{ user.foto_profil.url }}" alt="Avatar">
                             {% else %}
-                                {{ user.nama_tampilan|default:user.username|slice:2|upper }}
+                                {{ user.nama_asli|slice:2|upper }}
                             {% endif %}
                         </div>
                         <a href="{% url 'logout' %}" style="margin-left:15px; color:#dc2626; font-size: 20px;" title="Logout"><i class="fas fa-sign-out-alt"></i></a>

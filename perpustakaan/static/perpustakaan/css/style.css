@@ -653,6 +653,10 @@ a.stat-card:hover {
     font-size: 14px;
     outline: none;
 }
+.search-box input:focus-visible {
+    outline: 2px solid #173C3A;
+    outline-offset: 2px;
+}
 
 .btn-filter {
     padding: 0 25px;
@@ -1599,31 +1603,16 @@ a.stat-card:hover {
 ========================================================= */
 
 /* ---------- Katalog ---------- */
-.filter-panel {
-    display: none;
-    align-items: center;
-    gap: 14px;
-    background: #fff;
-    border: 1px solid #E5E5D8;
-    border-radius: 12px;
-    padding: 14px 20px;
-    margin-bottom: 18px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #4A4A3F;
-}
-.filter-panel.open { display: flex; }
-.filter-panel select {
-    padding: 8px 12px;
-    border: 1px solid #E5E5D8;
-    border-radius: 8px;
-    font-size: 13px;
-    background: #fff;
-    color: #173C3A;
-}
-
-.chip-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+.chip-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; min-width: 0; }
+.chip-scroll-area { min-width: 0; flex: 1; overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: none; -ms-overflow-style: none; }
+.chip-scroll-area::-webkit-scrollbar { display: none; }
+.chip-row { display: flex; width: max-content; gap: 8px; }
+.chip-scroll-btn { display: inline-flex; flex: 0 0 36px; width: 36px; height: 36px; align-items: center; justify-content: center; border: 1px solid #E5E5D8; border-radius: 50%; background: #fff; color: #173C3A; cursor: pointer; }
+.chip-scroll-btn:hover:not(:disabled) { background: #173C3A; color: #D4F838; }
+.chip-scroll-btn:disabled { opacity: .4; cursor: default; }
 .chip {
+    width: auto;
+    min-width: max-content;
     border: 1px solid #E5E5D8;
     background: #fff;
     color: #4A4A3F;
@@ -1633,6 +1622,7 @@ a.stat-card:hover {
     font-weight: 700;
     cursor: pointer;
     transition: background .2s, color .2s, border-color .2s;
+    white-space: nowrap;
 }
 .chip:hover { border-color: #173C3A; }
 .chip.active { background: #173C3A; border-color: #173C3A; color: #D4F838; }
@@ -2515,7 +2505,7 @@ body {
 
 .genre-chip {
     position: absolute;
-    top: 10px; left: 10px;
+    bottom: 10px; left: 10px;
     background: #e7f0fe;
     color: #2563eb;
     font-size: 10px;
@@ -2526,6 +2516,13 @@ body {
     border-radius: 999px;
     box-shadow: 0 2px 8px rgba(0,0,0,.25);
 }
+
+.catalog-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; padding: 0 14px 14px; font-size: 12px; }
+.catalog-card-footer .genre-chip { position: static; display: block; min-width: 0; max-width: calc(100% - 34px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-shadow: none; }
+.catalog-card-footer .catalog-bookmark { flex: 0 0 auto; }
+.book-author-row { display: flex; align-items: baseline; gap: 5px; min-width: 0; white-space: nowrap; }
+.book-author { display: block; min-width: 0; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; }
+.book-year { flex: 0 0 auto; }
 
 /* Grid katalog: 5 per baris di desktop, menyesuaikan di layar kecil */
 .grid-buku-5 {

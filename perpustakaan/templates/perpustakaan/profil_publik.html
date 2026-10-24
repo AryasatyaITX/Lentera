@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profil {{ profile_user.nama_tampilan|default:profile_user.username }} - Lentera</title>
+    <title>Profil {{ profile_user.nama_asli }} - Lentera</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
@@ -102,11 +102,11 @@
                     {% if user.foto_profil %}
                         <img src="{{ user.foto_profil.url }}" alt="Avatar" style="border-radius: 50% !important;">
                     {% else %}
-                        {{ user.nama_tampilan|default:user.username|make_list|first|upper }}
+                        {{ user.nama_asli|make_list|first|upper }}
                     {% endif %}
                 </div>
                 <div>
-                    <h4>{{ user.nama_tampilan|default:user.username }}</h4>
+                    <h4>{{ user.nama_asli }}</h4>
                     <p>User / Anggota</p>
                 </div>
             </div>
@@ -149,10 +149,10 @@
                             {% if profile_user.foto_profil %}
                                 <img src="{{ profile_user.foto_profil.url }}" alt="Avatar">
                             {% else %}
-                                {{ profile_user.nama_tampilan|default:profile_user.username|slice:":2"|upper }}
+                                {{ profile_user.nama_asli|slice:":2"|upper }}
                             {% endif %}
                         </div>
-                        <h2 class="pp-name">{{ profile_user.nama_tampilan|default:profile_user.username }}</h2>
+                        <h2 class="pp-name">{{ profile_user.nama_asli }}</h2>
                         <p class="pp-since">Anggota sejak {{ profile_user.date_joined|date:"F Y" }}</p>
 
                         <div class="pp-pills">
@@ -183,9 +183,9 @@
 
                         <p class="pp-compare">
                             {% if selisih > 0 %}
-                                Kamu {{ selisih_abs }} EXP di bawah {{ profile_user.nama_tampilan|default:profile_user.username }}.
+                                Kamu {{ selisih_abs }} EXP di bawah {{ profile_user.nama_asli }}.
                             {% elif selisih == 0 %}
-                                Kamu {{ selisih_abs }} EXP di atas {{ profile_user.nama_tampilan|default:profile_user.username }}.
+                                Kamu {{ selisih_abs }} EXP di atas {{ profile_user.nama_asli }}.
                             {% else %}
                                 EXP kalian sama.
                             {% endif %}

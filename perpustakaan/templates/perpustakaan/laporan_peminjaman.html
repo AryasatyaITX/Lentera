@@ -36,11 +36,13 @@
   <!-- Kartu statistik -->
   <section class="ap-stats" aria-label="Ringkasan laporan">
     <div class="ap-stat c-green">
+      <span class="ap-stat-ico"><i class="fa-solid fa-book-reader"></i></span>
       <h4>Peminjaman bulan ini</h4>
       <h2>{{ peminjaman_bulan_ini|default:0 }}</h2>
       <p>transaksi tercatat</p>
     </div>
     <div class="ap-stat c-blue">
+      <span class="ap-stat-ico"><i class="fa-solid fa-file-lines"></i></span>
       <h4>Jurnal tersedia</h4>
       <h2>{{ jurnal_tersedia|default:0 }}</h2>
       <p>saat ini</p>
@@ -52,6 +54,7 @@
       <p>dari {{ total_pembaca|default:0 }} pembaca</p>
     </div>
     <div class="ap-stat c-purple">
+      <span class="ap-stat-ico"><i class="fa-solid fa-book"></i></span>
       <h4>Buku tersedia</h4>
       <h2>{{ buku_tersedia|default:0 }}</h2>
       <p>saat ini</p>
@@ -79,7 +82,7 @@
     <div class="ap-panel">
       <div class="ap-panel-head">
         <div>
-          <span class="ap-eyebrow">Aktivitas peminjaman</span>
+          <span class="ap-eyebrow">Distribusi peminjaman</span>
           <h3>Buku per kategori</h3>
         </div>
       </div>

@@ -17,7 +17,7 @@ from django.contrib import messages
 from django.http import JsonResponse, Http404
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import ensure_csrf_cookie
-from .models import CustomUser, BukuDigital, Jurnal, Peminjaman, Bookmark, Pengaturan, Achievement, AchievementGambar, UserAchievement, Notifikasi
+from .models import CustomUser, BukuDigital, Jurnal, Peminjaman, Bookmark, Pengaturan, Achievement, AchievementGambar, UserAchievement, Notifikasi, KATEGORI_PRODI
 from django.db.models import Count, Q
 import json
 import os
@@ -45,29 +45,9 @@ OTP_BERLAKU_DETIK = 300
 OTP_JEDA_KIRIM_ULANG = 60        
 OTP_MAKS_SALAH = 5     
 
-KATEGORI = [
-    ("teknik_sipil", "Teknik Sipil"),
-    ("teknik_industri", "Teknik Industri"),
-    ("teknik_lingkungan", "Teknik Lingkungan"),
-    ("teknik_pertambangan", "Teknik Pertambangan"),
-    ("teknik_kimia", "Teknik Kimia"),
-    ("teknik_elektro", "Teknik Elektro"),
-    ("teknik_geologi", "Teknik Geologi"),
-    ("teknik_mesin", "Teknik Mesin"),
-    ("sistem_informasi", "Sistem Informasi"),
-    ("informatika", "Informatika"),
-]
+KATEGORI = KATEGORI_PRODI
 KATEGORI_FILTER_TERMS = {
-    "teknik_sipil": ("teknik_sipil", "teknik sipil"),
-    "teknik_industri": ("teknik_industri", "teknik industri"),
-    "teknik_lingkungan": ("teknik_lingkungan", "teknik lingkungan"),
-    "teknik_pertambangan": ("teknik_pertambangan", "teknik pertambangan"),
-    "teknik_kimia": ("teknik_kimia", "teknik kimia"),
-    "teknik_elektro": ("teknik_elektro", "teknik elektro"),
-    "teknik_geologi": ("teknik_geologi", "teknik geologi"),
-    "teknik_mesin": ("teknik_mesin", "teknik mesin"),
-    "sistem_informasi": ("sistem_informasi", "sistem informasi"),
-    "informatika": ("informatika",),
+    kode: (kode, label.casefold()) for kode, label in KATEGORI
 }
 DEFAULT_KATEGORI = "teknik_sipil"
 BAHASA = [("", "Semua bahasa"), ("ind", "Indonesia"), ("eng", "Inggris")]
@@ -358,9 +338,15 @@ def register_view(request):
             messages.error(request, galat)
             return render(request, "perpustakaan/register.html")
 
+        nama_tampilan = request.POST.get("nama_tampilan", "").strip()
+        if not nama_tampilan:
+            messages.error(request, "Nama asli wajib diisi.")
+            return render(request, "perpustakaan/register.html")
+
         CustomUser.objects.create_user(
             username=nim,
             email=email,
+            nama_tampilan=nama_tampilan,
             password=password,
             is_member=True,
             is_admin=False,
@@ -422,7 +408,7 @@ def dashboard(request):
         bacaan_terakhir = {
             "buku_digital": buku,
             "progress_baca": p.progress_baca,
-            "kategori_label": str(buku.kategori) if buku.kategori else "",
+            "kategori_label": buku.kategori_label,
             "sisa_hari": sisa_hari,
             "terakhir_teks": teks_terakhir(p.tanggal_pinjam),
         }
@@ -475,7 +461,8 @@ def katalog_view(request):
 
     if aktif_kategori and aktif_kategori.lower() != "semua":
         istilah_kategori = KATEGORI_FILTER_TERMS.get(
-            aktif_kategori.lower(), (aktif_kategori,)
+            aktif_kategori.lower(),
+            (aktif_kategori, aktif_kategori.replace("_", " ")),
         )
         filter_kategori = Q()
         for istilah in istilah_kategori:
@@ -493,7 +480,6 @@ def katalog_view(request):
     context = {
         "user": request.user,
         "kategori_list": KATEGORI,
-        "bahasa_list": BAHASA,
         "default_kategori": aktif_kategori if aktif_kategori else "semua",
         "search_query": search_query,
         "tersimpan_ids": list(
@@ -513,8 +499,8 @@ def katalog_view(request):
                 'want': None,
                 'akses': '',
                 'deskripsi': buku.deskripsi,
-                'kategori': buku.kategori or '',
-                'subjek': [buku.kategori] if buku.kategori else [],
+                'kategori': buku.kategori_label,
+                'subjek': [buku.kategori_label] if buku.kategori else [],
             }
             for buku in buku_queryset.order_by('judul')
         ],
@@ -585,6 +571,7 @@ def buku_detail(request, olid):
             else None
         ),
         "bookmarked": Bookmark.objects.filter(user=user, buku_digital_id=olid).exists(),
+        "jumlah_dibaca": Peminjaman.objects.filter(buku_digital_id=olid).count(),
         "pinjam_aktif": pinjam_aktif,
         "jatuh_tempo": _jatuh_tempo(pinjam_aktif) if pinjam_aktif else None,
         "jumlah_aktif": jumlah_aktif,
@@ -676,14 +663,14 @@ def pinjam_buku(request, olid):
 def toggle_bookmark(request, olid):
     if not ITEM_ID_RE.match(olid):
         raise Http404
-    ada = Bookmark.objects.filter(user=request.user, buku_digital_id=olid).first()
-    if ada:
-        ada.delete()
+    bookmarks = Bookmark.objects.filter(user=request.user, buku_digital_id=olid)
+    if bookmarks.exists():
+        bookmarks.delete()
         return JsonResponse({"bookmarked": False})
     buku = _pastikan_buku(request, olid)
     if buku is None:
         return JsonResponse({"error": "Data buku belum dimuat."}, status=400)
-    Bookmark.objects.create(user=request.user, buku_digital=buku)
+    Bookmark.objects.get_or_create(user=request.user, buku_digital=buku)
     return JsonResponse({"bookmarked": True})
 
 
@@ -923,7 +910,9 @@ def riwayat_view(request):
 
 @login_required(login_url="login")
 def leaderboard_view(request):
-    semua_user = CustomUser.objects.filter(is_member=True, is_admin=False, is_staff=False).order_by("-exp")
+    semua_user = CustomUser.objects.filter(
+        is_member=True, is_admin=False, is_staff=False, is_superuser=False
+    ).order_by("-exp", "pk")
     top_3 = semua_user[:3]
     other_users = semua_user[3:10]
     max_exp = top_3[0].exp if top_3 else 1
@@ -1191,7 +1180,14 @@ def profil_user_detail_view(request, username):
             break
 
     favorit = [
-        row["buku_digital__kategori"].replace("_", " ").title()
+        next(
+            (
+                label
+                for kode, label in KATEGORI
+                if kode == row["buku_digital__kategori"]
+            ),
+            row["buku_digital__kategori"].replace("_", " ").title(),
+        )
         for row in (
             selesai.exclude(buku_digital__kategori="")
             .order_by()
