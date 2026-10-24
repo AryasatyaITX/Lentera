@@ -139,7 +139,13 @@
                         {% endif %}
                     </span>
 
-                    <div class="acv-icon"><i class="fas {{ a.ikon }}"></i></div>
+                    <div class="acv-icon">
+                        {% if a.gambar %}
+                            <img src="{{ a.gambar }}" alt="" width="40" height="40" style="border-radius:10px;object-fit:cover;">
+                        {% else %}
+                            <i class="fas {{ a.ikon }}"></i>
+                        {% endif %}
+                    </div>
                     
                     <h3 class="acv-name">
                         <span>{{ a.nama }}</span>

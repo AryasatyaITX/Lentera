@@ -242,11 +242,24 @@ def path_gambar_terbuka(instance, filename):
 class AchievementGambar(models.Model):
     KATEGORI_CHOICES = [("Umum", "Umum"), ("Langka", "Langka"), ("Epik", "Epik")]
 
+    TIPE_SYARAT_CHOICES = [
+        ("buku_selesai", "Jumlah buku yang diselesaikan"),
+        ("buku_dimulai", "Jumlah judul buku berbeda yang dibaca"),
+        ("genre", "Jumlah genre berbeda yang dibaca"),
+        ("pinjam_total", "Total peminjaman"),
+        ("pinjam_selesai", "Peminjaman yang diselesaikan"),
+        ("bookmark", "Jumlah bookmark"),
+        ("exp", "Total EXP"),
+        ("streak", "Hari beruntun membaca (streak)"),
+    ]
+
     nama = models.CharField(max_length=100, unique=True)
     kategori = models.CharField(max_length=10, choices=KATEGORI_CHOICES, default="Umum")
     deskripsi = models.TextField(blank=True, default="")
     gambar_terkunci = models.ImageField(upload_to=path_gambar_terkunci)
     gambar_terbuka = models.ImageField(upload_to=path_gambar_terbuka)
+    tipe_syarat = models.CharField(max_length=20, choices=TIPE_SYARAT_CHOICES, blank=True, default="")
+    target = models.PositiveIntegerField(default=1)
     dibuat = models.DateTimeField(default=timezone.now)
     class Meta:
         ordering = ["-dibuat", "-id"]

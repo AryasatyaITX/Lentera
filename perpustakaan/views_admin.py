@@ -455,6 +455,8 @@ class AchievementForm(forms.ModelForm):
         model = AchievementGambar
         fields = ["nama", "kategori", "deskripsi", "gambar_terkunci", "gambar_terbuka"]
         labels = {
+            "tipe_syarat": "Jenis syarat",   
+            "target": "Target",   
             "nama": "Nama",
             "kategori": "Kategori",
             "deskripsi": "Deskripsi",
@@ -478,6 +480,12 @@ class AchievementForm(forms.ModelForm):
         if ada.exists():
             raise forms.ValidationError("sudah dipakai achievement lain.")
         return nama
+
+    def clean_target(self):
+        target = self.cleaned_data.get("target") or 0
+        if target < 1:
+            raise forms.ValidationError("minimal 1.")
+        return target
 
     def _cek_ukuran(self, field):
         berkas = self.cleaned_data.get(field)

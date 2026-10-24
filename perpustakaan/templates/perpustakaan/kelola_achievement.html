@@ -91,6 +91,8 @@
                     data-nama="{{ a.nama }}"
                     data-kategori="{{ a.kategori }}"
                     data-deskripsi="{{ a.deskripsi }}"
+                    data-tipe="{{ a.tipe_syarat }}"
+                    data-target="{{ a.target }}"
                     data-gambar_terkunci="{% if a.gambar_terkunci %}{{ a.gambar_terkunci.url }}{% endif %}"
                     data-gambar_terbuka="{% if a.gambar_terbuka %}{{ a.gambar_terbuka.url }}{% endif %}"><i class="fa-regular fa-pen-to-square"></i></button>
             <form action="{% url 'hapus_achievement' a.pk %}" method="POST" data-confirm-delete>
@@ -137,6 +139,27 @@
       <div class="nm-field">
         <label for="achDeskripsi">Deskripsi</label>
         <textarea id="achDeskripsi" name="deskripsi" rows="3" placeholder="Cara mendapatkan achievement ini..."></textarea>
+      </div>
+
+      <div class="nm-row">
+        <div class="nm-field">
+          <label for="achTipe">Jenis syarat</label>
+          <select id="achTipe" name="tipe_syarat">
+            <option value="">— Tanpa syarat (selalu terkunci) —</option>
+            <option value="buku_selesai">Buku yang diselesaikan</option>
+            <option value="buku_dimulai">Judul buku berbeda yang dibaca</option>
+            <option value="genre">Genre berbeda yang dibaca</option>
+            <option value="pinjam_total">Total peminjaman</option>
+            <option value="pinjam_selesai">Peminjaman yang diselesaikan</option>
+            <option value="bookmark">Jumlah bookmark</option>
+            <option value="exp">Total EXP</option>
+            <option value="streak">Hari beruntun membaca (streak)</option>
+          </select>
+        </div>
+        <div class="nm-field">
+          <label for="achTarget">Target (angka)</label>
+          <input type="number" id="achTarget" name="target" min="1" value="1" required>
+        </div>
       </div>
 
       <div class="nm-row">
@@ -194,6 +217,27 @@
       </div>
 
       <div class="nm-row">
+        <div class="nm-field">
+          <label for="editTipe">Jenis syarat</label>
+          <select id="editTipe" name="tipe_syarat">
+            <option value="">— Tanpa syarat (selalu terkunci) —</option>
+            <option value="buku_selesai">Buku yang diselesaikan</option>
+            <option value="buku_dimulai">Judul buku berbeda yang dibaca</option>
+            <option value="genre">Genre berbeda yang dibaca</option>
+            <option value="pinjam_total">Total peminjaman</option>
+            <option value="pinjam_selesai">Peminjaman yang diselesaikan</option>
+            <option value="bookmark">Jumlah bookmark</option>
+            <option value="exp">Total EXP</option>
+            <option value="streak">Hari beruntun membaca (streak)</option>
+          </select>
+        </div>
+        <div class="nm-field">
+          <label for="editTarget">Target (angka)</label>
+          <input type="number" id="editTarget" name="target" min="1" value="1" required>
+        </div>
+      </div>
+
+      <div class="nm-row">
         <div class="nm-field acv-upload">
           <label for="editTerkunci">Gambar terkunci</label>
           <div class="acv-upload-box"><img class="acv-preview is-hidden" alt=""><i class="fa-solid fa-lock acv-ph"></i></div>
@@ -240,4 +284,16 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Isi field syarat saat modal edit dibuka (field lain diisi oleh script.js)
+  document.querySelectorAll('.btn-edit').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.getElementById('editTipe').value = btn.dataset.tipe || '';
+      document.getElementById('editTarget').value = btn.dataset.target || 1;
+    });
+  });
+</script>
 {% endblock %}
