@@ -33,7 +33,7 @@
         .acv-card.terbuka:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); border-color: #b8df25; }
         
         /* State saat card disematkan (Pinned) */
-        .acv-card.pinned { border-color: #173C3A !important; background: #f0fdf4 !important; box-shadow: 0 0 0 2px #173C3A; }
+        .acv-card.pinned { border-color: #173C3A !important; box-shadow: 0 0 0 2px #173C3A; }
 
         .acv-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: #ECEFE4; color: #A0A89A; font-size: 15px; margin-bottom: 14px; }
         .acv-card.terbuka .acv-icon { background: #D4F838; color: #112222; }
@@ -49,6 +49,20 @@
         .acv-progress { font-size: 11px; color: #8A8A7A; margin-top: 6px; }
 
         .acv-empty { grid-column: 1 / -1; text-align: center; color: #8A8A7A; padding: 40px 0; font-size: 14px; }
+
+        /* Warna per kategori: Umum hijau, Langka biru, Epik ungu */
+        .acv-card { --k-bg: #F2FBF5; --k-bg-on: #DCFCE7; --k-line: #BBF7D0; --k-line-on: #22C55E; --k-main: #22C55E; --k-dark: #166534; }
+        .acv-card[data-kategori="langka"] { --k-bg: #F3F8FF; --k-bg-on: #DBEAFE; --k-line: #BFDBFE; --k-line-on: #3B82F6; --k-main: #3B82F6; --k-dark: #1D4ED8; }
+        .acv-card[data-kategori="epik"] { --k-bg: #F7F5FF; --k-bg-on: #EDE9FE; --k-line: #DDD6FE; --k-line-on: #8B5CF6; --k-main: #8B5CF6; --k-dark: #6D28D9; }
+
+        .acv-card { background: var(--k-bg); border-color: var(--k-line); }
+        .acv-card.terbuka { background: var(--k-bg-on); border-color: var(--k-line-on); }
+        .acv-card.terbuka:hover { border-color: var(--k-dark); }
+        .acv-icon { background: var(--k-line); color: var(--k-dark); }
+        .acv-card.terbuka .acv-icon { background: var(--k-main); color: #fff; }
+        .acv-card.terbuka .acv-status { color: var(--k-dark); }
+        .acv-bar { background: rgba(255,255,255,0.75); }
+        .acv-bar span { background: var(--k-main); }
 
         /* Toast Notifikasi Kecil */
         #toastNotif {
@@ -151,15 +165,15 @@
                         <span>{{ a.nama }}</span>
                         <!-- Label Kategori di Samping Nama -->
                         {% if a.kategori == 'Epik' %}
-                            <span style="font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: #fbbf24; color: #78350f; display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0;">
+                            <span style="font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: #8B5CF6; color: #fff; display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0;">
                                 <i class="fas fa-crown" style="font-size: 7px;"></i> EPIK
                             </span>
                         {% elif a.kategori == 'Langka' %}
-                            <span style="font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: #38bdf8; color: #0c4a6e; display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0;">
+                            <span style="font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: #3B82F6; color: #fff; display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0;">
                                 <i class="fas fa-gem" style="font-size: 7px;"></i> LANGKA
                             </span>
                         {% else %}
-                            <span style="font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: #e2e8f0; color: #475569; flex-shrink: 0;">
+                            <span style="font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: #22C55E; color: #fff; flex-shrink: 0;">
                                 UMUM
                             </span>
                         {% endif %}
