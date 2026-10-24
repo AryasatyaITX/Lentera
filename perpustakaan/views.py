@@ -17,7 +17,7 @@ from django.contrib import messages
 from django.http import JsonResponse, Http404
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import ensure_csrf_cookie
-from .models import CustomUser, BukuDigital, Jurnal, Peminjaman, Bookmark, Pengaturan, Achievement, UserAchievement, Notifikasi
+from .models import CustomUser, BukuDigital, Jurnal, Peminjaman, Bookmark, Pengaturan, Achievement, AchievementGambar, UserAchievement, Notifikasi
 from django.db.models import Count, Q
 import json
 import os
@@ -46,24 +46,30 @@ OTP_JEDA_KIRIM_ULANG = 60
 OTP_MAKS_SALAH = 5     
 
 KATEGORI = [
-    ("engineering", "Engineering"),
-    ("computer_science", "Computer Science"),
-    ("matematika", "Matematika"),
-    ("fisika", "Fisika"),
-    ("bisnis", "Bisnis"),
-    ("fiksi", "Fiksi"),
-    ("sejarah", "Sejarah"),
+    ("teknik_sipil", "Teknik Sipil"),
+    ("teknik_industri", "Teknik Industri"),
+    ("teknik_lingkungan", "Teknik Lingkungan"),
+    ("teknik_pertambangan", "Teknik Pertambangan"),
+    ("teknik_kimia", "Teknik Kimia"),
+    ("teknik_elektro", "Teknik Elektro"),
+    ("teknik_geologi", "Teknik Geologi"),
+    ("teknik_mesin", "Teknik Mesin"),
+    ("sistem_informasi", "Sistem Informasi"),
+    ("informatika", "Informatika"),
 ]
 KATEGORI_FILTER_TERMS = {
-    "engineering": ("engineering",),
-    "computer_science": ("computer_science", "computer science"),
-    "matematika": ("matematika", "mathematics"),
-    "fisika": ("fisika", "physics"),
-    "bisnis": ("bisnis", "business"),
-    "fiksi": ("fiksi", "fiction"),
-    "sejarah": ("sejarah", "history"),
+    "teknik_sipil": ("teknik_sipil", "teknik sipil"),
+    "teknik_industri": ("teknik_industri", "teknik industri"),
+    "teknik_lingkungan": ("teknik_lingkungan", "teknik lingkungan"),
+    "teknik_pertambangan": ("teknik_pertambangan", "teknik pertambangan"),
+    "teknik_kimia": ("teknik_kimia", "teknik kimia"),
+    "teknik_elektro": ("teknik_elektro", "teknik elektro"),
+    "teknik_geologi": ("teknik_geologi", "teknik geologi"),
+    "teknik_mesin": ("teknik_mesin", "teknik mesin"),
+    "sistem_informasi": ("sistem_informasi", "sistem informasi"),
+    "informatika": ("informatika",),
 }
-DEFAULT_KATEGORI = "engineering"
+DEFAULT_KATEGORI = "teknik_sipil"
 BAHASA = [("", "Semua bahasa"), ("ind", "Indonesia"), ("eng", "Inggris")]
 
 def validasi_password(pw):
@@ -463,7 +469,7 @@ def katalog_view(request):
     aktif_kategori = kategori_pilihan
     if search_query and (not kategori_pilihan or kategori_pilihan.lower() == "semua"):
         for nilai_kat, label_kat in KATEGORI:
-            if search_query.lower() in nilai_kat.lower() or search_query.lower() in label_kat.lower():
+            if search_query.lower() in (nilai_kat.lower(), label_kat.lower()):
                 aktif_kategori = nilai_kat
                 break
 
@@ -1086,7 +1092,7 @@ def _achievements(user):
             "kategori": kategori,
         }
 
-    return [
+    daftar = [
         item("Halaman Pertama", "fa-book-open", "Selesaikan sesi baca buku pertamamu.", 0, 1, "Umum"),
         item("Tunas Literasi", "fa-seedling", "Selesaikan 5 sesi baca buku.", 0, 5, "Umum"),
         item("Rak Mulai Terisi", "fa-leaf", "Selesaikan 10 sesi baca buku.", 0, 10, "Umum"),
@@ -1125,6 +1131,47 @@ def _achievements(user):
         item("Bagian demi Bagian", "fa-puzzle-piece", "Selesaikan 15 bagian buku dan jurnal.", 0, 15, "Epik"),
     ]
 
+    metrik = {
+        "buku_selesai": buku_selesai,
+        "buku_dimulai": buku_dimulai,
+        "genre": genre,
+        "pinjam_total": pinjam_total,
+        "pinjam_selesai": pinjam_selesai,
+        "bookmark": bookmark,
+        "exp": exp,
+        "streak": hari,
+    }
+
+    def url_gambar(g, didapat):
+        berkas = g.gambar_terbuka if didapat else g.gambar_terkunci
+        return berkas.url if berkas else ""
+
+    dari_admin = {g.nama: g for g in AchievementGambar.objects.all()}
+    hasil = []
+
+    for a in daftar:
+        g = dari_admin.pop(a["nama"], None)
+        if g:
+            if g.tipe_syarat in metrik:
+                a = item(a["nama"], a["ikon"], g.deskripsi or a["syarat"],
+                         metrik[g.tipe_syarat], max(g.target, 1), g.kategori)
+            else:
+                a["kategori"] = g.kategori
+                if g.deskripsi:
+                    a["syarat"] = g.deskripsi
+            a["gambar"] = url_gambar(g, a["didapat"])
+        else:
+            a["gambar"] = ""
+        hasil.append(a)
+
+    for g in dari_admin.values():
+        a = item(g.nama, "fa-trophy", g.deskripsi or "Belum ada deskripsi.",
+                 metrik.get(g.tipe_syarat, 0), max(g.target, 1), g.kategori)
+        a["gambar"] = url_gambar(g, a["didapat"])
+        hasil.append(a)
+
+    return hasil
+
 @login_required(login_url="login")
 def profil_user_detail_view(request, username):
     target = get_object_or_404(CustomUser, username=username)
@@ -1144,7 +1191,7 @@ def profil_user_detail_view(request, username):
             break
 
     favorit = [
-        row["buku_digital__kategori"].replace("_", " ").capitalize()
+        row["buku_digital__kategori"].replace("_", " ").title()
         for row in (
             selesai.exclude(buku_digital__kategori="")
             .order_by()
