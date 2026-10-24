@@ -6,7 +6,7 @@
 {% block page_subtitle %}Kelola alur buku keluar dan kembali{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'perpustakaan/css/admin.css' %}?v=5">
+<link rel="stylesheet" href="{% static 'perpustakaan/css/admin.css' %}?v=7">
 <style>
 /* Dimuat langsung di halaman ini, jadi tidak bergantung pada versi admin.css. */
 
@@ -14,7 +14,7 @@
 .app-layout .main-content.adm-main { overflow-y: scroll; scrollbar-gutter: stable; }
 
 /* Pencarian putih, panjangnya sama dengan Kelola Anggota */
-.ap-search--white { width: 520px; max-width: 100%; }
+.ap-search--white { flex: 1 1 auto; width: auto; max-width: none; }
 .ap-search--white input { background: #fff; }
 
 .ap-card--tall { min-height: 420px; }
@@ -101,7 +101,15 @@
 
 @media (max-width: 900px) {
     .ap-filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .ap-search--white { width: 100%; }
+    .ap-search--white { flex-basis: 100%; }
+}
+
+.ap-extend {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #1976D2;
 }
 </style>
 {% endblock %}
@@ -196,7 +204,10 @@
           </td>
           <td>{{ p.pengguna.nama_tampilan|default:p.pengguna.username }}</td>
           <td>{{ p.tanggal_pinjam|date:"d F Y" }}</td>
-          <td>{{ p.jatuh_tempo_tampil|date:"d F Y" }}</td>
+          <td>
+            {{ p.jatuh_tempo_tampil|date:"d F Y" }}
+            {% if p.jumlah_perpanjang %}<span class="ap-extend">Diperpanjang{% if p.jumlah_perpanjang > 1 %} {{ p.jumlah_perpanjang }}x{% endif %}</span>{% endif %}
+          </td>
           <td>
             {% if p.is_kembali %}<span class="ap-pill kembali">Dikembalikan</span>
             {% elif p.is_telat %}<span class="ap-pill telat">Terlambat</span>
