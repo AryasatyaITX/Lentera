@@ -747,6 +747,63 @@ def aktifkan_anggota(request, pk):
 # ==========================================
 # PEMINJAMAN & PENGEMBALIAN (ADMIN)
 # ==========================================
+# Nama field yang mungkin dipakai model Peminjaman untuk tanggal jatuh tempo.
+_NAMA_JATUH_TEMPO = (
+    "jatuh_tempo", "tanggal_jatuh_tempo", "batas_kembali", "batas_pengembalian",
+    "tenggat", "tanggal_tenggat", "deadline", "tanggal_batas",
+)
+
+
+def _hitung_jatuh_tempo(p):
+    """
+    Kembalikan (jatuh_tempo, jumlah_perpanjangan).
+
+    Urutan pencarian, supaya perpanjangan dari sisi user ikut terbaca:
+    1. Field khusus jatuh tempo di model (mis. jatuh_tempo) bila terisi.
+    2. Field "perpanjang..." bertipe tanggal yang berarti tanggal baru (mis. diperpanjang_hingga).
+    3. Pinjaman yang masih berjalan dan tanggal_kembali-nya terisi: itu tanggal tenggatnya.
+    4. Cadangan: tanggal pinjam + LAMA_PINJAM_HARI + (jumlah perpanjangan x LAMA_PINJAM_HARI).
+    """
+    fields = {f.name: f for f in p._meta.concrete_fields}
+
+    # Jumlah perpanjangan (field angka / boolean yang namanya memuat "perpanjang")
+    jumlah = 0
+    for nama, f in fields.items():
+        if "perpanjang" not in nama.lower():
+            continue
+        nilai = getattr(p, nama, None)
+        tipe = f.get_internal_type()
+        if tipe == "BooleanField":
+            jumlah = max(jumlah, 1 if nilai else 0)
+        elif tipe in ("IntegerField", "PositiveIntegerField", "SmallIntegerField",
+                      "PositiveSmallIntegerField", "BigIntegerField"):
+            jumlah = max(jumlah, int(nilai or 0))
+
+    # 1. Field jatuh tempo khusus
+    for nama in _NAMA_JATUH_TEMPO:
+        if nama in fields and getattr(p, nama, None):
+            return getattr(p, nama), jumlah
+
+    # 2. Tanggal baru hasil perpanjangan
+    for nama, f in fields.items():
+        if "perpanjang" in nama.lower() and f.get_internal_type() in ("DateField", "DateTimeField"):
+            if any(k in nama.lower() for k in ("hingga", "sampai", "baru", "jatuh", "batas", "tempo")):
+                nilai = getattr(p, nama, None)
+                if nilai:
+                    return nilai, max(jumlah, 1)
+
+    # 3. Pinjaman berjalan: tanggal_kembali yang terisi adalah tenggatnya
+    tgl_kembali = getattr(p, "tanggal_kembali", None)
+    if p.status != "Selesai" and tgl_kembali and tgl_kembali > p.tanggal_pinjam:
+        return tgl_kembali, jumlah
+
+    # 4. Cadangan
+    return (
+        p.tanggal_pinjam + timedelta(days=LAMA_PINJAM_HARI * (1 + jumlah)),
+        jumlah,
+    )
+
+
 @user_passes_test(_boleh_admin, login_url="login")
 def peminjaman_admin(request):
     hari_ini = timezone.localdate()
@@ -760,10 +817,9 @@ def peminjaman_admin(request):
         p.item = p.buku_digital or p.jurnal
         p.is_kembali = p.status == "Selesai"
 
-        jatuh_tempo = getattr(p, "jatuh_tempo", None) or (
-            p.tanggal_pinjam + timedelta(days=LAMA_PINJAM_HARI)
-        )
+        jatuh_tempo, jumlah_perpanjang = _hitung_jatuh_tempo(p)
         p.jatuh_tempo_tampil = jatuh_tempo
+        p.jumlah_perpanjang = jumlah_perpanjang
         tgl = jatuh_tempo.date() if hasattr(jatuh_tempo, "date") else jatuh_tempo
         p.is_telat = (not p.is_kembali) and tgl < hari_ini
 
@@ -851,4 +907,4 @@ def unduh_laporan(request):
             "Dikembalikan" if p.status == "Selesai" else "Dipinjam",
         ])
 
-    return response
+        return response

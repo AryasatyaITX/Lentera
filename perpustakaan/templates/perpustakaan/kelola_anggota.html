@@ -6,7 +6,7 @@
 {% block page_subtitle %}Pantau anggota dan aktivitas pinjaman anggota{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'perpustakaan/css/admin.css' %}?v=4">
+<link rel="stylesheet" href="{% static 'perpustakaan/css/admin.css' %}?v=7">
 <style>
 /* Cadangan: CSS Kelola Anggota dimuat langsung di halaman ini,
    jadi tetap tampil benar walau admin.css belum terbarui / masih di-cache. */
@@ -23,7 +23,7 @@
 
 .ap-card--tall { min-height: 420px; }
 
-.ap-search--white { width: 520px; }
+.ap-search--white { flex: 1 1 auto; width: auto; max-width: none; }
 .ap-search--white input { background: #fff; }
 
 .ap-toolbar .ap-btn-add { margin-left: auto; }
@@ -164,7 +164,7 @@
 .ap-confirm-text { font-size: 13px; color: #6A6A5C; line-height: 1.6; }
 
 @media (max-width: 700px) {
-    .ap-search--white { width: 100%; }
+    .ap-search--white { flex-basis: 100%; }
     .ap-form-row { grid-template-columns: 1fr; }
 }
 
