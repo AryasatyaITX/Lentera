@@ -31,9 +31,9 @@
             <div class="sidebar-profile">
                 <div class="avatar-circle">
                     {% if user.foto_profil %}<img src="{{ user.foto_profil.url }}" alt="Avatar">
-                    {% else %}{{ user.nama_tampilan|default:user.username|slice:2|upper }}{% endif %}
+                    {% else %}{{ user.nama_asli|slice:2|upper }}{% endif %}
                 </div>
-                <div><h4>{{ user.nama_tampilan|default:user.username }}</h4><p>User / Anggota</p></div>
+                <div><h4>{{ user.nama_asli }}</h4><p>User / Anggota</p></div>
             </div>
         </div>
 
@@ -49,7 +49,7 @@
                         {% include "perpustakaan/includes/notification_bell.html" %}
                         <div class="avatar-circle">
                             {% if user.foto_profil %}<img src="{{ user.foto_profil.url }}" alt="Avatar">
-                            {% else %}{{ user.nama_tampilan|default:user.username|slice:2|upper }}{% endif %}
+                            {% else %}{{ user.nama_asli|slice:2|upper }}{% endif %}
                         </div>
                         <a href="{% url 'logout' %}" style="margin-left:15px; color:#dc2626; font-size: 20px;" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
                     </div>

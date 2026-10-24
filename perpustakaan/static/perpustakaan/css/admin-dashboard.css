@@ -36,10 +36,11 @@
 .kelola-table tr:last-child td { border-bottom: none; }
 .kelola-table tr:hover td { background: #fafaf5; }
 
-.kelola-item { display: flex; align-items: center; gap: 14px; }
+.kelola-item { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.kelola-item > div { min-width: 0; }
 .kelola-item img { width: 50px; height: 70px; border-radius: 6px; object-fit: cover; background: #ddd; box-shadow: 0 2px 6px rgba(0,0,0,.1); }
 .kelola-item .t { font-size: 13px; font-weight: 700; color: #173C3A; display: block; }
-.kelola-item .s { font-size: 12px; color: #8A8A7A; display: block; margin-top: 3px; }
+.kelola-item .s { font-size: 12px; color: #8A8A7A; display: block; max-width: 240px; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .kelola-actions { display: flex; gap: 8px; justify-content: flex-end; }
 .kelola-icon-btn {

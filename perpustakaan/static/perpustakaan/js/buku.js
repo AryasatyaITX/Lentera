@@ -268,14 +268,9 @@
 
             const stats = $('bd-stats');
             if (stats) {
-                const rating = b.rating == null ? 'Belum ada rating' : b.rating;
-                const want = b.want == null
-                    ? 'Jumlah ingin membaca tidak tersedia'
-                    : `${new Intl.NumberFormat('id-ID').format(b.want)} orang ingin membaca`;
+                const count = Number(stats.dataset.readCount || 0);
                 stats.innerHTML =
-                    `<span><i class="fas fa-star"></i> ${rating}</span>` +
-                    `<span><i class="fas fa-bookmark"></i> ${want}</span>` +
-                    (b.akses === 'public' ? '<span><i class="fas fa-book-open"></i> Bisa dibaca gratis</span>' : '');
+                    `<span><i class="fas fa-eye"></i> ${new Intl.NumberFormat('id-ID').format(count)}x Dibaca</span>`;
             }
 
             const desc = $('bd-desc');
@@ -701,21 +696,18 @@
     const titleEl = document.getElementById('grid-title');
     const sentinel = document.getElementById('grid-sentinel');
     const searchEl = document.getElementById('katalog-search');
-    const langEl = document.getElementById('filter-bahasa');
     const chips = Array.from(document.querySelectorAll('#chip-row .chip'));
     const DEFAULT_KAT = grid.dataset.defaultKategori;
     const LIMIT = 20;
     const localBooks = readJson('buku-lokal') || [];
 
-    const state = { q: '', kategori: DEFAULT_KAT, bahasa: '', gratis: false, page: 1, loading: false, done: false, failed: false };
+    const state = { q: '', kategori: DEFAULT_KAT, page: 1, loading: false, done: false, failed: false };
     let token = 0; // naik setiap filter berubah, supaya respons lama diabaikan
 
     function buildQuery() {
         const parts = [];
         if (state.q) parts.push(state.q);
         if (state.kategori) parts.push(`subject:"${state.kategori.replace(/"/g, '')}"`);
-        if (state.bahasa) parts.push(`language:${state.bahasa}`);
-        if (state.gratis) parts.push('public_scan_b:true');
         return parts.join(' ');
     }
     const SKELETON = Array(8).fill(
@@ -819,13 +811,6 @@
             load(true);
         }, 400);
     });
-
-    document.getElementById('btn-filter').addEventListener('click', (e) => {
-        const open = document.getElementById('filter-panel').classList.toggle('open');
-        e.currentTarget.setAttribute('aria-expanded', open);
-    });
-    langEl.addEventListener('change', () => { state.bahasa = langEl.value; load(true); });
-    document.getElementById('filter-gratis').addEventListener('change', (e) => { state.gratis = e.target.checked; load(true); });
 
     const awal = new URLSearchParams(window.location.search).get('q');
     if (awal && awal.trim()) {

@@ -251,10 +251,10 @@
           <td>
             <div class="ap-user">
               <span class="ap-avatar">
-                {% if a.foto_profil %}<img src="{{ a.foto_profil.url }}" alt="">{% else %}{{ a.nama_tampilan|default:a.username|slice:":2"|upper }}{% endif %}
+                {% if a.foto_profil %}<img src="{{ a.foto_profil.url }}" alt="">{% else %}{{ a.nama_asli|slice:":2"|upper }}{% endif %}
               </span>
               <span>
-                <span class="ap-user-name">{{ a.nama_tampilan|default:a.username }}</span>
+                <span class="ap-user-name">{{ a.nama_asli }}</span>
                 <span class="ap-user-sub">@{{ a.username }}</span>
               </span>
             </div>
@@ -272,7 +272,7 @@
                 data-url="{% url 'edit_anggota' a.pk %}"
                 data-id="{{ a.pk }}"
                 data-username="{{ a.username }}"
-                data-nama="{{ a.nama_tampilan|default:'' }}"
+                data-nama="{{ a.nama_asli }}"
                 data-email="{{ a.email }}"
                 data-active="{% if a.is_active %}1{% else %}0{% endif %}"
                 data-joined="{{ a.date_joined|date:'d M Y, H:i' }}"
@@ -282,7 +282,7 @@
               {% if a.is_active %}
               <button type="button" class="ap-icon-btn danger js-hapus" title="Hapus (nonaktifkan)"
                 data-url="{% url 'hapus_anggota' a.pk %}"
-                data-nama="{{ a.nama_tampilan|default:a.username }}">
+                data-nama="{{ a.nama_asli }}">
                 <i class="fa-regular fa-trash-can"></i>
               </button>
               {% else %}

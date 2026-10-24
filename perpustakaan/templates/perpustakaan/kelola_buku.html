@@ -64,7 +64,7 @@
             </div>
           </div>
         </td>
-        <td data-label="Kategori">{{ buku.kategori|default:"-" }}</td>
+        <td data-label="Kategori">{{ buku.kategori_label|default:"-" }}</td>
         <td data-label="Tahun">{{ buku.tahun_terbit|default:"-" }}</td>
         <td data-label="Pembaca">{{ buku.total_pembaca|default:"0" }}</td>
         <td class="kelola-aksi">
@@ -128,16 +128,16 @@
           <label>Kategori</label>
           <select name="kategori" required>
             <option value="" disabled selected>Pilih kategori</option>
+            <option value="teknik_elektro">Teknik Elektro</option>
             <option value="teknik_sipil">Teknik Sipil</option>
             <option value="teknik_industri">Teknik Industri</option>
-            <option value="teknik_lingkungan">Teknik Lingkungan</option>
             <option value="teknik_pertambangan">Teknik Pertambangan</option>
             <option value="teknik_kimia">Teknik Kimia</option>
-            <option value="teknik_elektro">Teknik Elektro</option>
             <option value="teknik_geologi">Teknik Geologi</option>
-            <option value="teknik_mesin">Teknik Mesin</option>
-            <option value="sistem_informasi">Sistem Informasi</option>
+            <option value="arsitektur">Arsitektur</option>
             <option value="informatika">Informatika</option>
+            <option value="sistem_informasi">Sistem Informasi</option>
+            <option value="teknik_lingkungan">Teknik Lingkungan</option>
           </select>
         </div>
       </div>
@@ -184,16 +184,16 @@
           <label>Kategori</label>
           <select name="kategori">
             <option value="">Tanpa kategori</option>
+            <option value="teknik_elektro">Teknik Elektro</option>
             <option value="teknik_sipil">Teknik Sipil</option>
             <option value="teknik_industri">Teknik Industri</option>
-            <option value="teknik_lingkungan">Teknik Lingkungan</option>
             <option value="teknik_pertambangan">Teknik Pertambangan</option>
             <option value="teknik_kimia">Teknik Kimia</option>
-            <option value="teknik_elektro">Teknik Elektro</option>
             <option value="teknik_geologi">Teknik Geologi</option>
-            <option value="teknik_mesin">Teknik Mesin</option>
-            <option value="sistem_informasi">Sistem Informasi</option>
+            <option value="arsitektur">Arsitektur</option>
             <option value="informatika">Informatika</option>
+            <option value="sistem_informasi">Sistem Informasi</option>
+            <option value="teknik_lingkungan">Teknik Lingkungan</option>
           </select>
         </div>
       </div>

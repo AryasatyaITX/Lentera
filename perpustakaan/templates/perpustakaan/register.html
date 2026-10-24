@@ -99,6 +99,13 @@
                     </div>
 
                     <div class="input-group">
+                        <label for="regNama">Nama asli</label>
+                        <input type="text" id="regNama" name="nama_tampilan"
+                               placeholder="Masukkan nama lengkap"
+                               value="{{ request.POST.nama_tampilan|default:'' }}" maxlength="100" required autocomplete="name">
+                    </div>
+
+                    <div class="input-group">
                         <label for="regEmail">Email</label>
                         <input type="email" id="regEmail" name="email"
                                placeholder="Masukkan email aktif"

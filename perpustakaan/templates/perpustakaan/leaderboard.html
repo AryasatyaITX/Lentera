@@ -7,7 +7,7 @@
     <title>Top List Reader</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1052">
+    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1054">
     <script src="{% static 'perpustakaan/js/script.js' %}?v=2" defer></script>
     <style>
         /* Kotak Besar Utama */
@@ -106,15 +106,17 @@
 
         /* Kotak Bingkai Putih Avatar (Presisi di Tengah) */
         .podium-avatar-wrap {
-            width: 54px;
-            height: 54px;
+            box-sizing: border-box;
+            width: 64px;
+            height: 64px;
+            min-width: 64px;
+            padding: 5px;
             background: #ffffff;
             border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-top: 25px;
-            margin-bottom: 12px;
+            margin: 25px auto 12px;
             box-shadow: 0 8px 20px rgba(0,0,0,0.12);
             flex-shrink: 0;
             overflow: hidden;
@@ -123,12 +125,31 @@
 
         /* Foto Profil Benar-benar Pas di Tengah & Proporsional */
         .podium-avatar {
-            width: 46px;
-            height: 46px;
+            box-sizing: border-box;
+            width: 54px;
+            height: 54px;
+            flex: 0 0 54px;
             border-radius: 10px;
             object-fit: cover;
+            object-position: center;
             display: block;
             margin: auto;
+        }
+
+        .podium-avatar-initial {
+            box-sizing: border-box;
+            display: flex;
+            width: 54px;
+            height: 54px;
+            flex: 0 0 54px;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            background: #e2e8f0;
+            color: #112222;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
         }
 
         /* Badge Nomor Peringkat dengan Outline Putih Solid yang Pas di Garis Bawah */
@@ -260,11 +281,11 @@
                 {% if user.foto_profil %}
                     <img src="{{ user.foto_profil.url }}" alt="Avatar">
                 {% else %}
-                    {{ user.nama_tampilan|default:user.username|slice:2|upper }}
+                    {{ user.nama_asli|slice:2|upper }}
                 {% endif %}
             </div>
             <div>
-                <h4>{{ user.nama_tampilan|default:user.username }}</h4>
+                <h4>{{ user.nama_asli }}</h4>
                 <p>User / Anggota</p>
             </div>
         </div>
@@ -296,7 +317,7 @@
                         {% if user.foto_profil %}
                             <img src="{{ user.foto_profil.url }}" alt="Avatar">
                         {% else %}
-                            {{ user.nama_tampilan|default:user.username|slice:2|upper }}
+                            {{ user.nama_asli|slice:2|upper }}
                         {% endif %}
                     </div>
                 </a>
@@ -320,13 +341,13 @@
                         {% if podium.rank2.foto_profil %}
                             <img src="{{ podium.rank2.foto_profil.url }}" class="podium-avatar" alt="Juara 2">
                         {% else %}
-                            <div style="width: 46px; height: 46px; background: #e2e8f0; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: #2b3447; font-size: 15px;">
-                                {{ podium.rank2.nama_tampilan|default:podium.rank2.username|slice:2|upper }}
-                            </div>
+                            <span class="podium-avatar-initial">
+                                {{ podium.rank2.nama_asli|slice:2|upper }}
+                            </span>
                         {% endif %}
                     </div>
-                    <a href="{% url 'profil_user_detail' podium.rank2.username %}" class="podium-name" title="{{ podium.rank2.nama_tampilan|default:podium.rank2.username }}">
-                        {{ podium.rank2.nama_tampilan|default:podium.rank2.username }}
+                    <a href="{% url 'profil_user_detail' podium.rank2.username %}" class="podium-name" title="{{ podium.rank2.nama_asli }}">
+                        {{ podium.rank2.nama_asli }}
                     </a>
                     <p class="podium-meta">
                         {% with total_buku=podium.rank2.peminjaman_set.all.count %}
@@ -348,13 +369,13 @@
                         {% if podium.rank1.foto_profil %}
                             <img src="{{ podium.rank1.foto_profil.url }}" class="podium-avatar" alt="Juara 1">
                         {% else %}
-                            <div style="width: 46px; height: 46px; background: #e2e8f0; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: #112222; font-size: 15px;">
-                                {{ podium.rank1.nama_tampilan|default:podium.rank1.username|slice:2|upper }}
-                            </div>
+                            <span class="podium-avatar-initial">
+                                {{ podium.rank1.nama_asli|slice:2|upper }}
+                            </span>
                         {% endif %}
                     </div>
-                    <a href="{% url 'profil_user_detail' podium.rank1.username %}" class="podium-name" title="{{ podium.rank1.nama_tampilan|default:podium.rank1.username }}">
-                        {{ podium.rank1.nama_tampilan|default:podium.rank1.username }}
+                    <a href="{% url 'profil_user_detail' podium.rank1.username %}" class="podium-name" title="{{ podium.rank1.nama_asli }}">
+                        {{ podium.rank1.nama_asli }}
                     </a>
                     <p class="podium-meta">
                         {% with total_buku=podium.rank1.peminjaman_set.all.count %}
@@ -373,13 +394,13 @@
                         {% if podium.rank3.foto_profil %}
                             <img src="{{ podium.rank3.foto_profil.url }}" class="podium-avatar" alt="Juara 3">
                         {% else %}
-                            <div style="width: 46px; height: 46px; background: #e2e8f0; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: #112222; font-size: 15px;">
-                                {{ podium.rank3.nama_tampilan|default:podium.rank3.username|slice:2|upper }}
-                            </div>
+                            <span class="podium-avatar-initial">
+                                {{ podium.rank3.nama_asli|slice:2|upper }}
+                            </span>
                         {% endif %}
                     </div>
-                    <a href="{% url 'profil_user_detail' podium.rank3.username %}" class="podium-name" title="{{ podium.rank3.nama_tampilan|default:podium.rank3.username }}">
-                        {{ podium.rank3.nama_tampilan|default:podium.rank3.username }}
+                    <a href="{% url 'profil_user_detail' podium.rank3.username %}" class="podium-name" title="{{ podium.rank3.nama_asli }}">
+                        {{ podium.rank3.nama_asli }}
                     </a>
                     <p class="podium-meta">
                         {% with total_buku=podium.rank3.peminjaman_set.all.count %}
@@ -413,7 +434,7 @@
                                 <img src="{% if item.user.foto_profil %}{{ item.user.foto_profil.url }}{% else %}https://ui-avatars.com/api/?name={{ item.user.username }}&background=1e293b&color=ffffff{% endif %}" alt="Avatar" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;">
                                 <div>
                                     <a href="{% url 'profil_user_detail' item.user.username %}" class="user-link">
-                                        {{ item.user.nama_tampilan|default:item.user.username }}
+                                        {{ item.user.nama_asli }}
                                     </a>
                                     {% if item.user == request.user %}
                                         <span style="background: #ca8a04; color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 6px; font-weight: 700;">Kamu</span>

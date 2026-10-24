@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1006">
     <script src="{% static 'perpustakaan/js/script.js' %}?v=2" defer></script>
-    <script src="{% static 'perpustakaan/js/buku.js' %}?v=4" defer></script>
+    <script src="{% static 'perpustakaan/js/buku.js' %}?v=5" defer></script>
 </head>
 <body>
     <div class="app-layout" id="appLayout">
@@ -33,9 +33,9 @@
             <div class="sidebar-profile">
                 <div class="avatar-circle">
                     {% if user.foto_profil %}<img src="{{ user.foto_profil.url }}" alt="Avatar">
-                    {% else %}{{ user.nama_tampilan|default:user.username|slice:2|upper }}{% endif %}
+                    {% else %}{{ user.nama_asli|slice:2|upper }}{% endif %}
                 </div>
-                <div><h4>{{ user.nama_tampilan|default:user.username }}</h4><p>User / Anggota</p></div>
+                <div><h4>{{ user.nama_asli }}</h4><p>User / Anggota</p></div>
             </div>
         </div>
 
@@ -49,7 +49,7 @@
                     </div>
                     <div class="nav-actions">
                         {% include "perpustakaan/includes/notification_bell.html" %}
-                        <div class="avatar-circle">{{ user.nama_tampilan|default:user.username|slice:2|upper }}</div>
+                        <div class="avatar-circle">{{ user.nama_asli|slice:2|upper }}</div>
                         <a href="{% url 'logout' %}" style="margin-left:15px; color:#dc2626; font-size: 20px;" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
                     </div>
                 </div>
@@ -61,7 +61,7 @@
 
             <div class="catalog-grid">
                 {% for mark in bookmarks %}
-                <div class="book-card"{% if mark.buku_digital %} data-olid="{{ mark.buku_digital.id_item }}" tabindex="0" role="link"{% endif %}>
+                <div class="book-card"{% if mark.buku_digital %} data-olid="{{ mark.buku_digital.id_item }}" data-bookmark-stats tabindex="0" role="link"{% endif %}>
                     {% if mark.buku_digital %}
                         <img src="{% if mark.buku_digital.cover %}{{ mark.buku_digital.cover }}{% else %}https://images.unsplash.com/photo-1532012197267-da84d127e765?w=300{% endif %}" alt="Cover" class="book-cover">
                     {% elif mark.jurnal %}
@@ -71,7 +71,9 @@
                         <p class="type">{% if mark.buku_digital %}Buku Digital{% else %}E-Journal{% endif %}</p>
                         <h3>{% if mark.buku_digital %}{{ mark.buku_digital.judul }}{% else %}{{ mark.jurnal.judul }}{% endif %}</h3>
                         <p class="author">{% if mark.buku_digital %}{{ mark.buku_digital.penulis }}{% else %}{{ mark.jurnal.penulis }}{% endif %}</p>
-                        
+                        {% if mark.buku_digital %}
+                        <span class="book-rating"><i class="fas fa-star"></i> <span data-book-rating>—</span> • <i class="fas fa-bookmark"></i> <span data-book-want>—</span></span>
+                        {% endif %}
                         <i class="fas fa-heart heart active" data-id="{{ mark.id }}" onclick="removeBookmark(this)" title="Hapus dari Bookmark"></i>
                     </div>
                 </div>

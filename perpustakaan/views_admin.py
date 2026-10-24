@@ -12,7 +12,7 @@ from django.db.models import Count
 from django.db.models.functions import TruncDate
 from django.shortcuts import render
 from django.utils import timezone
-from .models import AchievementGambar, BukuDigital, CustomUser, Jurnal, Peminjaman, Notifikasi
+from .models import AchievementGambar, BukuDigital, CustomUser, Jurnal, Peminjaman, Notifikasi, label_kategori
 
 
 BULAN = [
@@ -58,6 +58,11 @@ def _judul_item(obj):
     item = obj.buku_digital or obj.jurnal
     return item.judul if item else "Item sudah dihapus"
 
+
+def _nama_pengguna(user):
+    return user.nama_asli
+
+
 def _aktivitas_terbaru():
     """Selalu empat kartu: buku, jurnal, anggota, dikembalikan."""
     events = []
@@ -79,14 +84,16 @@ def _aktivitas_terbaru():
     })
 
     u = (
-        CustomUser.objects.filter(is_member=True)
+        CustomUser.objects.filter(
+            is_member=True, is_admin=False, is_staff=False, is_superuser=False
+        )
         .order_by("-date_joined")
         .first()
     )
     events.append({
         "jenis": "anggota",
         "judul": "Anggota baru bergabung",
-        "deskripsi": (u.nama_tampilan or u.username) if u else "Belum ada anggota",
+        "deskripsi": _nama_pengguna(u) if u else "Belum ada anggota",
         "waktu_lalu": _waktu_lalu(u.date_joined) if u else "-",
     })
 
@@ -119,12 +126,18 @@ def _data_grafik_7_hari():
         )
         return {h: n for h, n in rows}
 
+    peminjaman_anggota = Peminjaman.objects.filter(
+        user__is_member=True,
+        user__is_admin=False,
+        user__is_staff=False,
+        user__is_superuser=False,
+    )
     dipinjam = per_hari(
-        Peminjaman.objects.filter(tanggal_pinjam__date__gte=mulai),
+        peminjaman_anggota.filter(tanggal_pinjam__date__gte=mulai),
         "tanggal_pinjam",
     )
     dikembalikan = per_hari(
-        Peminjaman.objects.filter(
+        peminjaman_anggota.filter(
             tanggal_kembali__isnull=False, tanggal_kembali__date__gte=mulai
         ),
         "tanggal_kembali",
@@ -147,7 +160,9 @@ def dashboard_admin(request):
         day=1, hour=0, minute=0, second=0, microsecond=0
     )
 
-    anggota = CustomUser.objects.filter(is_member=True)
+    anggota = CustomUser.objects.filter(
+        is_member=True, is_admin=False, is_staff=False, is_superuser=False
+    )
     populer = (
         BukuDigital.objects.annotate(jumlah=Count("peminjaman"))
         .filter(jumlah__gt=0)
@@ -158,7 +173,7 @@ def dashboard_admin(request):
     for b in populer:
         b.persen = round(b.jumlah / maks * 100)
 
-    nama = request.user.nama_tampilan or request.user.username
+    nama = _nama_pengguna(request.user)
 
     context = {
         "nama": nama,
@@ -227,7 +242,7 @@ def kelola_buku(request):
         judul_notif = f"Buku baru: {buku.judul}"
         for anggota in CustomUser.objects.filter(is_member=True, is_admin=False):
             Notifikasi.objects.create(user=anggota, jenis="katalog", judul=judul_notif,
-                isi=f"Buku {buku.judul} baru masuk di kategori {buku.kategori or 'Umum'}.",
+                isi=f"Buku {buku.judul} baru masuk di kategori {buku.kategori_label or 'Umum'}.",
                 url=f"/buku/{buku.id_item}/")
         return redirect("kelola_buku")
 
@@ -453,7 +468,10 @@ KATEGORI_ACHIEVEMENT = ["Umum", "Langka", "Epik"]
 class AchievementForm(forms.ModelForm):
     class Meta:
         model = AchievementGambar
-        fields = ["nama", "kategori", "deskripsi", "gambar_terkunci", "gambar_terbuka"]
+        fields = [
+            "nama", "kategori", "deskripsi", "tipe_syarat", "target",
+            "gambar_terkunci", "gambar_terbuka",
+        ]
         labels = {
             "tipe_syarat": "Jenis syarat",   
             "target": "Target",   
@@ -838,7 +856,9 @@ def laporan(request):
         day=1, hour=0, minute=0, second=0, microsecond=0
     )
 
-    anggota = CustomUser.objects.filter(is_member=True)
+    anggota = CustomUser.objects.filter(
+        is_member=True, is_admin=False, is_staff=False, is_superuser=False
+    )
 
     # Anggota aktif = anggota yang meminjam dalam 30 hari terakhir.
     id_aktif = (
@@ -851,15 +871,22 @@ def laporan(request):
     )
 
     # Buku per kategori
+    peminjaman_anggota = Peminjaman.objects.filter(
+        user__is_member=True,
+        user__is_admin=False,
+        user__is_staff=False,
+        user__is_superuser=False,
+        buku_digital__isnull=False,
+    )
     rows = list(
-        BukuDigital.objects.values("kategori")
+        peminjaman_anggota.values("buku_digital__kategori")
         .annotate(jumlah=Count("pk"))
         .order_by("-jumlah")
     )
     maks = rows[0]["jumlah"] if rows else 1
     kategori_list = [
         {
-            "nama": (r["kategori"] or "Lainnya").replace("_", " ").title(),
+            "nama": label_kategori(r["buku_digital__kategori"] or "Lainnya"),
             "jumlah": r["jumlah"],
             "persen": round(r["jumlah"] / maks * 100),
         }
@@ -869,7 +896,7 @@ def laporan(request):
     grafik = _data_grafik_7_hari()
 
     context = {
-        "peminjaman_bulan_ini": Peminjaman.objects.filter(
+        "peminjaman_bulan_ini": peminjaman_anggota.filter(
             tanggal_pinjam__gte=awal_bulan
         ).count(),
         "jurnal_tersedia": Jurnal.objects.count(),
@@ -894,14 +921,21 @@ def unduh_laporan(request):
     writer = csv.writer(response)
     writer.writerow(["Buku/Jurnal", "Anggota", "Tanggal pinjam", "Tanggal kembali", "Status"])
 
-    qs = Peminjaman.objects.select_related(
+    qs = Peminjaman.objects.filter(
+        **{
+            f"{_USER_FIELD}__is_member": True,
+            f"{_USER_FIELD}__is_admin": False,
+            f"{_USER_FIELD}__is_staff": False,
+            f"{_USER_FIELD}__is_superuser": False,
+        }
+    ).select_related(
         _USER_FIELD, "buku_digital", "jurnal"
     ).order_by("-tanggal_pinjam")
 
     for p in qs:
         writer.writerow([
             _judul_item(p),
-            getattr(p, _USER_FIELD).username,
+            _nama_pengguna(getattr(p, _USER_FIELD)),
             p.tanggal_pinjam.strftime("%Y-%m-%d"),
             p.tanggal_kembali.strftime("%Y-%m-%d") if p.tanggal_kembali else "-",
             "Dikembalikan" if p.status == "Selesai" else "Dipinjam",

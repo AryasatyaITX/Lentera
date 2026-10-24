@@ -176,7 +176,7 @@
     <table class="ap-table">
       <thead>
         <tr>
-          <th style="width:34%;">Buku/Jurnal</th>
+          <th style="width:34%;">Buku</th>
           <th>Anggota</th>
           <th>Dipinjam</th>
           <th>Jatuh Tempo</th>
@@ -192,7 +192,7 @@
             data-tgl="{{ p.tanggal_pinjam|date:'Y-m-d' }}"
             data-ts="{{ p.tanggal_pinjam|date:'U' }}"
             data-judul="{{ p.item.judul|default:''|lower }}"
-            data-anggota="{{ p.pengguna.nama_tampilan|default:p.pengguna.username|lower }}">
+            data-anggota="{{ p.pengguna.nama_asli|lower }}">
           <td>
             <div class="ap-item">
               <img src="{{ p.item.cover|default:'https://placehold.co/112x156?text=Cover' }}" alt="">
@@ -202,7 +202,7 @@
               </div>
             </div>
           </td>
-          <td>{{ p.pengguna.nama_tampilan|default:p.pengguna.username }}</td>
+          <td>{{ p.pengguna.nama_asli }}</td>
           <td>{{ p.tanggal_pinjam|date:"d F Y" }}</td>
           <td>
             {{ p.jatuh_tempo_tampil|date:"d F Y" }}
