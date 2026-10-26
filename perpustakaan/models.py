@@ -19,6 +19,8 @@ KATEGORI_PRODI = [
     ("teknik_lingkungan", "Teknik Lingkungan"),
 ]
 
+TARGET_HARIAN_DETIK = 30 * 60
+
 
 def label_kategori(kategori):
     label = dict(KATEGORI_PRODI).get(kategori)
@@ -222,9 +224,13 @@ class CustomUser(AbstractUser):
         self.save()
 
     def update_streak(self):
-        """Perilaku object user untuk memperbarui streak bacaan harian."""
+        """Perbarui streak setelah target baca harian tercapai."""
         today = timezone.localdate()
-        if self.last_read_date == today:
+        if (
+            self.tanggal_baca_harian != today
+            or self.detik_baca_hari_ini < TARGET_HARIAN_DETIK
+            or self.last_read_date == today
+        ):
             return
 
         if self.last_read_date == today - timedelta(days=1):
@@ -236,6 +242,17 @@ class CustomUser(AbstractUser):
 
         self.last_read_date = today
         self.save()
+
+    def reset_streak_if_expired(self):
+        """Hapus streak yang sudah melewatkan satu hari tanpa target baca."""
+        today = timezone.localdate()
+        if (
+            self.streak_days
+            and self.last_read_date
+            and self.last_read_date < today - timedelta(days=1)
+        ):
+            self.streak_days = 0
+            self.save(update_fields=["streak_days"])
 
     # [POLIMORFISME - overriding] Menimpa __str__ bawaan Model.
     def __str__(self):

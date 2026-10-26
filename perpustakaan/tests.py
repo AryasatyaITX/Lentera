@@ -1,5 +1,8 @@
+from datetime import timedelta
+
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from .models import Bookmark, BukuDigital, CustomUser, Peminjaman
 
@@ -130,6 +133,9 @@ class CollectionPaginationTests(TestCase):
         self.assertEqual(first_page.context['bookmarks'].paginator.count, 12)
         self.assertEqual(len(first_page.context['bookmarks']), 10)
         self.assertContains(first_page, 'Halaman 1 dari 2')
+        self.assertContains(first_page, 'Filter kategori buku')
+        self.assertNotContains(first_page, 'bookmark-counter')
+        self.assertNotIn('total_tersimpan', first_page.context)
         self.assertContains(first_page, 'data-bookmark-stats', count=10)
         self.assertNotContains(first_page, '4.8')
         self.assertNotContains(first_page, 'fa-eye')
@@ -137,6 +143,31 @@ class CollectionPaginationTests(TestCase):
         second_page = self.client.get(reverse('bookmarks'), {'page': 2})
         self.assertEqual(len(second_page.context['bookmarks']), 2)
         self.assertContains(second_page, 'Halaman 2 dari 2')
+
+    def test_bookmarks_can_be_filtered_by_catalog_category(self):
+        matching = BukuDigital.objects.create(
+            id_item='OL7654322W',
+            judul='Buku Sistem Informasi',
+            penulis='Penulis Tes',
+            kategori='sistem_informasi',
+        )
+        other = BukuDigital.objects.create(
+            id_item='OL7654323W',
+            judul='Buku Informatika',
+            penulis='Penulis Tes',
+            kategori='informatika',
+        )
+        Bookmark.objects.create(user=self.user, buku_digital=matching)
+        Bookmark.objects.create(user=self.user, buku_digital=other)
+
+        response = self.client.get(
+            reverse('bookmarks'), {'kategori': 'sistem_informasi'}
+        )
+
+        self.assertEqual(response.context['bookmarks'].paginator.count, 1)
+        self.assertContains(response, 'Buku Sistem Informasi')
+        self.assertNotContains(response, 'Buku Informatika')
+        self.assertContains(response, 'Sistem Informasi')
 
     def test_history_is_paginated(self):
         book = BukuDigital.objects.create(
@@ -157,6 +188,44 @@ class CollectionPaginationTests(TestCase):
         second_page = self.client.get(reverse('riwayat'), {'page': 2})
         self.assertEqual(len(second_page.context['riwayat_list']), 2)
         self.assertContains(second_page, 'Halaman 2 dari 2')
+
+
+class DailyReadingGoalTests(TestCase):
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(
+            username='daily-goal-test',
+            password='test-password',
+        )
+        self.client.force_login(self.user)
+
+    def send_reading_time(self, seconds):
+        session = self.client.session
+        session['ring_terakhir'] = 0
+        session.save()
+        return self.client.post(reverse('waktu_baca'), {'detik': seconds})
+
+    def test_daily_reading_and_streak_stop_at_thirty_minutes(self):
+        self.send_reading_time(1800)
+        self.send_reading_time(300)
+
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.detik_baca_hari_ini, 1800)
+        self.assertEqual(self.user.streak_days, 1)
+
+        dashboard = self.client.get(reverse('dashboard'))
+        self.assertEqual(dashboard.context['menit_hari_ini'], 30)
+        self.assertEqual(dashboard.context['persen_target'], 100)
+
+    def test_streak_resets_after_a_missed_reading_day(self):
+        self.user.streak_days = 4
+        self.user.last_read_date = timezone.localdate() - timedelta(days=2)
+        self.user.save(update_fields=['streak_days', 'last_read_date'])
+
+        dashboard = self.client.get(reverse('dashboard'))
+
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.streak_days, 0)
+        self.assertEqual(dashboard.context['streak_hari'], 0)
 
 
 class ProfileAndAdminRegressionTests(TestCase):

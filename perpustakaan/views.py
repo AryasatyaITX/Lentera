@@ -17,7 +17,7 @@ from django.contrib import messages
 from django.http import JsonResponse, Http404
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import ensure_csrf_cookie
-from .models import CustomUser, BukuDigital, Jurnal, Peminjaman, Bookmark, Pengaturan, Achievement, AchievementGambar, UserAchievement, Notifikasi, KATEGORI_PRODI
+from .models import CustomUser, BukuDigital, Jurnal, Peminjaman, Bookmark, Pengaturan, Achievement, AchievementGambar, UserAchievement, Notifikasi, KATEGORI_PRODI, TARGET_HARIAN_DETIK
 from django.db.models import Count, Q
 import json
 import os
@@ -232,7 +232,7 @@ def notifikasi_view(request):
         elif delta < 0:
             telat = abs(delta)
             simpan_pengingat("tenggat", f"{title} terlambat", f"Buku sudah lewat {telat} hari dari tanggal jatuh tempo.", "/peminjaman/")
-    target = 30 * 60
+    target = TARGET_HARIAN_DETIK
     dibaca = request.user.detik_baca_hari_ini if request.user.tanggal_baca_harian == hari_ini else 0
     if dibaca < target:
         simpan_pengingat("gamifikasi", "Target harian membaca", f"Kamu sudah membaca {dibaca // 60} dari 30 menit hari ini. Lanjutkan agar target tercapai.", "/")
@@ -365,6 +365,7 @@ def logout_view(request):
 @login_required(login_url="login")
 def dashboard(request):
     user = request.user
+    user.reset_streak_if_expired()
 
     sedang_dipinjam = Peminjaman.objects.filter(user=user, status="Dibaca").count()
     total_dibaca = Peminjaman.objects.filter(user=user, status="Selesai").count()
@@ -413,8 +414,11 @@ def dashboard(request):
             "terakhir_teks": teks_terakhir(p.tanggal_pinjam),
         }
 
-    TARGET_HARIAN_DETIK = 1800
-    detik_hari_ini = user.detik_baca_hari_ini if user.tanggal_baca_harian == timezone.localdate() else 0
+    detik_hari_ini = (
+        min(user.detik_baca_hari_ini, TARGET_HARIAN_DETIK)
+        if user.tanggal_baca_harian == timezone.localdate()
+        else 0
+    )
     menit_hari_ini = detik_hari_ini // 60
     target_menit = TARGET_HARIAN_DETIK // 60
     persen_target = min(100, round(detik_hari_ini / TARGET_HARIAN_DETIK * 100)) if detik_hari_ini else 0
@@ -597,13 +601,6 @@ def baca_buku(request, olid):
 
     peminjaman.tanggal_pinjam = timezone.now()
     peminjaman.save(update_fields=["tanggal_pinjam"])
-
-    # Memanfaatkan perilaku yang dienkapsulasi di CustomUser. View tidak perlu
-    # tahu cara menghitung streak.
-    streak_lama = request.user.streak_days
-    request.user.update_streak()
-    if request.user.streak_days > streak_lama and request.user.streak_days in (3, 7, 14, 30):
-        _notifikasi(request.user, "gamifikasi", f"Streak {request.user.streak_days} hari!", "Lanjutkan kebiasaan membaca besok.", "dashboard")
 
     context = {
         "buku": buku,
@@ -874,12 +871,24 @@ def bookmarks_view(request):
         .select_related('buku_digital', 'jurnal')
         .order_by('-tanggal_disimpan', '-pk')
     )
+    kategori_aktif = request.GET.get("kategori", "semua").strip().lower() or "semua"
+    if kategori_aktif != "semua":
+        istilah_kategori = KATEGORI_FILTER_TERMS.get(
+            kategori_aktif,
+            (kategori_aktif, kategori_aktif.replace("_", " ")),
+        )
+        filter_kategori = Q()
+        for istilah in istilah_kategori:
+            filter_kategori |= Q(buku_digital__kategori__icontains=istilah)
+        daftar_bookmark = daftar_bookmark.filter(filter_kategori)
+
     page_obj = Paginator(daftar_bookmark, PAGINATION_PAGE_SIZE).get_page(request.GET.get('page'))
     context = {
         'user': request.user,
         'bookmarks': page_obj,
         'page_obj': page_obj,
-        'total_tersimpan': page_obj.paginator.count,
+        'kategori_list': KATEGORI,
+        'kategori_aktif': kategori_aktif,
     }
     return render(request, "perpustakaan/bookmarks.html", context)
 
@@ -1266,6 +1275,8 @@ def waktu_baca(request):
             p.save(update_fields=['waktu_baca_detik'])
 
     user = request.user
+    user.reset_streak_if_expired()
+    streak_sebelum = user.streak_days
     exp_sebelum = user.exp
     peringkat_sebelum = 1 + CustomUser.objects.filter(is_member=True, is_admin=False, exp__gt=exp_sebelum).count()
     pool = user.waktu_baca_detik + klaim
@@ -1282,9 +1293,15 @@ def waktu_baca(request):
     if user.tanggal_baca_harian != hari_ini:
         user.detik_baca_hari_ini = 0
         user.tanggal_baca_harian = hari_ini
-    user.detik_baca_hari_ini += klaim
+    user.detik_baca_hari_ini = min(
+        TARGET_HARIAN_DETIK,
+        user.detik_baca_hari_ini + klaim,
+    )
 
     user.save(update_fields=["waktu_baca_detik", "exp", "detik_baca_hari_ini", "tanggal_baca_harian"])
+    user.update_streak()
+    if user.streak_days > streak_sebelum and user.streak_days in (3, 7, 14, 30):
+        _notifikasi(user, "gamifikasi", f"Streak {user.streak_days} hari!", "Lanjutkan kebiasaan membaca besok.", "dashboard")
 
     if exp_gain:
         _notifikasi(user, "gamifikasi", "EXP bertambah", f"Kamu mendapatkan {exp_gain} EXP dari membaca.", "profil")

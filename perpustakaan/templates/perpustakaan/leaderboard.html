@@ -7,8 +7,8 @@
     <title>Top List Reader</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1054">
-    <script src="{% static 'perpustakaan/js/script.js' %}?v=2" defer></script>
+    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1057">
+    <script src="{% static 'perpustakaan/js/script.js' %}?v=4" defer></script>
     <style>
         /* Kotak Besar Utama */
         .top-reader-wrapper {
@@ -110,6 +110,7 @@
             width: 64px;
             height: 64px;
             min-width: 64px;
+            min-height: 64px;
             padding: 5px;
             background: #ffffff;
             border-radius: 14px;
@@ -126,30 +127,39 @@
         /* Foto Profil Benar-benar Pas di Tengah & Proporsional */
         .podium-avatar {
             box-sizing: border-box;
-            width: 54px;
-            height: 54px;
-            flex: 0 0 54px;
-            border-radius: 10px;
-            object-fit: cover;
-            object-position: center;
-            display: block;
-            margin: auto;
+            width: 54px !important;
+            height: 54px !important;
+            min-width: 54px !important;
+            min-height: 54px !important;
+            max-width: 54px !important;
+            max-height: 54px !important;
+            flex: 0 0 54px !important;
+            border-radius: 10px !important;
+            object-fit: cover !important;
+            object-position: center !important;
+            display: block !important;
+            margin: 0 !important;
+            padding: 0 !important;
         }
 
         .podium-avatar-initial {
             box-sizing: border-box;
             display: flex;
-            width: 54px;
-            height: 54px;
-            flex: 0 0 54px;
+            width: 54px !important;
+            height: 54px !important;
+            min-width: 54px !important;
+            min-height: 54px !important;
+            flex: 0 0 54px !important;
             align-items: center;
             justify-content: center;
-            border-radius: 10px;
+            border-radius: 10px !important;
             background: #e2e8f0;
             color: #112222;
             font-family: 'Space Grotesk', sans-serif;
             font-size: 15px;
             font-weight: 700;
+            margin: 0 !important;
+            padding: 0 !important;
         }
 
         /* Badge Nomor Peringkat dengan Outline Putih Solid yang Pas di Garis Bawah */
@@ -249,7 +259,7 @@
     </style>
 </head>
 <body>
-    <div class="app-layout" id="appLayout">
+    <div class="app-layout no-anim" id="appLayout">
 
     <!-- ===== Sidebar ===== -->
     <div class="sidebar">
@@ -267,7 +277,6 @@
             <li>
                 <a href="{% url 'peminjaman' %}">
                     <i class="fas fa-book-reader"></i> Peminjaman
-                    {% if sedang_dipinjam %}<span class="menu-badge">{{ sedang_dipinjam }}</span>{% endif %}
                 </a>
             </li>
             <li><a href="{% url 'bookmarks' %}"><i class="fas fa-heart"></i> Bookmarks</a></li>
@@ -339,7 +348,7 @@
                 <div class="podium-card podium-2" style="background-color: #5E8F88 !important;">
                     <div class="podium-avatar-wrap">
                         {% if podium.rank2.foto_profil %}
-                            <img src="{{ podium.rank2.foto_profil.url }}" class="podium-avatar" alt="Juara 2">
+                            <img src="{{ podium.rank2.foto_profil.url }}" class="podium-avatar" alt="Juara 2" width="54" height="54">
                         {% else %}
                             <span class="podium-avatar-initial">
                                 {{ podium.rank2.nama_asli|slice:2|upper }}
@@ -367,7 +376,7 @@
                     </svg>
                     <div class="podium-avatar-wrap">
                         {% if podium.rank1.foto_profil %}
-                            <img src="{{ podium.rank1.foto_profil.url }}" class="podium-avatar" alt="Juara 1">
+                            <img src="{{ podium.rank1.foto_profil.url }}" class="podium-avatar" alt="Juara 1" width="54" height="54">
                         {% else %}
                             <span class="podium-avatar-initial">
                                 {{ podium.rank1.nama_asli|slice:2|upper }}
@@ -392,7 +401,7 @@
                 <div class="podium-card podium-3" style="background-color: #FF9F85 !important;">
                     <div class="podium-avatar-wrap">
                         {% if podium.rank3.foto_profil %}
-                            <img src="{{ podium.rank3.foto_profil.url }}" class="podium-avatar" alt="Juara 3">
+                            <img src="{{ podium.rank3.foto_profil.url }}" class="podium-avatar" alt="Juara 3" width="54" height="54">
                         {% else %}
                             <span class="podium-avatar-initial">
                                 {{ podium.rank3.nama_asli|slice:2|upper }}
