@@ -31,7 +31,6 @@
                 <li>
                     <a href="{% url 'peminjaman' %}">
                         <i class="fas fa-book-reader"></i> Peminjaman
-                        {% if sedang_dipinjam %}<span class="menu-badge">{{ sedang_dipinjam }}</span>{% endif %}
                     </a>
                 </li>
                 <li><a href="{% url 'bookmarks' %}"><i class="fas fa-heart"></i> Bookmarks</a></li>
