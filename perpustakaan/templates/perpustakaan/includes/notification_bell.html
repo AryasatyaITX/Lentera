@@ -1,5 +1,4 @@
 {% load static %}
-<link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=notification-panel-1">
 <script src="{% static 'perpustakaan/js/notifikasi.js' %}?v=1" defer></script>
 <div class="notification-widget">
   <button class="notification-bell" type="button" title="Notifikasi" aria-label="Notifikasi{% if jumlah_notifikasi_belum_dibaca %}, {{ jumlah_notifikasi_belum_dibaca }} belum dibaca{% endif %}" aria-expanded="false" aria-controls="notificationPanel">

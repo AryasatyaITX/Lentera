@@ -156,6 +156,10 @@ document.addEventListener("DOMContentLoaded", function () {
         localStorage.removeItem("sidebarOpen"); // bersihkan sisa versi lama
     } catch (e) {}
 
+    requestAnimationFrame(function () {
+        appLayout.classList.remove("no-anim");
+    });
+
     menuButton.addEventListener("click", function () {
         appLayout.classList.toggle("sidebar-open");
         try {

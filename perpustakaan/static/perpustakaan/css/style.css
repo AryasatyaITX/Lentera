@@ -1666,6 +1666,18 @@ a.stat-card:hover {
 .ol-credit a { color: #4A4A3F; }
 
 /* kartu buku: judul maksimal 2 baris, kartu bisa difokus keyboard */
+.catalog-grid .book-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+.catalog-grid .book-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 14px 14px 10px;
+    position: relative;
+}
 .catalog-grid .book-info h3 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -1674,7 +1686,7 @@ a.stat-card:hover {
     overflow: hidden;
     min-height: 36px;
 }
-.catalog-grid .book-info p.author { padding-right: 28px; }
+.catalog-grid .book-info p.author { padding-right: 0; margin-bottom: 8px; }
 .book-card:focus-visible { outline: 2px solid #173C3A; outline-offset: 2px; }
 
 /* hati: abu = belum disimpan, lime = tersimpan */
@@ -2540,9 +2552,46 @@ body {
     box-shadow: 0 1px 8px rgba(0,0,0,.25);
 }
 
-.catalog-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; padding: 0 14px 14px; font-size: 12px; }
-.catalog-card-footer .genre-chip { position: static; display: block; min-width: 0; max-width: calc(100% - 34px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-shadow: none; }
-.catalog-card-footer .catalog-bookmark { flex: 0 0 auto; }
+.catalog-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
+    padding: 0 14px 14px;
+    font-size: 12px;
+    margin-top: auto;
+}
+.catalog-card-footer .genre-chip {
+    position: static !important;
+    display: block;
+    min-width: 0;
+    max-width: calc(100% - 34px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    box-shadow: none !important;
+}
+.catalog-card-footer .catalog-bookmark {
+    flex: 0 0 auto;
+    margin-left: auto;
+    border: 0;
+    background: transparent;
+    padding: 4px;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.catalog-card-footer .catalog-bookmark i,
+.catalog-card-footer .catalog-bookmark .heart {
+    position: static !important;
+    color: #D4F838 !important;
+    font-size: 16px;
+    line-height: 1;
+    text-shadow: none !important;
+}
 .book-author-row { display: flex; align-items: baseline; gap: 5px; min-width: 0; white-space: nowrap; }
 .book-author { display: block; min-width: 0; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; }
 .book-year { flex: 0 0 auto; }

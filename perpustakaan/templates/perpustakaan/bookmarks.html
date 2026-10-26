@@ -9,12 +9,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1007">
-    <script src="{% static 'perpustakaan/js/script.js' %}?v=2" defer></script>
+    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1058">
+    <script src="{% static 'perpustakaan/js/script.js' %}?v=4" defer></script>
     <script src="{% static 'perpustakaan/js/buku.js' %}?v=5" defer></script>
 </head>
 <body>
-    <div class="app-layout" id="appLayout">
+    <div class="app-layout no-anim" id="appLayout">
         <div class="sidebar">
             <div class="sidebar-brand">
                 <img src="{% static 'perpustakaan/img/logo.svg' %}" alt="Logo Lentera" class="sidebar-logo">
@@ -43,32 +43,25 @@
             <div class="bookmarks-header">
                 <div class="top-nav" style="margin-bottom: 10px;">
                     <div class="top-nav-left">
-                        <button id="menuButton" class="menu-button" type="button" aria-label="Buka atau tutup menu"><i class="fas fa-bars"></i></button>
+                        <button id="menuButton" class="menu-button" type="button" aria-label="Buka atau tutup menu">
+                            <i class="fas fa-bars"></i></button>
                         <div class="top-divider"></div>
                         <div class="greeting"><h4> Lentera / ANGGOTA</h4><h1 class="page-title-space">Bookmarks</h1></div>
                     </div>
                     <div class="nav-actions">
                         {% include "perpustakaan/includes/notification_bell.html" %}
-                        <div class="avatar-circle">{{ user.nama_asli|slice:2|upper }}</div>
+                        <div class="avatar-circle">
+                            {% if user.foto_profil %}
+                                <img src="{{ user.foto_profil.url }}" alt="Avatar">
+                            {% else %}
+                                {{ user.nama_asli|slice:2|upper }}
+                            {% endif %}
+                        </div>
                         <a href="{% url 'logout' %}" style="margin-left:15px; color:#dc2626; font-size: 20px;" title="Logout"><i class="fas fa-sign-out-alt"></i></a>
                     </div>
                 </div>
                 <div class="bookmark-header-info">
                     <p>Koleksi buku yang ingin kamu baca nanti.</p>
-                    <nav class="chip-nav bookmark-category-nav" aria-label="Filter kategori buku">
-                        <div class="chip-scroll-area">
-                            <div class="chip-row">
-                                <a href="?kategori=semua" style="text-decoration: none;">
-                                    <button type="button" class="chip{% if kategori_aktif == 'semua' %} active{% endif %}">Semua</button>
-                                </a>
-                                {% for nilai, label in kategori_list %}
-                                <a href="?kategori={{ nilai }}" style="text-decoration: none;">
-                                    <button type="button" class="chip{% if kategori_aktif == nilai %} active{% endif %}">{{ label }}</button>
-                                </a>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </nav>
                 </div>
             </div>
 
@@ -82,13 +75,23 @@
                     {% endif %}
                     <div class="book-info">
                         <p class="type">{% if mark.buku_digital %}Buku Digital{% else %}E-Journal{% endif %}</p>
-                        <h3>{% if mark.buku_digital %}{{ mark.buku_digital.judul }}{% else %}{{ mark.jurnal.judul }}{% endif %}</h3>
+                        <h3 title="{% if mark.buku_digital %}{{ mark.buku_digital.judul }}{% else %}{{ mark.jurnal.judul }}{% endif %}">{% if mark.buku_digital %}{{ mark.buku_digital.judul }}{% else %}{{ mark.jurnal.judul }}{% endif %}</h3>
                         <p class="author">{% if mark.buku_digital %}{{ mark.buku_digital.penulis }}{% else %}{{ mark.jurnal.penulis }}{% endif %}</p>
-                        {% if mark.buku_digital %}
-                        <span class="genre-chip">{{ mark.buku_digital.kategori_label }}</span>
+                    </div>
+                    <div class="catalog-card-footer">
+                        {% if mark.buku_digital and mark.buku_digital.kategori_label %}
+                            <span class="genre-chip" title="{{ mark.buku_digital.kategori_label }}">{{ mark.buku_digital.kategori_label }}</span>
+                        {% elif mark.jurnal and mark.jurnal.kategori %}
+                            <span class="genre-chip" title="{{ mark.jurnal.kategori }}">{{ mark.jurnal.kategori }}</span>
                         {% endif %}
-                        <br>
-                        <i class="fas fa-heart heart active" data-id="{{ mark.id }}" onclick="removeBookmark(this)" title="Hapus dari Bookmark"></i>
+                        <button type="button"
+                                class="catalog-bookmark heart active"
+                                data-id="{{ mark.id }}"
+                                onclick="event.stopPropagation(); removeBookmark(this)"
+                                aria-label="Hapus dari bookmark"
+                                title="Hapus dari Bookmark">
+                            <i class="fas fa-heart" data-id="{{ mark.id }}"></i>
+                        </button>
                     </div>
                 </div>
                 {% empty %}
