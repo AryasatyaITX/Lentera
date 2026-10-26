@@ -950,8 +950,7 @@ def profil_view(request):
         foto_profil = request.FILES.get("foto_profil")
         foto_bg = request.FILES.get("foto_background")
 
-        # PENTING: dibandingkan eksplisit dengan "1"
-        # (string "0" di Python itu TRUE, makanya dulu foto/bg selalu terhapus!)
+        # PENTING: dibandingkan eksplisit dengan "1" (string "0" itu truthy di Python!)
         hapus_foto_profil = request.POST.get("hapus_foto_profil") == "1"
         hapus_foto_bg = request.POST.get("hapus_foto_background") == "1"
 
@@ -1019,16 +1018,22 @@ def profil_view(request):
     exp_di_level = user.exp % LEVEL_EXP
     persen_level = exp_di_level * 100 // LEVEL_EXP
 
+    # --- Achievement yang ditampilkan: HANYA hasil sematan user ---
     pinned_names = [name.strip() for name in user.pinned_achievements.split(",") if name.strip()]
     achievements_dict = {a["nama"]: a for a in semua_achievement}
 
     display_achievements = []
     for name in pinned_names:
-        if name in achievements_dict:
-            display_achievements.append(achievements_dict[name])
+        a = achievements_dict.get(name)
+        if a and a["didapat"]:
+            display_achievements.append(a)
+    # Tanpa fallback: tidak menyematkan = profil kosong di bagian ini.
 
-    if not display_achievements:
-        display_achievements = [a for a in semua_achievement if a["didapat"]][:5]
+    display_achievements = []
+    for name in pinned_names:
+        a = achievements_dict.get(name)
+        if a and a["didapat"]:
+            display_achievements.append(a)
 
     context = {
         "user": user,
@@ -1092,12 +1097,12 @@ def _achievements(user):
         item("Kolektor Kisah", "fa-layer-group", "Tuntaskan lima buku.", buku_selesai, 5, "Langka"),
         item("Penjelajah Rak", "fa-compass", "Mulai membaca lima judul buku berbeda.", buku_dimulai, 5, "Langka"),
         item("Rak Pribadi", "fa-book", "Mulai membaca tujuh judul buku berbeda.", buku_dimulai, 7, "Langka"),
-        item("Misteri Terurai", "fa-magnifying-glass", "Selesaikan sesi baca buku berkategori Misteri.", kategori_selesai("misteri", "mystery"), 1, "Umum"),
-        item("Dunia Ajaib", "fa-wand-magic-sparkles", "Selesaikan sesi baca buku berkategori Fantasi.", kategori_selesai("fantasi", "fantasy"), 1, "Umum"),
-        item("Hati di Halaman", "fa-heart", "Selesaikan sesi baca buku berkategori Romansa.", kategori_selesai("romansa", "romance"), 1, "Umum"),
-        item("Langkah Bertumbuh", "fa-arrow-trend-up", "Selesaikan sesi baca buku Pengembangan Diri.", kategori_selesai("pengembangan", "self"), 1, "Umum"),
-        item("Pencari Ilmu", "fa-graduation-cap", "Selesaikan sesi baca buku berkategori Pendidikan.", kategori_selesai("pendidikan", "education"), 1, "Umum"),
-        item("Sang Pencinta Sastra", "fa-feather-pointed", "Selesaikan sesi baca buku berkategori Sastra.", kategori_selesai("sastra", "literature"), 1, "Umum"),
+        item("Sistem Informasi Terurai", "fa-magnifying-glass", "Selesaikan sesi baca buku berkategori Sistem Informasi.", kategori_selesai("misteri", "mystery"), 1, "Umum"),
+        item("Dunia Elektro", "fa-wand-magic-sparkles", "Selesaikan sesi baca buku berkategori Teknik Elektro.", kategori_selesai("fantasi", "fantasy"), 1, "Umum"),
+        item("Hati di Lingkungan", "fa-heart", "Selesaikan sesi baca buku berkategori Teknik Lingkungan.", kategori_selesai("romansa", "romance"), 1, "Umum"),
+        item("Langkah Pembangunan", "fa-arrow-trend-up", "Selesaikan sesi baca buku Arsitektur.", kategori_selesai("pengembangan", "self"), 1, "Umum"),
+        item("Pencari Ilmu Teknik", "fa-graduation-cap", "Selesaikan sesi baca buku berkategori Teknik Sipil.", kategori_selesai("pendidikan", "education"), 1, "Umum"),
+        item("Sang Pencinta IT", "fa-feather-pointed", "Selesaikan sesi baca buku berkategori Informatika.", kategori_selesai("sastra", "literature"), 1, "Umum"),
         item("Lintas Genre", "fa-shuffle", "Baca buku dari 3 genre yang berbeda.", genre, 3, "Langka"),
         item("Pustaka Berwarna", "fa-palette", "Baca buku dari 5 genre yang berbeda.", genre, 5, "Epik"),
         item("Percikan Pertama", "fa-bolt", "Kumpulkan 25 EXP dari ikon membaca.", exp, 25, "Umum"),
@@ -1141,11 +1146,13 @@ def _achievements(user):
     for a in daftar:
         g = dari_admin.pop(a["nama"], None)
         if g:
+            ikon = g.ikon or a["ikon"]
             if g.tipe_syarat in metrik:
                 a = item(a["nama"], a["ikon"], g.deskripsi or a["syarat"],
-                         metrik[g.tipe_syarat], max(g.target, 1), g.kategori)
+                    metrik[g.tipe_syarat], max(g.target, 1), g.kategori)
             else:
                 a["kategori"] = g.kategori
+                a["ikon"] = ikon
                 if g.deskripsi:
                     a["syarat"] = g.deskripsi
             a["gambar"] = url_gambar(g, a["didapat"])
@@ -1155,7 +1162,7 @@ def _achievements(user):
 
     for g in dari_admin.values():
         a = item(g.nama, "fa-trophy", g.deskripsi or "Belum ada deskripsi.",
-                 metrik.get(g.tipe_syarat, 0), max(g.target, 1), g.kategori)
+            metrik.get(g.tipe_syarat, 0), max(g.target, 1), g.kategori)
         a["gambar"] = url_gambar(g, a["didapat"])
         hasil.append(a)
 
@@ -1307,23 +1314,24 @@ def achievement_view(request):
 @login_required(login_url="login")
 @require_POST
 def update_pinned_achievement_api(request):
+    """Simpan sematan achievement (maksimal 5, HANYA yang terbuka)."""
     try:
-        data = json.loads(request.body)
-        pinned_list = data.get("pinned_achievements", [])
-        
-        if not isinstance(pinned_list, list):
-            return JsonResponse({"status": "error", "message": "Format data tidak valid."}, status=400)
-            
-        if len(pinned_list) > 5:
-            pinned_list = pinned_list[:5]
-            
-        request.user.pinned_achievements = ",".join(pinned_list)
-        request.user.save(update_fields=["pinned_achievements"])
-        
-        return JsonResponse({"status": "success", "pinned": pinned_list})
-    except Exception as e:
-        return JsonResponse({"status": "error", "message": str(e)}, status=400)
+        data = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"status": "error", "message": "Data tidak valid."}, status=400)
 
+    names = [n.strip() for n in data.get("pinned_achievements", []) if n.strip()]
+
+    # Saring: hanya achievement yang TERBUKA yang boleh disematkan
+    terbuka = {a["nama"] for a in _achievements(request.user) if a["didapat"]}
+    names = [n for n in names if n in terbuka]
+
+    if len(names) > 5:
+        return JsonResponse({"status": "error", "message": "Maksimal 5 achievement."}, status=400)
+
+    request.user.pinned_achievements = ",".join(names)
+    request.user.save(update_fields=["pinned_achievements"])
+    return JsonResponse({"status": "success", "total": len(names)})
 
 @login_required(login_url="login")
 @user_passes_test(is_admin, login_url="login")
