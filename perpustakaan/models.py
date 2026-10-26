@@ -267,6 +267,50 @@ def path_gambar_terkunci(instance, filename):
 
 def path_gambar_terbuka(instance, filename):
     return f"achievement/terbuka/{uuid.uuid4().hex}{os.path.splitext(filename)[1].lower()}"
+
+# Kamus nama achievement -> ikon default (sinkron dengan _achievements() di views.py)
+IKON_ACHIEVEMENT = {
+    "Halaman Pertama": "fa-book-open",
+    "Tunas Literasi": "fa-seedling",
+    "Rak Mulai Terisi": "fa-leaf",
+    "Pembaca Tekun": "fa-tree",
+    "Penjaga Cerita": "fa-shield-halved",
+    "Sampul Terakhir": "fa-flag-checkered",
+    "Tiga Cerita": "fa-medal",
+    "Kolektor Kisah": "fa-layer-group",
+    "Penjelajah Rak": "fa-compass",
+    "Rak Pribadi": "fa-book",
+    "Misteri Terurai": "fa-magnifying-glass",
+    "Dunia Ajaib": "fa-wand-magic-sparkles",
+    "Hati di Halaman": "fa-heart",
+    "Langkah Bertumbuh": "fa-arrow-trend-up",
+    "Pencari Ilmu": "fa-graduation-cap",
+    "Sang Pencinta Sastra": "fa-feather-pointed",
+    "Lintas Genre": "fa-shuffle",
+    "Pustaka Berwarna": "fa-palette",
+    "Percikan Pertama": "fa-bolt",
+    "Bintang Pembaca": "fa-star",
+    "Cahaya Lentera": "fa-lightbulb",
+    "Lentera Emas": "fa-crown",
+    "Penanda Cerita": "fa-bookmark",
+    "Penjaga Halaman": "fa-book-bookmark",
+    "Peminjam Pertama": "fa-handshake",
+    "Sahabat Perpustakaan": "fa-user-group",
+    "Pembaca Jurnal": "fa-newspaper",
+    "Penjelajah Wacana": "fa-scroll",
+    "Hadir Membaca": "fa-sun",
+    "Ritme Membaca": "fa-chart-line",
+    "Kebiasaan Terbentuk": "fa-calendar-check",
+    "Rak Kesayangan": "fa-heart-circle-check",
+    "Saldo Pertama": "fa-coins",
+    "Poin Terkumpul": "fa-gem",
+    "Pinjam dan Kembali": "fa-rotate-left",
+    "Bagian demi Bagian": "fa-puzzle-piece",
+}
+
+# Versi normalisasi (toleran huruf besar/kecil dan spasi): HARUS di bawah kamus
+IKON_ACHIEVEMENT_BERSIH = {k.strip().casefold(): v for k, v in IKON_ACHIEVEMENT.items()}
+
 class AchievementGambar(models.Model):
     KATEGORI_CHOICES = [("Umum", "Umum"), ("Langka", "Langka"), ("Epik", "Epik")]
 
@@ -284,8 +328,9 @@ class AchievementGambar(models.Model):
     nama = models.CharField(max_length=100, unique=True)
     kategori = models.CharField(max_length=10, choices=KATEGORI_CHOICES, default="Umum")
     deskripsi = models.TextField(blank=True, default="")
-    gambar_terkunci = models.ImageField(upload_to=path_gambar_terkunci)
-    gambar_terbuka = models.ImageField(upload_to=path_gambar_terbuka)
+    gambar_terkunci = models.ImageField(upload_to=path_gambar_terkunci, blank=True)
+    gambar_terbuka = models.ImageField(upload_to=path_gambar_terbuka, blank=True)
+    ikon = models.CharField(max_length=40, blank=True, default="", help_text="Kelas Font Awesome, contoh fa-bolt")
     tipe_syarat = models.CharField(max_length=20, choices=TIPE_SYARAT_CHOICES, blank=True, default="")
     target = models.PositiveIntegerField(default=1)
     dibuat = models.DateTimeField(default=timezone.now)
@@ -294,3 +339,11 @@ class AchievementGambar(models.Model):
 
     def __str__(self):
         return f"[{self.kategori}] {self.nama}"
+
+    @property
+    def ikon_tampil(self):
+        """Ikon untuk tampilan: field 'ikon' dulu, lalu kamus nama. Kosong jika tidak ada."""
+        ikon = (self.ikon or "").strip()
+        if ikon:
+            return ikon
+        return IKON_ACHIEVEMENT_BERSIH.get((self.nama or "").strip().casefold(), "")

@@ -54,9 +54,9 @@
       <tr>
         <th class="col-check"><input type="checkbox" id="checkAll" aria-label="Pilih semua"></th>
         <th class="col-main">Achievement</th>
-        <th>Kategori</th>
-        <th>Gambar terkunci</th>
-        <th>Gambar terbuka</th>
+        <th class="col-tengah">Kategori</th>
+        <th class="col-tengah">Gambar terkunci</th>
+        <th class="col-tengah">Gambar terbuka</th>
         <th class="col-aksi">Aksi</th>
       </tr>
     </thead>
@@ -72,17 +72,17 @@
             </div>
           </div>
         </td>
-        <td data-label="Kategori">
+        <td class="col-tengah"data-label="Kategori">
           <span class="acv-badge {{ a.kategori|lower }}">
             {% if a.kategori == 'Epik' %}<i class="fa-solid fa-crown"></i>{% elif a.kategori == 'Langka' %}<i class="fa-solid fa-gem"></i>{% else %}<i class="fa-solid fa-leaf"></i>{% endif %}
             {{ a.kategori }}
           </span>
         </td>
-        <td data-label="Terkunci">
-          {% if a.gambar_terkunci %}<img class="acv-thumb" src="{{ a.gambar_terkunci.url }}" alt="Gambar terkunci {{ a.nama }}" width="48" height="48" loading="lazy">{% else %}<span class="acv-thumb acv-thumb--kosong"><i class="fa-solid fa-lock"></i></span>{% endif %}
+        <td class="col-tengah"data-label="Terkunci">
+          {% if a.gambar_terkunci %}<img class="acv-thumb" src="{{ a.gambar_terkunci.url }}" alt="Gambar terkunci {{ a.nama }}" width="48" height="48" loading="lazy">{% else %}<span class="acv-thumb acv-thumb--kosong"><i class="fa-solid {{ a.ikon_tampil|default:'fa-lock' }}"></i></span>{% endif %}
         </td>
-        <td data-label="Terbuka">
-          {% if a.gambar_terbuka %}<img class="acv-thumb" src="{{ a.gambar_terbuka.url }}" alt="Gambar terbuka {{ a.nama }}" width="48" height="48" loading="lazy">{% else %}<span class="acv-thumb acv-thumb--kosong"><i class="fa-solid fa-lock-open"></i></span>{% endif %}
+        <td class="col-tengah"data-label="Terbuka">
+          {% if a.gambar_terbuka %}<img class="acv-thumb" src="{{ a.gambar_terbuka.url }}" alt="Gambar terbuka {{ a.nama }}" width="48" height="48" loading="lazy">{% else %}<span class="acv-thumb acv-thumb--kosong acv-thumb--terbuka"><i class="fa-solid {{ a.ikon_tampil|default:'fa-lock-open' }}"></i></span>{% endif %}
         </td>
         <td class="kelola-aksi">
           <div class="kelola-actions">

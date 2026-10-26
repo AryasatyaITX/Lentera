@@ -58,8 +58,9 @@
         .acv-card { background: var(--k-bg); border-color: var(--k-line); }
         .acv-card.terbuka { background: var(--k-bg-on); border-color: var(--k-line-on); }
         .acv-card.terbuka:hover { border-color: var(--k-dark); }
-        .acv-icon { background: var(--k-line); color: var(--k-dark); }
-        .acv-card.terbuka .acv-icon { background: var(--k-main); color: #fff; }
+        .acv-icon { background: #ffffff; color: #A0A89A; border: 1px solid #E5E5D8; }
+        .acv-card.terbuka .acv-icon { background: var(--k-main); color: #fff; border-color: var(--k-main); }
+        .acv-card:not(.terbuka) .acv-icon img { filter: grayscale(1); opacity: 0.55; }
         .acv-card.terbuka .acv-status { color: var(--k-dark); }
         .acv-bar { background: rgba(255,255,255,0.75); }
         .acv-bar span { background: var(--k-main); }

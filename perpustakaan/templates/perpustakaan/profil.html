@@ -286,6 +286,13 @@
             font-size: 13px;
             color: #6A6A5C;
         }
+        /* Ikon achievement profil = konsisten dengan halaman achievement */
+        .pf-ach-icon { background: #22C55E; color: #fff; }        /* Umum (hijau) */
+        .pf-ach-icon.k-langka { background: #3B82F6; }            /* Langka (biru) */
+        .pf-ach-icon.k-epik { background: #8B5CF6; }              /* Epik (ungu) */
+        .pf-ach-icon.terkunci { background: #ffffff; color: #A0A89A; border: 1px solid #E5E5D8; }
+        .pf-ach-icon.terkunci img,
+        .pf-ach-icon.terkunci i { filter: grayscale(1); opacity: .55; }
     </style>
 </head>
 <body>
@@ -329,11 +336,11 @@
                     {% if request.user.foto_profil %}
                         <img src="{{ request.user.foto_profil.url }}" alt="Avatar">
                     {% else %}
-                        {{ request.user.nama_asli|slice:2|upper }}
+                        {{ user.nama_tampilan|default:user.username|slice:2|upper }}
                     {% endif %}
                 </div>
                 <div>
-                    <h4>{{ request.user.nama_asli }}</h4>
+                    <h4>{{ user.nama_tampilan|default:user.username }}</h4>
                     <p>User / Anggota</p>
                 </div>
             </div>
@@ -370,7 +377,7 @@
                             {% if request.user.foto_profil %}
                                 <img src="{{ request.user.foto_profil.url }}" alt="Avatar">
                             {% else %}
-                                {{ request.user.nama_asli|slice:2|upper }}
+                                {{ user.nama_tampilan|default:user.username|slice:2|upper }}
                             {% endif %}
                         </div>
                     </a>
@@ -395,12 +402,12 @@
                             {% if user.foto_profil %}
                                 <img id="previewImg" src="{{ user.foto_profil.url }}" alt="Profile" style="width: 100%; height: 100%; object-fit: cover;">
                             {% else %}
-                                <span id="previewInitial" style="font-size: 26px; font-weight: 800; color: #112222; font-family: 'Space Grotesk', sans-serif;">{{ user.nama_asli|slice:2|upper }}</span>
+                                <span id="previewInitial" style="font-size: 26px; font-weight: 800; color: #112222; font-family: 'Space Grotesk', sans-serif;">{{ user.nama_tampilan|default:user.username|slice:2|upper }}</span>
                             {% endif %}
                         </div>
 
                         <h2 style="font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: #0f172a; margin-bottom: 2px;">
-                            {{ user.nama_asli }}
+                            {{ user.nama_tampilan|default:user.username }}
                         </h2>
 
                         <p style="font-size: 13px; color: #94a3b8; font-weight: 500;">Anggota sejak {{ user.date_joined|date:"F Y" }}</p>
@@ -440,8 +447,13 @@
                                 <div style="display: flex; flex-direction: column; gap: 12px;">
                                     {% for ach in achievements %}
                                     <div style="display: flex; align-items: center; gap: 12px;">
-                                        <div style="width: 40px; height: 40px; border-radius: 10px; background: #d4f838; color: #112222; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 15px;">
-                                            <i class="fas {{ ach.ikon }}"></i>
+                                        <div class="pf-ach-icon k-{{ ach.kategori|lower }}{% if not ach.didapat %} terkunci{% endif %}"
+                                            style="width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;">
+                                            {% if ach.gambar %}
+                                                <img src="{{ ach.gambar }}" alt="{{ ach.nama }}" style="width:100%; height:100%; object-fit:cover;">
+                                            {% else %}
+                                                <i class="fas {{ ach.ikon }}"></i>
+                                            {% endif %}
                                         </div>
                                         <div style="overflow: hidden;">
                                             <h5 style="font-size: 13px; font-weight: 700; color: #0f172a; margin: 0 0 2px 0;">{{ ach.nama }}</h5>
@@ -452,7 +464,12 @@
                                 </div>
                             {% else %}
                                 <div style="padding: 10px 0;">
-                                    <p style="font-size: 13px; color: #94a3b8; font-style: italic; margin: 0;">Belum ada achievement</p>
+                                    <p style="font-size: 13px; color: #94a3b8; font-style: italic; margin: 0 0 6px 0;">
+                                        Belum ada achievement yang disematkan.
+                                    </p>
+                                    <a href="{% url 'achievement' %}" style="font-size: 12px; font-weight: 700; color: #173C3A; text-decoration: none;">
+                                        Pilih di halaman Achievement <i class="fas fa-arrow-right"></i>
+                                    </a>
                                 </div>
                             {% endif %}
 
@@ -506,7 +523,7 @@
 
                             <div class="input-group">
                                 <label>Nama asli</label>
-                                <input type="text" name="nama_tampilan" value="{{ user.nama_asli }}" maxlength="100" title="Maksimal 100 karakter" required>
+                                <input type="text" name="nama_tampilan" value="{{ user.nama_tampilan|default:user.username }}" maxlength="100" title="Maksimal 100 karakter" required>
                             </div>
 
                             <div class="input-group">
@@ -632,7 +649,7 @@
             closeAvatarMenu();
             var container = document.getElementById('previewContainer');
             if (container) {
-                container.innerHTML = '<span id="previewInitial" style="font-size: 26px; font-weight: 800; color: #112222; font-family: \'Space Grotesk\', sans-serif;">{{ user.nama_asli|slice:2|upper }}</span>';
+                container.innerHTML = '<span id="previewInitial" style="font-size: 26px; font-weight: 800; color: #112222; font-family: \'Space Grotesk\', sans-serif;">{{ user.nama_tampilan|default:user.username|slice:2|upper }}</span>';
             }
             var hapusInput = document.getElementById('hapusFotoProfilInput');
             if (hapusInput) hapusInput.value = "1";
