@@ -849,3 +849,19 @@ body.admin-body {
     .ap-search--white { width: 100%; }
     .ap-form-row { grid-template-columns: 1fr; }
 }
+
+/* Ikon achievement di admin = konsisten dengan tampilan user */
+.acv-admin-ik {
+    width: 44px; height: 44px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 10px; font-size: 16px;
+}
+.acv-admin-ik.terkunci {
+    background: #ffffff; color: #A0A89A;
+    border: 1px solid #E5E5D8;
+}
+.acv-admin-ik.terkunci i { filter: grayscale(1); opacity: .55; }
+.acv-admin-ik.terbuka { color: #fff; }
+
+.acv-thumb { border-radius: 10px; object-fit: cover; }
+.acv-thumb.terkunci { filter: grayscale(1); opacity: .7; }

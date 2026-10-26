@@ -137,6 +137,13 @@
 .kelola-table th.col-main { width: 36%; }
 .kelola-table th.col-aksi { text-align: right; }
 
+/* Kolom rata tengah (hanya desktop/tablet; di HP tabel berubah jadi kartu) */
+@media (min-width: 601px) {
+    .kelola-table th.col-tengah,
+    .kelola-table td.col-tengah { text-align: center; }
+    .kelola-table td.col-tengah .acv-thumb { margin: 0 auto; }
+}
+
 /* Baris kosong pada tabel */
 .kelola-empty { text-align: center; padding: 40px; color: #8A8A7A; }
 
@@ -217,6 +224,11 @@ tr[data-kat="umum"]   .acv-thumb { border-color: var(--acv-umum-line); }
 tr[data-kat="langka"] .acv-thumb { border-color: var(--acv-langka-line); }
 tr[data-kat="epik"]   .acv-thumb { border-color: var(--acv-epik-line); }
 .acv-thumb--kosong { border-style: dashed; }
+/* Placeholder "terbuka": warna solid sesuai kategori, ikon putih, tanpa garis putus-putus */
+.acv-thumb--kosong.acv-thumb--terbuka { border-style: solid; color: #fff; }
+tr[data-kat="umum"]   .acv-thumb--terbuka { background: var(--acv-umum-line);   border-color: var(--acv-umum-line); }
+tr[data-kat="langka"] .acv-thumb--terbuka { background: var(--acv-langka-line); border-color: var(--acv-langka-line); }
+tr[data-kat="epik"]   .acv-thumb--terbuka { background: var(--acv-epik-line);   border-color: var(--acv-epik-line); }
 
 /* Deskripsi dipotong 2 baris */
 .acv-clip {
