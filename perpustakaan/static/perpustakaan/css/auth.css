@@ -13,9 +13,6 @@
     --lime: #D4F838;
 }
 
-body.auth-login    { --forest-img: url('../img/hu.jpg'); }
-body.auth-register { --forest-img: url('../img/tra.jpg'); }
-
 /* ===== Foto slider panel kiri (dulu inline di HTML) ===== */
 .slide-1 { background-image: url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=1200&auto=format&fit=crop'); }
 .slide-2 { background-image: url('https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=1200&auto=format&fit=crop'); }
@@ -236,10 +233,9 @@ body.auth-body {
     background-color: #0f2a24;
     background-image:
         linear-gradient(180deg, rgba(8, 28, 22, 0.40) 0%, rgba(8, 28, 22, 0.78) 100%),
-        var(--forest-img),
         linear-gradient(160deg, #1d5a3f 0%, #0f2a24 100%);
-    background-size: cover, cover, cover;
-    background-position: center, center, center;
+    background-size: cover, cover;
+    background-position: center, center;
     background-repeat: no-repeat;
 }
 
@@ -566,20 +562,53 @@ body.auth-body {
 
 /* ---- HP: panel kiri jadi header ringkas (hemat tinggi layar & data) ---- */
 @media (max-width: 600px) {
+    .page-container {
+        position: relative;
+        overflow: visible;
+    }
+
     .left-panel {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 3;
+        width: 100%;
         min-height: 0;
         padding: 16px 20px;
+        background: transparent;
+        pointer-events: none;
         flex-direction: row;
         align-items: center;
     }
+
+    .brand-logo {
+        pointer-events: auto;
+    }
+
+    .right-panel {
+        flex: 0 0 auto;
+        align-self: stretch;
+        width: 100%;
+        min-height: 100vh;
+        min-height: 100dvh;
+        margin: 0;
+        padding: 88px 24px calc(32px + env(safe-area-inset-bottom));
+        border-radius: 0;
+        align-items: center;
+        justify-content: center;
+    }
+
     .slider-wrapper,
     .banner-quote,
     .slider-dots { display: none; }
     .brand-logo img { width: 30px; height: 30px; }
     .brand-logo span { font-size: 1.4rem; }
 
-    .right-panel { padding: 28px 20px calc(40px + env(safe-area-inset-bottom)); }
-    .form-box { max-width: 100%; }
+    .right-panel { padding-right: clamp(24px, 7vw, 36px); padding-left: clamp(24px, 7vw, 36px); }
+    .form-box {
+        max-width: 400px;
+        transform: translateY(-50px);
+    }
     .title { font-size: 1.65rem; margin-bottom: 22px; }
 
     /* 16px mencegah iOS memperbesar layar saat kolom difokus */
@@ -596,7 +625,7 @@ body.auth-body {
 
 /* ---- HP sangat kecil ---- */
 @media (max-width: 360px) {
-    .right-panel { padding: 24px 16px 36px; }
+    .right-panel { padding-right: 22px; padding-left: 22px; }
     .title { font-size: 1.45rem; }
     .input-group input.otp-input { font-size: 20px; letter-spacing: 0.4em; }
 }

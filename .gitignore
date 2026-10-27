@@ -11,3 +11,8 @@ __pycache__/
 # Abaikan Pengaturan Editor
 .vscode/
 .idea/
+
+# Environment files can contain production credentials.
+.env
+.env.*
+!.env.example
