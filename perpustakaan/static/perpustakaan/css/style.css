@@ -246,8 +246,8 @@ body.auth-body {
     gap: 20px;
 }
 
-.dashboard-main .notification-widget {
-    margin-right: 15px;
+.app-layout .main-content:not(.adm-main) .nav-actions .notification-widget {
+    margin-right: 20px;
 }
 
 .nav-actions i {
@@ -2602,10 +2602,10 @@ body {
 .book-author { display: block; min-width: 0; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; }
 .book-year { flex: 0 0 auto; }
 
-/* Grid katalog: 5 per baris di desktop, menyesuaikan di layar kecil */
+/* Grid katalog: 5 kartu per baris di desktop, menyesuaikan di layar kecil */
 .grid-buku-5 {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 20px;
 }
 .notification-bell { position: relative; display: inline-flex; align-items: center; justify-content: center; }
@@ -2635,10 +2635,10 @@ body {
 .notification-panel-all { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; color: #173c3a; font-size: 12px; font-weight: 700; text-decoration: none; }
 .notification-panel-all:hover { background: #f7faf8; }
 @media (max-width: 520px) { .notification-panel { position: fixed; top: 72px; right: 12px; width: calc(100vw - 24px); } }
-@media (max-width: 1200px) { .grid-buku-5 { grid-template-columns: repeat(4, 1fr); } }
-@media (max-width: 900px)  { .grid-buku-5 { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 640px)  { .grid-buku-5 { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 420px)  { .grid-buku-5 { grid-template-columns: 1fr; } }
+@media (max-width: 1200px) { .grid-buku-5 { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 900px)  { .grid-buku-5 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 640px)  { .grid-buku-5 { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; } }
+@media (max-width: 420px)  { .grid-buku-5 { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; } }
 
 /* Bookmark cards follow the catalog grid at each responsive breakpoint. */
 .bookmarks-main .catalog-grid {
@@ -2976,15 +2976,7 @@ body {
     }
 
     .app-layout .main-content:not(.adm-main) .nav-actions {
-        gap: 8px;
-    }
-
-    .app-layout .main-content.dashboard-main .nav-actions {
         gap: 10px;
-    }
-
-    .app-layout .main-content.dashboard-main .notification-widget {
-        margin-right: 0;
     }
 
     .app-layout .main-content.dashboard-main .nav-actions .notification-bell {
@@ -3351,3 +3343,96 @@ body {
 .pf-ach-icon.terkunci { background: #ffffff; color: #A0A89A; border: 1px solid #E5E5D8; }
 .pf-ach-icon.terkunci img,
 .pf-ach-icon.terkunci i { filter: grayscale(1); opacity: .55; }
+
+@media (max-width: 600px) {
+    .loan-list {
+        gap: 12px;
+        padding-bottom: 24px;
+    }
+
+    .loan-card {
+        display: grid;
+        grid-template-columns: 58px minmax(0, 1fr);
+        align-items: start;
+        gap: 12px;
+        padding: 14px;
+    }
+
+    .loan-cover,
+    .loan-cover-link .loan-cover {
+        width: 58px;
+        height: 84px;
+    }
+
+    .loan-info {
+        min-width: 0;
+    }
+
+    .loan-status-row {
+        flex-wrap: wrap;
+        gap: 5px 8px;
+        margin-bottom: 8px;
+    }
+
+    .badge-aktif,
+    .due-date {
+        font-size: 10px;
+    }
+
+    .badge-aktif {
+        padding: 3px 8px;
+    }
+
+    .loan-info h3 {
+        font-size: 14px;
+        line-height: 1.3;
+        overflow-wrap: anywhere;
+    }
+
+    .loan-info p.author {
+        display: -webkit-box;
+        overflow: hidden;
+        margin-bottom: 8px;
+        font-size: 11px;
+        line-height: 1.35;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+
+    .loan-info .progress-bar {
+        max-width: none;
+        margin-top: 6px;
+    }
+
+    .loan-info p.page {
+        font-size: 11px;
+    }
+
+    .loan-actions {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+        width: 100%;
+    }
+
+    .loan-actions > form {
+        min-width: 0;
+    }
+
+    .loan-actions .btn-baca,
+    .loan-actions .btn-outline {
+        display: inline-flex;
+        width: 100%;
+        min-width: 0;
+        min-height: 34px;
+        box-sizing: border-box;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 7px 4px;
+        font-size: 10px;
+        line-height: 1.15;
+        white-space: nowrap;
+    }
+}

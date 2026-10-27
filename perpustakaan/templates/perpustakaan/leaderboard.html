@@ -8,7 +8,7 @@
     <title>Top List Reader</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1058">
+    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1064">
     <script src="{% static 'perpustakaan/js/script.js' %}?v=5" defer></script>
     <style>
         /* Kotak Besar Utama */
@@ -257,6 +257,214 @@
             color: #2563eb;
             text-decoration: underline;
         }
+
+        @media (max-width: 600px) {
+            .leaderboard-main {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .top-reader-wrapper {
+                margin-top: 16px;
+                padding: 42px 18px 0;
+                border-radius: 18px;
+            }
+
+            .top-reader-wrapper::before {
+                border-radius: 18px;
+            }
+
+            .top-reader-title {
+                top: 24px;
+                left: 18px;
+                font-size: 10px;
+                letter-spacing: 1px;
+            }
+
+            .podium-inner-box {
+                gap: 7px;
+                padding-top: 28px;
+            }
+
+            .podium-card {
+                min-width: 0;
+                padding: 10px 4px 14px;
+                border-radius: 14px 14px 0 0;
+            }
+
+            .podium-1 { min-height: 200px; }
+            .podium-2 { min-height: 165px; }
+            .podium-3 { min-height: 150px; }
+
+            .podium-avatar-wrap {
+                width: 42px;
+                height: 42px;
+                min-width: 42px;
+                min-height: 42px;
+                padding: 4px;
+                margin: 14px auto 7px;
+                border-radius: 12px;
+            }
+
+            .podium-avatar,
+            .podium-avatar-initial {
+                width: 34px !important;
+                height: 34px !important;
+                min-width: 34px !important;
+                min-height: 34px !important;
+                max-width: 34px !important;
+                max-height: 34px !important;
+                flex: 0 0 34px !important;
+                border-radius: 8px !important;
+                font-size: 12px;
+            }
+
+            .podium-name {
+                font-size: 10px;
+            }
+
+            .podium-meta {
+                margin-bottom: 4px;
+                font-size: 9px;
+            }
+
+            .podium-meta span {
+                font-size: 8px !important;
+            }
+
+            .rank-badge {
+                bottom: -9px;
+                width: 27px;
+                height: 22px;
+                font-size: 10px;
+            }
+
+            .top-star-icon {
+                top: -29px;
+                width: 24px;
+                height: 24px;
+            }
+
+            .leaderboard-table-wrap {
+                display: flex;
+                flex: 1 0 auto;
+                flex-direction: column;
+                margin-top: 16px !important;
+                padding: 8px !important;
+                border-radius: 14px !important;
+                overflow-x: auto;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .leaderboard-table {
+                display: table;
+                flex: 1;
+                width: 100%;
+                height: 100%;
+                min-width: 0;
+                table-layout: fixed;
+            }
+
+            .leaderboard-table thead {
+                display: table-header-group;
+            }
+
+            .leaderboard-table tbody {
+                display: table-row-group;
+            }
+
+            .leaderboard-table tbody tr {
+                display: table-row;
+                border-bottom: 1px solid #eef2f5 !important;
+            }
+
+            .leaderboard-table tbody tr.table-row-highlight {
+                background: #fef08a !important;
+                border-left: 4px solid #ca8a04 !important;
+            }
+
+            .leaderboard-table th {
+                padding: 8px 3px !important;
+                font-size: 9px !important;
+                white-space: nowrap;
+            }
+
+            .leaderboard-table td {
+                display: table-cell;
+                min-width: 0;
+                padding: 8px 3px !important;
+                font-size: 9px;
+                white-space: nowrap;
+            }
+
+            .leaderboard-table th:nth-child(1),
+            .leaderboard-table td:nth-child(1) {
+                width: 34px !important;
+                text-align: center !important;
+            }
+
+            .leaderboard-table th:nth-child(2),
+            .leaderboard-table td:nth-child(2) {
+                width: auto;
+                text-align: left !important;
+            }
+
+            .leaderboard-table td:nth-child(2) > div {
+                display: flex;
+                min-width: 0;
+                align-items: center;
+                gap: 5px !important;
+            }
+
+            .leaderboard-table td:nth-child(2) img {
+                width: 24px !important;
+                height: 24px !important;
+                flex: 0 0 24px;
+            }
+
+            .leaderboard-table td:nth-child(2) > div > div {
+                min-width: 0;
+                overflow: hidden;
+                line-height: 1.3;
+            }
+
+            .leaderboard-table td:nth-child(2) > div > div > p {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .leaderboard-table .user-link {
+                display: inline-block;
+                max-width: 100%;
+                overflow: hidden;
+                font-size: 9px;
+                text-overflow: ellipsis;
+                vertical-align: bottom;
+                white-space: nowrap;
+            }
+
+            .leaderboard-table th:nth-child(3),
+            .leaderboard-table td:nth-child(3) {
+                width: 62px;
+                color: #ef4444 !important;
+                text-align: center !important;
+            }
+
+            .leaderboard-table th:nth-child(4),
+            .leaderboard-table td:nth-child(4) {
+                width: 66px;
+                text-align: right !important;
+            }
+
+            .leaderboard-metric-value {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                white-space: nowrap;
+            }
+        }
     </style>
 </head>
 <body>
@@ -303,7 +511,7 @@
     <!-- ===== / Sidebar ===== -->
 
     <!-- ===== Konten utama ===== -->
-    <div class="main-content">
+    <div class="main-content leaderboard-main">
 
         <div class="top-nav">
             <div class="top-nav-left">
@@ -425,8 +633,8 @@
         </div>
 
         <!-- ================= TABEL PERINGKAT 4 - 10 ================= -->
-        <div style="background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-top: 25px;">
-            <table style="width: 100%; border-collapse: collapse;">
+        <div class="leaderboard-table-wrap" style="background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-top: 25px;">
+            <table class="leaderboard-table" style="width: 100%; border-collapse: collapse;">
                 <thead>
                     <tr style="text-align: left; border-bottom: 2px solid #e2e8f0; color: #64748b; font-size: 13px;">
                         <th style="padding: 12px; width: 60px;">Rank</th>
@@ -453,11 +661,11 @@
                                 </div>
                             </div>
                         </td>
-                        <td style="padding: 12px; text-align: center; color: #ef4444; font-weight: 600;">
-                            <i class="fas fa-fire"></i> {{ item.user.streak_days|default:0 }} hari
+                        <td data-label="Streak" style="padding: 12px; text-align: center; color: #ef4444; font-weight: 600;">
+                            <span class="leaderboard-metric-value"><i class="fas fa-fire"></i> {{ item.user.streak_days|default:0 }} hari</span>
                         </td>
-                        <td style="padding: 12px; text-align: right; font-weight: 700; color: #0f172a;">
-                            {{ item.user.exp }} EXP
+                        <td data-label="Total EXP" style="padding: 12px; text-align: right; font-weight: 700; color: #0f172a;">
+                            <span class="leaderboard-metric-value">{{ item.user.exp }} EXP</span>
                         </td>
                     </tr>
                     {% empty %}
