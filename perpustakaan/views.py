@@ -133,7 +133,8 @@ def _proses_reset(request, action):
                     None,
                     [email],
                 )
-            except Exception:
+            except Exception as e:
+                print("GAGAL KIRIM OTP:", repr(e))
                 return _render_login(request, 1, error="Gagal mengirim email. Coba lagi beberapa saat.")
 
         # Pesan sama untuk email terdaftar maupun tidak (tidak membocorkan data akun)
@@ -265,43 +266,34 @@ def login_view(request):
         return redirect("dashboard")
 
     if request.method == "POST":
-        action = request.POST.get("action")
+        action = request.POST.get("action", "")
 
-        if action == "reset_password":
-            username_input = request.POST.get("username")
-            email_input = request.POST.get("email")
-            new_password = request.POST.get("new_password")
-            confirm_password = request.POST.get("confirm_password")
+        # ===== ALUR PEMULIHAN AKUN (OTP) =====
+        # Semua action reset_* (kirim OTP, verifikasi, kirim ulang,
+        # ganti email, batal, simpan password baru) diserahkan ke
+        # _proses_reset() yang sudah menangani session & langkahnya.
+        if action.startswith("reset_"):
+            return _proses_reset(request, action)
 
-            if new_password != confirm_password:
-                messages.error(request, "Konfirmasi password baru tidak cocok!")
+        # ===== LOGIN BIASA =====
+        username_input = request.POST.get("username")
+        password_input = request.POST.get("password")
+        remember_me = request.POST.get("remember_me")
+
+        user = authenticate(request, username=username_input, password=password_input)
+
+        if user is not None:
+            login(request, user)
+            if remember_me:
+                request.session.set_expiry(1209600)   # 2 minggu
             else:
-                user = CustomUser.objects.filter(username=username_input, email=email_input).first()
-                if user:
-                    user.set_password(new_password)
-                    user.save()
-                    messages.success(request, "Password berhasil diubah! Silakan login dengan password baru.")
-                else:
-                    messages.error(request, "Username/NIM atau Email terdaftar tidak ditemukan!")
+                request.session.set_expiry(0)         # tutup browser = logout
+
+            if is_admin(user) or user.is_staff:
+                return redirect("dashboard_admin")
+            return redirect("dashboard")
         else:
-            username_input = request.POST.get("username")
-            password_input = request.POST.get("password")
-            remember_me = request.POST.get("remember_me")
-
-            user = authenticate(request, username=username_input, password=password_input)
-
-            if user is not None:
-                login(request, user)
-                if not remember_me:
-                    request.session.set_expiry(0)
-                else:
-                    request.session.set_expiry(1209600)
-
-                if is_admin(user) or user.is_staff:
-                    return redirect("dashboard_admin")
-                return redirect("dashboard")
-            else:
-                messages.error(request, "NIM atau Password Salah. Password minimal terdiri dari 8 karakter! Silahkan Coba Lagi")
+            messages.error(request, "NIM atau Password Salah. Password minimal terdiri dari 8 karakter! Silakan coba lagi.")
 
     return render(request, "perpustakaan/login.html")
 
@@ -836,7 +828,7 @@ def perpanjang_buku(request, pinjaman_id):
         messages.error(
             request,
             f"Batas perpanjangan {MAKS_PERPANJANG} kali untuk buku ini sudah tercapai.",
-                extra_tags="Perpanjangan gagal",
+                extra_tags="Perpanjangan",
             )
         return redirect("peminjaman")
 
