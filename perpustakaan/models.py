@@ -178,7 +178,7 @@ class Notifikasi(models.Model):
 class CustomUser(AbstractUser):
     is_admin = models.BooleanField(default=False)
     is_member = models.BooleanField(default=True)
-
+    menunggu_persetujuan = models.BooleanField(default=False)
     # --- FITUR PROFIL KUSTOM ---
     nama_tampilan = models.CharField(max_length=100)
     foto_profil = models.ImageField(upload_to="profil/", blank=True, null=True)

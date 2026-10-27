@@ -256,6 +256,7 @@
         }
         .chip-rank { background: #E8F0FE; color: #1D4ED8; }
         .chip-streak { background: #FFF3E0; color: #C2410C; }
+
         .chip-streak i { color: #f97316; }
 
         .level-box {
@@ -426,7 +427,7 @@
                         <div class="level-box">
                             <div class="level-row">
                                 <strong>Level {{ level }}</strong>
-                                <span>{{ exp_di_level }} / {{ exp_per_level }} EXP</span>
+                                <span>{{ user.exp }} EXP</span>
                             </div>
                             <div class="level-bar">
                                 <div class="level-fill" style="width: {{ persen_level }}%;"></div>

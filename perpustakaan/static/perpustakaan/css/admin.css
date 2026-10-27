@@ -865,3 +865,70 @@ body.admin-body {
 
 .acv-thumb { border-radius: 10px; object-fit: cover; }
 .acv-thumb.terkunci { filter: grayscale(1); opacity: .7; }
+
+/* =========================================================
+   KELOLA ANGGOTA: permintaan akun baru (popup persetujuan)
+========================================================= */
+.ap-btn-req {
+    height: 46px;
+    padding: 0 18px;
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    color: var(--ap-green);
+    border: 1px solid var(--ap-line);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: border-color .2s;
+}
+.ap-btn-req:hover { border-color: var(--ap-green); }
+.ap-toolbar .ap-btn-req + .ap-btn-add { margin-left: 0; }
+
+.ap-req-badge {
+    min-width: 20px; height: 20px; padding: 0 6px;
+    border-radius: 10px;
+    background: #dc2626; color: #fff;
+    font-size: 11px; font-weight: 800;
+    display: inline-flex; align-items: center; justify-content: center;
+}
+
+.ap-modal-lg { width: 620px; }
+
+.ap-req-list { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 10px; }
+.ap-req-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px;
+    border: 1px solid var(--ap-line);
+    border-radius: 12px;
+    background: #FDFDF8;
+}
+.ap-req-info { flex: 1; min-width: 0; }
+.ap-req-info > span {
+    display: block;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ap-req-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.ap-req-actions form { margin: 0; }
+
+.ap-btn-approve,
+.ap-btn-reject {
+    height: 36px; padding: 0 16px;
+    border-radius: 8px;
+    font-size: 12px; font-weight: 700;
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+}
+.ap-btn-approve { background: var(--ap-lime); color: var(--ap-green); border: none; }
+.ap-btn-approve:hover { background: #c0e628; }
+.ap-btn-reject { background: transparent; color: #dc2626; border: 1px solid #fecaca; }
+.ap-btn-reject:hover { background: #fee2e2; }
+
+@media (max-width: 700px) {
+    .ap-req-item { flex-wrap: wrap; }
+    .ap-req-actions { width: 100%; justify-content: flex-end; }
+}
+

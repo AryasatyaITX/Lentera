@@ -16,6 +16,11 @@ class Migration(migrations.Migration):
             name='ikon',
             field=models.CharField(blank=True, default='', help_text='Kelas Font Awesome, contoh fa-bolt', max_length=40),
         ),
+        migrations.AddField(
+            model_name='customuser',
+            name='menunggu_persetujuan',
+            field=models.BooleanField(default=False),
+        ),
         migrations.AlterField(
             model_name='achievementgambar',
             name='gambar_terbuka',

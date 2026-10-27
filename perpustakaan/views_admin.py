@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import user_passes_test
 from django.db.models import Count
 from django.db.models.functions import TruncDate
 from django.shortcuts import render
+from django.urls import reverse
 from django.utils import timezone
 from .models import AchievementGambar, BukuDigital, CustomUser, Jurnal, Peminjaman, Notifikasi, label_kategori
 
@@ -85,7 +86,8 @@ def _aktivitas_terbaru():
 
     u = (
         CustomUser.objects.filter(
-            is_member=True, is_admin=False, is_staff=False, is_superuser=False
+            is_member=True, is_admin=False, is_staff=False, is_superuser=False,
+            menunggu_persetujuan=False,
         )
         .order_by("-date_joined")
         .first()
@@ -161,7 +163,8 @@ def dashboard_admin(request):
     )
 
     anggota = CustomUser.objects.filter(
-        is_member=True, is_admin=False, is_staff=False, is_superuser=False
+        is_member=True, is_admin=False, is_staff=False, is_superuser=False,
+        menunggu_persetujuan=False,
     )
     populer = (
         BukuDigital.objects.annotate(jumlah=Count("peminjaman"))
@@ -641,11 +644,30 @@ def _cek_password(pw):
 def _queryset_anggota():
     """Hanya user biasa. Akun admin tidak ditampilkan / tidak bisa diubah di sini."""
     return (
-        CustomUser.objects.filter(is_member=True)
+        CustomUser.objects.filter(is_member=True, menunggu_persetujuan=False)
         .exclude(is_admin=True)
         .exclude(is_staff=True)
         .exclude(is_superuser=True)
     )
+
+
+def _queryset_pendaftar():
+    """Akun yang baru mendaftar dan masih menunggu persetujuan admin."""
+    return CustomUser.objects.filter(
+        is_member=True,
+        menunggu_persetujuan=True,
+        is_admin=False,
+        is_staff=False,
+        is_superuser=False,
+    )
+
+
+def _kembali_ke_anggota():
+    """Balik ke Kelola Anggota; pop up persetujuan tetap terbuka kalau masih ada antrean."""
+    url = reverse("kelola_anggota")
+    if _queryset_pendaftar().exists():
+        url += "?persetujuan=1"
+    return redirect(url)
 
 
 @user_passes_test(_boleh_admin, login_url="login")
@@ -682,9 +704,57 @@ def kelola_anggota(request):
     for a in anggota:
         a.jumlah_pinjaman = jumlah.get(a.pk, 0)
 
+    pendaftar = list(_queryset_pendaftar().order_by("date_joined"))
+
     return render(
-        request, "perpustakaan/kelola_anggota.html", {"anggota": anggota}
+        request,
+        "perpustakaan/kelola_anggota.html",
+        {"anggota": anggota, "pendaftar": pendaftar},
     )
+
+
+@user_passes_test(_boleh_admin, login_url="login")
+def setujui_anggota(request, pk):
+    """Setujui pendaftaran: akun diaktifkan dan anggota bisa login."""
+    if request.method == "POST":
+        user = get_object_or_404(_queryset_pendaftar(), pk=pk)
+        user.is_active = True
+        user.menunggu_persetujuan = False
+        user.save(update_fields=["is_active", "menunggu_persetujuan"])
+        Notifikasi.objects.create(
+            user=user,
+            jenis="pengumuman",
+            judul="Akun kamu sudah disetujui",
+            isi="Selamat datang di perpustakaan! Admin telah menyetujui pendaftaranmu.",
+            url="/profil/",
+        )
+        messages.success(
+            request,
+            f"Pendaftaran \u201c{user.nama_asli}\u201d disetujui.",
+        )
+    return _kembali_ke_anggota()
+
+
+@user_passes_test(_boleh_admin, login_url="login")
+def tolak_anggota(request, pk):
+    """Tolak pendaftaran: akun dihapus (belum punya riwayat apa pun)."""
+    if request.method == "POST":
+        user = get_object_or_404(_queryset_pendaftar(), pk=pk)
+        nama = user.nama_asli
+        user.delete()
+        messages.success(request, f"Pendaftaran \u201c{nama}\u201d ditolak.")
+    return _kembali_ke_anggota()
+
+
+@user_passes_test(_boleh_admin, login_url="login")
+def setujui_semua_anggota(request):
+    if request.method == "POST":
+        jumlah = _queryset_pendaftar().update(
+            is_active=True, menunggu_persetujuan=False
+        )
+        if jumlah:
+            messages.success(request, f"{jumlah} pendaftaran disetujui.")
+    return _kembali_ke_anggota()
 
 
 @user_passes_test(_boleh_admin, login_url="login")
@@ -857,7 +927,8 @@ def laporan(request):
     )
 
     anggota = CustomUser.objects.filter(
-        is_member=True, is_admin=False, is_staff=False, is_superuser=False
+        is_member=True, is_admin=False, is_staff=False, is_superuser=False,
+        menunggu_persetujuan=False,
     )
 
     # Anggota aktif = anggota yang meminjam dalam 30 hari terakhir.

@@ -293,7 +293,14 @@ def login_view(request):
                 return redirect("dashboard_admin")
             return redirect("dashboard")
         else:
-            messages.error(request, "NIM atau Password Salah. Password minimal terdiri dari 8 karakter! Silakan coba lagi.")
+            kandidat = CustomUser.objects.filter(username=username_input or "").first()
+            if kandidat and not kandidat.is_active and kandidat.check_password(password_input or ""):
+                if kandidat.menunggu_persetujuan:
+                    messages.error(request, "Akunmu masih menunggu persetujuan admin. Silakan coba login lagi nanti.")
+                else:
+                    messages.error(request, "Akunmu dinonaktifkan. Hubungi admin perpustakaan.")
+            else:
+                messages.error(request, "NIM atau Password Salah. Password minimal terdiri dari 8 karakter! Silakan coba lagi.")
 
     return render(request, "perpustakaan/login.html")
 
@@ -321,8 +328,16 @@ def register_view(request):
             except ValidationError:
                 galat = "Format email tidak valid!"
 
-        if not galat and CustomUser.objects.filter(username=nim).exists():
-            galat = "NIM sudah terdaftar!"
+        if not galat:
+            ada = CustomUser.objects.filter(username=nim).first()
+            if ada:
+                if ada.menunggu_persetujuan:
+                    galat = "NIM ini sudah mendaftar dan sedang menunggu persetujuan admin."
+                elif not ada.is_active:
+                    galat = "Akun dengan NIM ini dinonaktifkan. Hubungi admin perpustakaan."
+                else:
+                    galat = "NIM sudah terdaftar!"
+
         if not galat and CustomUser.objects.filter(email__iexact=email).exists():
             galat = "Email sudah dipakai akun lain!"
 
@@ -342,9 +357,11 @@ def register_view(request):
             password=password,
             is_member=True,
             is_admin=False,
+            is_active=False,
+            menunggu_persetujuan=True,
         )
         # Setelah daftar, arahkan ke halaman login (tidak login otomatis)
-        messages.success(request, "Registrasi berhasil! Silakan login.")
+        messages.success(request, "Registrasi berhasil! Akunmu menunggu persetujuan admin. Kamu baru bisa login setelah disetujui.")
         return redirect("login")
 
     return render(request, "perpustakaan/register.html")
@@ -912,7 +929,7 @@ def riwayat_view(request):
 @login_required(login_url="login")
 def leaderboard_view(request):
     semua_user = CustomUser.objects.filter(
-        is_member=True, is_admin=False, is_staff=False, is_superuser=False
+        is_member=True, is_admin=False, is_staff=False, is_superuser=False, menunggu_persetujuan=False,
     ).order_by("-exp", "pk")
     top_3 = semua_user[:3]
     other_users = semua_user[3:10]
