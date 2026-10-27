@@ -197,6 +197,65 @@
 .ap-pw-rules li.ok { color: var(--ap-lime); }
 .ap-pw-rules li.ok::before { background: var(--ap-lime); box-shadow: 0 0 8px rgba(212,248,56,.7); }
 .ap-btn-add:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ---------- Persetujuan pendaftaran ---------- */
+.ap-btn-approve {
+    position: relative;
+    height: 46px;
+    padding: 0 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    color: var(--ap-green);
+    border: 1.5px solid var(--ap-green);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .2s, color .2s;
+}
+.ap-btn-approve:hover { background: var(--ap-green); color: var(--ap-lime); }
+.ap-badge {
+    min-width: 22px; height: 22px; padding: 0 6px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 11px;
+    background: #dc2626; color: #fff;
+    font-size: 11px; font-weight: 800;
+}
+.ap-toolbar .ap-btn-approve { margin-left: auto; }
+.ap-toolbar .ap-btn-approve + .ap-btn-add { margin-left: 0; }
+
+.ap-modal-box--lg { width: 620px; }
+.ap-pend-sub { font-size: 13px; color: #6A6A5C; line-height: 1.6; margin: 0 0 16px; }
+.ap-pend-list { display: grid; gap: 10px; max-height: 46vh; overflow-y: auto; }
+.ap-pend-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px;
+    border: 1px solid var(--ap-line);
+    border-radius: 12px;
+    background: #FDFDF8;
+}
+.ap-pend-info { flex: 1; min-width: 0; }
+.ap-pend-info .ap-user-name,
+.ap-pend-info .ap-user-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ap-pend-time { display: block; font-size: 11px; color: var(--ap-muted); margin-top: 3px; }
+.ap-pend-actions { display: flex; gap: 8px; }
+.ap-pend-actions form { margin: 0; }
+.ap-btn-sm { height: 36px; padding: 0 14px; font-size: 12px; border-radius: 8px; }
+.ap-btn-reject {
+    height: 36px; padding: 0 14px;
+    background: #fff; color: #dc2626;
+    border: 1px solid #fca5a5; border-radius: 8px;
+    font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.ap-btn-reject:hover { background: #fee2e2; }
+.ap-pill.menunggu { background: #FFF8E1; color: #F57F17; }
+
+@media (max-width: 700px) {
+    .ap-pend-item { flex-wrap: wrap; }
+    .ap-pend-actions { width: 100%; justify-content: flex-end; }
+}
 </style>
 {% endblock %}
 
@@ -216,6 +275,12 @@
       <i class="fa-solid fa-magnifying-glass"></i>
       <input type="text" id="ap-search" placeholder="Cari nama, username, atau email...">
     </div>
+    {% if pendaftar %}
+    <button type="button" class="ap-btn-approve" id="btnSetuju">
+      <i class="fa-solid fa-user-clock"></i> Persetujuan akun
+      <span class="ap-badge">{{ pendaftar|length }}</span>
+    </button>
+    {% endif %}
     <button type="button" class="ap-btn-add" id="btnTambah">
       <i class="fa-solid fa-plus"></i> Tambah anggota
     </button>
@@ -305,6 +370,56 @@
   </div>
 
 </div>
+
+<!-- ===== Modal persetujuan akun baru ===== -->
+{% if pendaftar %}
+<div class="ap-modal" id="modalSetuju">
+  <div class="ap-modal-box ap-modal-box--lg">
+    <div class="ap-modal-head">
+      <h3>Persetujuan Akun Baru</h3>
+      <button type="button" class="ap-modal-close" data-close>&times;</button>
+    </div>
+    <p class="ap-pend-sub">
+      <b>{{ pendaftar|length }}</b> akun baru menunggu persetujuanmu.
+      Akun baru baru bisa login setelah kamu setujui.
+    </p>
+
+    <div class="ap-pend-list">
+      {% for p in pendaftar %}
+      <div class="ap-pend-item">
+        <span class="ap-avatar">{{ p.nama_asli|slice:":2"|upper }}</span>
+        <div class="ap-pend-info">
+          <span class="ap-user-name">{{ p.nama_asli }}</span>
+          <span class="ap-user-sub">@{{ p.username }}{% if p.email %} · {{ p.email }}{% endif %}</span>
+          <span class="ap-pend-time">Mendaftar {{ p.date_joined|timesince }} yang lalu</span>
+        </div>
+        <div class="ap-pend-actions">
+          <form action="{% url 'tolak_anggota' p.pk %}" method="POST"
+                onsubmit="return confirm('Tolak pendaftaran {{ p.nama_asli|escapejs }}? Akunnya akan dihapus.');">
+            {% csrf_token %}
+            <button type="submit" class="ap-btn-reject">Tolak</button>
+          </form>
+          <form action="{% url 'setujui_anggota' p.pk %}" method="POST">
+            {% csrf_token %}
+            <button type="submit" class="ap-btn-add ap-btn-sm"><i class="fa-solid fa-check"></i> Setujui</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="ap-modal-foot">
+      <button type="button" class="ap-btn-cancel" data-close>Nanti saja</button>
+      {% if pendaftar|length > 1 %}
+      <form action="{% url 'setujui_semua_anggota' %}" method="POST" style="margin:0;">
+        {% csrf_token %}
+        <button type="submit" class="ap-btn-add"><i class="fa-solid fa-check-double"></i> Setujui semua</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
 
 <!-- ===== Modal tambah ===== -->
 <div class="ap-modal" id="modalTambah">
@@ -466,10 +581,17 @@
   var mTambah = document.getElementById('modalTambah');
   var mEdit = document.getElementById('modalEdit');
   var mHapus = document.getElementById('modalHapus');
+  var mSetuju = document.getElementById('modalSetuju');   // null kalau tidak ada antrean
   var modals = [mTambah, mEdit, mHapus];
+  if (mSetuju) modals.push(mSetuju);
+  var KEY_SETUJU = 'lentera-setuju-ditutup';
 
   function buka(m) { m.classList.add('open'); }
-  function tutupSemua() { modals.forEach(function (m) { m.classList.remove('open'); }); }
+  function tutupSemua() {
+    modals.forEach(function (m) { m.classList.remove('open'); });
+    // ingat bahwa pop up persetujuan sudah ditutup, supaya tidak muncul terus saat pindah tab/refresh
+    if (mSetuju) { try { sessionStorage.setItem(KEY_SETUJU, '1'); } catch (e) {} }
+  }
 
   modals.forEach(function (m) {
     m.addEventListener('click', function (e) { if (e.target === m) tutupSemua(); });
@@ -509,6 +631,20 @@
   });
 
   document.getElementById('btnTambah').addEventListener('click', function () { buka(mTambah); });
+
+  /* ---------- Pop up persetujuan akun baru ---------- */
+  if (mSetuju) {
+    var btnSetuju = document.getElementById('btnSetuju');
+    if (btnSetuju) btnSetuju.addEventListener('click', function () { buka(mSetuju); });
+
+    var ditutup = false;
+    try { ditutup = sessionStorage.getItem(KEY_SETUJU) === '1'; } catch (e) {}
+    var paksa = location.search.indexOf('persetujuan=1') !== -1;   // habis setujui/tolak
+    if (paksa || !ditutup) buka(mSetuju);
+    if (paksa && window.history.replaceState) {
+      window.history.replaceState(null, '', location.pathname);
+    }
+  }
 
   Array.prototype.forEach.call(document.querySelectorAll('.js-edit'), function (b) {
     b.addEventListener('click', function () {
