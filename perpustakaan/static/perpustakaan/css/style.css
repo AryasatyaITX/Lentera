@@ -246,6 +246,10 @@ body.auth-body {
     gap: 20px;
 }
 
+.dashboard-main .notification-widget {
+    margin-right: 15px;
+}
+
 .nav-actions i {
     font-size: 20px;
     cursor: pointer;
@@ -2635,6 +2639,650 @@ body {
 @media (max-width: 900px)  { .grid-buku-5 { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 640px)  { .grid-buku-5 { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 420px)  { .grid-buku-5 { grid-template-columns: 1fr; } }
+
+/* Bookmark cards follow the catalog grid at each responsive breakpoint. */
+.bookmarks-main .catalog-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.bookmarks-main .catalog-grid .book-card {
+    border-radius: 20px;
+}
+
+.bookmarks-main .catalog-grid .book-cover {
+    height: 210px;
+}
+
+@media (max-width: 1200px) {
+    .bookmarks-main .catalog-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+    .bookmarks-main .catalog-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+    }
+}
+
+@media (max-width: 640px) {
+    .bookmarks-main .catalog-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+}
+
+@media (max-width: 420px) {
+    .bookmarks-main .catalog-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 760px) {
+    .app-layout .main-content:not(.adm-main) .riwayat-header {
+        width: auto;
+        min-width: 0;
+        margin: -28px -24px 0;
+        padding: 28px 24px 8px;
+    }
+
+    .riwayat-container {
+        overflow: hidden;
+    }
+
+    .riwayat-thead {
+        display: none;
+    }
+
+    .riwayat-container .riwayat-row {
+        min-width: 0;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        padding: 16px;
+    }
+
+    .riwayat-container .riwayat-row > div:first-child {
+        grid-column: 1 / -1;
+        min-width: 0;
+    }
+
+    .riwayat-container .history-book-info {
+        gap: 12px;
+    }
+
+    .riwayat-container .history-book-cover {
+        width: 48px;
+        height: 68px;
+        flex: 0 0 48px;
+    }
+
+    .riwayat-container .history-book-details {
+        min-width: 0;
+    }
+
+    .riwayat-container .history-book-details h4 {
+        font-size: 13px;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+    }
+
+    .riwayat-container .history-book-details p {
+        font-size: 11px;
+        line-height: 1.4;
+        overflow-wrap: anywhere;
+    }
+
+    .riwayat-container .riwayat-row > div:nth-child(2),
+    .riwayat-container .riwayat-row > div:nth-child(3) {
+        justify-self: stretch;
+        min-width: 0;
+        padding: 9px 10px;
+        border-radius: 8px;
+        background: #f5f8f5;
+        text-align: left;
+        font-size: 11px;
+    }
+
+    .riwayat-container .riwayat-row > div:nth-child(2)::before,
+    .riwayat-container .riwayat-row > div:nth-child(3)::before {
+        display: block;
+        margin-bottom: 4px;
+        color: #8a8f7f;
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .riwayat-container .riwayat-row > div:nth-child(2)::before {
+        content: "Tanggal pinjam";
+    }
+
+    .riwayat-container .riwayat-row > div:nth-child(3)::before {
+        content: "Tanggal kembali";
+    }
+
+    .riwayat-container .riwayat-row > div:nth-child(4) {
+        grid-column: 1 / -1;
+        justify-self: stretch;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        text-align: left;
+    }
+
+    .riwayat-container .riwayat-row > div:nth-child(4)::before {
+        content: "Status";
+        color: #8a8f7f;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .riwayat-container .badge-status {
+        padding: 5px 10px;
+        font-size: 10px;
+        white-space: nowrap;
+    }
+
+    .riwayat-container .empty-state {
+        grid-column: 1 / -1;
+    }
+}
+
+/* ---------- Layout user: tablet dan HP ---------- */
+.user-sidebar-backdrop {
+    display: none;
+}
+
+.user-menu-trigger--standalone {
+    display: none;
+}
+
+@media (max-width: 900px) {
+    .app-layout .sidebar:not(.adm-sidebar) {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: min(290px, 85vw);
+        min-width: 0;
+        height: 100vh;
+        height: 100dvh;
+        min-height: 0;
+        margin-left: 0;
+        z-index: 1100;
+        transform: translateX(-100%);
+        transition: transform .25s ease, box-shadow .25s ease;
+        padding: 24px 16px calc(20px + env(safe-area-inset-bottom));
+    }
+
+    .app-layout.sidebar-open .sidebar:not(.adm-sidebar) {
+        transform: translateX(0);
+        box-shadow: 10px 0 34px rgba(0, 0, 0, .28);
+    }
+
+    .app-layout.no-anim .sidebar:not(.adm-sidebar) {
+        transition: none;
+    }
+
+    .user-sidebar-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 1050;
+        width: 100%;
+        border: 0;
+        background: rgba(13, 18, 28, .5);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .25s ease;
+    }
+
+    .app-layout.sidebar-open .user-sidebar-backdrop {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .app-layout.no-anim .user-sidebar-backdrop {
+        transition: none;
+    }
+
+    body.user-drawer-open {
+        overflow: hidden;
+    }
+
+    .app-layout .main-content:not(.adm-main) {
+        height: auto;
+        min-height: 100vh;
+        min-height: 100dvh;
+        overflow-y: visible;
+        padding: 28px 24px calc(32px + env(safe-area-inset-bottom));
+    }
+
+    .app-layout .main-content:not(.adm-main) .top-nav {
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .app-layout .main-content:not(.adm-main) .top-nav-left {
+        flex: 1;
+        min-width: 0;
+        gap: 12px;
+    }
+
+    .app-layout .main-content:not(.adm-main) .top-nav-left .greeting {
+        min-width: 0;
+    }
+
+    .app-layout .main-content:not(.adm-main) .top-nav-left .greeting h1 {
+        overflow-wrap: anywhere;
+    }
+
+    .app-layout .main-content:not(.adm-main) .nav-actions {
+        flex: none;
+        gap: 12px;
+    }
+
+    .app-layout .sidebar:not(.adm-sidebar) .sidebar-profile {
+        min-width: 0;
+        gap: 10px;
+    }
+
+    .app-layout .sidebar:not(.adm-sidebar) .sidebar-profile .avatar-circle {
+        flex: 0 0 44px;
+        width: 44px;
+        height: 44px;
+    }
+
+    .app-layout .sidebar:not(.adm-sidebar) .sidebar-profile .avatar-circle img {
+        width: 44px;
+        height: 44px;
+        object-fit: cover;
+    }
+
+    .app-layout.has-standalone-menu .main-content:not(.adm-main) {
+        padding-top: 72px;
+    }
+
+    .app-layout .user-menu-trigger--standalone {
+        display: flex;
+        position: fixed;
+        top: 16px;
+        left: 16px;
+        z-index: 1030;
+        margin: 0;
+        box-shadow: 0 2px 10px rgba(23, 60, 58, .12);
+    }
+}
+
+@media (max-width: 760px) {
+    .app-layout .main-content:not(.adm-main) .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
+    .app-layout .main-content:not(.adm-main) .stat-card {
+        min-width: 0;
+        padding: 16px;
+    }
+
+    .app-layout .main-content:not(.adm-main) .stat-card h2 {
+        font-size: 32px;
+    }
+}
+
+@media (max-width: 600px) {
+    .app-layout .main-content:not(.adm-main) {
+        padding: 18px 16px calc(28px + env(safe-area-inset-bottom));
+    }
+
+    .app-layout.has-standalone-menu .main-content:not(.adm-main) {
+        padding-top: 68px;
+    }
+
+    .app-layout .main-content:not(.adm-main) .top-nav {
+        margin-bottom: 22px;
+    }
+
+    .app-layout .main-content:not(.adm-main) .top-nav-left {
+        gap: 10px;
+    }
+
+    .app-layout .main-content:not(.adm-main) .top-nav-left .menu-button {
+        flex: 0 0 40px;
+        width: 40px;
+        height: 40px;
+        margin: 0;
+    }
+
+    .app-layout .main-content:not(.adm-main) .greeting h4 {
+        font-size: 10px;
+    }
+
+    .app-layout .main-content:not(.adm-main) .greeting h1 {
+        font-size: 19px;
+        line-height: 1.25;
+    }
+
+    .app-layout .main-content:not(.adm-main) .greeting p {
+        font-size: 12px;
+        line-height: 1.4;
+    }
+
+    .app-layout .main-content:not(.adm-main) .nav-actions {
+        gap: 8px;
+    }
+
+    .app-layout .main-content.dashboard-main .nav-actions {
+        gap: 10px;
+    }
+
+    .app-layout .main-content.dashboard-main .notification-widget {
+        margin-right: 0;
+    }
+
+    .app-layout .main-content.dashboard-main .nav-actions .notification-bell {
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
+    }
+
+    .app-layout .main-content.dashboard-main .nav-actions .notification-count {
+        top: -4px;
+        right: -3px;
+        min-width: 15px;
+        height: 15px;
+        font-size: 9px;
+    }
+
+    .app-layout .main-content.dashboard-main .nav-actions .avatar-circle {
+        width: 32px;
+        height: 32px;
+    }
+
+    .app-layout .main-content:not(.adm-main) .nav-actions > a[title="Logout"] {
+        margin-left: 0 !important;
+    }
+
+    .app-layout .main-content.dashboard-main .nav-actions > a[title="Logout"] {
+        font-size: 16px !important;
+    }
+
+    .app-layout .main-content:not(.adm-main) .hero-banner:not(.adm-hero) {
+        padding: 24px 20px;
+        padding-bottom: 24px;
+        border-radius: 16px;
+        margin-bottom: 20px;
+    }
+
+    .app-layout .main-content:not(.adm-main) .hero-banner:not(.adm-hero) h2 {
+        font-size: clamp(24px, 7vw, 29px);
+        line-height: 1.2;
+    }
+
+    .app-layout .main-content:not(.adm-main) .hero-banner:not(.adm-hero) p {
+        max-width: 100%;
+        font-size: 13px;
+    }
+
+    .app-layout .main-content:not(.adm-main) .hero-banner .hero-actions {
+        position: static;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .app-layout .main-content:not(.adm-main) .hero-banner .hero-actions .btn-katalog {
+        width: 100%;
+        justify-content: center;
+        height: 46px;
+        padding: 0 16px;
+    }
+
+    .app-layout .main-content:not(.adm-main) .hero-banner .hero-actions form {
+        flex: 1 1 100% !important;
+        width: 100%;
+        max-width: none !important;
+        min-width: 0;
+        align-items: stretch;
+        gap: 8px !important;
+    }
+
+    .app-layout .main-content:not(.adm-main) .hero-banner .hero-actions .search-box {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .app-layout .main-content:not(.adm-main) .hero-banner .hero-actions .search-box input {
+        box-sizing: border-box;
+        height: 48px;
+        min-width: 0;
+        padding: 0 10px 0 40px;
+        border-radius: 10px;
+        font-size: 16px;
+    }
+
+    .app-layout .main-content:not(.adm-main) .hero-banner .hero-actions .btn-filter {
+        flex: 0 0 48px;
+        justify-content: center;
+        height: 48px;
+        padding: 0;
+        border-radius: 10px;
+        font-size: 0;
+    }
+
+    .app-layout .main-content:not(.adm-main) .hero-banner .hero-actions .btn-filter i {
+        font-size: 16px;
+    }
+
+    .app-layout .main-content:not(.adm-main) .streak-banner {
+        gap: 14px;
+        padding: 16px;
+        margin: 14px 0 20px;
+    }
+
+    .app-layout .main-content:not(.adm-main) .streak-left {
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .app-layout .main-content:not(.adm-main) .streak-title {
+        font-size: 13px;
+    }
+
+    .app-layout .main-content:not(.adm-main) .streak-sub {
+        font-size: 11px;
+        line-height: 1.4;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .app-layout .sidebar:not(.adm-sidebar),
+    .user-sidebar-backdrop {
+        transition: none;
+    }
+}
+
+/* Dashboard anggota: jaga lebar konten dan susun ulang panel seperti dashboard admin. */
+@media (min-width: 1181px) {
+.app-layout .main-content.dashboard-main {
+    padding: 32px 40px;
+}
+
+.dashboard-main .bottom-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
+    align-items: start;
+    gap: 24px;
+}
+
+.dashboard-main .recommendations,
+.dashboard-main .continue-reading {
+    min-width: 0;
+}
+
+.dashboard-main .book-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+}
+}
+
+@media (max-width: 1180px) {
+    .dashboard-main .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+}
+
+@media (max-width: 1180px) {
+    .dashboard-main .bottom-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 28px;
+    }
+
+    .dashboard-main .recommendations,
+    .dashboard-main .continue-reading {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .dashboard-main .book-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .dashboard-main .book-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .app-layout .main-content.dashboard-main {
+        width: 100%;
+        max-width: 100%;
+        padding: 18px 16px calc(28px + env(safe-area-inset-bottom));
+    }
+
+    .dashboard-main .top-nav {
+        gap: 10px;
+        margin-bottom: 22px;
+    }
+
+    .dashboard-main .top-nav-left {
+        flex: 1;
+        min-width: 0;
+        gap: 10px;
+    }
+
+    .dashboard-main .greeting h1 {
+        font-size: clamp(17px, 4.8vw, 20px);
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+    }
+
+    .dashboard-main .nav-actions {
+        gap: 8px;
+    }
+
+    .dashboard-main .stats-grid {
+        gap: 12px;
+        margin-bottom: 28px;
+    }
+
+    .dashboard-main .stat-card {
+        min-width: 0;
+        padding: 16px;
+    }
+
+    .dashboard-main .stat-card h4 {
+        max-width: calc(100% - 34px);
+        line-height: 1.35;
+    }
+
+    .dashboard-main .stat-card h2 {
+        font-size: 32px;
+    }
+
+    .dashboard-main .bottom-layout {
+        gap: 24px;
+    }
+
+    .dashboard-main .section-header {
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .dashboard-main .section-header h2 {
+        font-size: 17px;
+    }
+
+    .dashboard-main .section-header > a {
+        flex: none;
+        font-size: 10px;
+    }
+
+    .dashboard-main .book-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .dashboard-main .book-card {
+        min-width: 0;
+    }
+
+    .dashboard-main .book-cover {
+        height: clamp(150px, 44vw, 190px);
+    }
+
+    .dashboard-main .book-info {
+        padding: 12px;
+    }
+
+    .dashboard-main .book-info h3 {
+        font-size: 13px;
+        overflow-wrap: anywhere;
+    }
+
+    .dashboard-main .continue-card {
+        width: 100%;
+        min-width: 0;
+        padding: 18px;
+    }
+
+    .dashboard-main .cc-top {
+        min-width: 0;
+        gap: 12px;
+    }
+
+    .dashboard-main .cc-info h3 {
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    .dashboard-main .cc-bottom {
+        flex-wrap: wrap;
+        align-items: flex-start;
+    }
+
+    .dashboard-main .cc-last {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .dashboard-main .cc-btn {
+        padding: 11px 16px;
+    }
+}
 
 .ach-icon {
     position: relative;

@@ -10,8 +10,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1025">
-    <script src="{% static 'perpustakaan/js/script.js' %}?v=8" defer></script>
+    <link rel="stylesheet" href="{% static 'perpustakaan/css/style.css' %}?v=1032">
+    <script src="{% static 'perpustakaan/js/script.js' %}?v=9" defer></script>
     <script src="{% static 'perpustakaan/js/buku.js' %}?v=14" defer></script>
 </head>
 <body>
@@ -55,7 +55,7 @@
             </div>
         </div>
 
-        <div class="main-content">
+        <main class="main-content dashboard-main">
             <div class="top-nav">
                 <div class="top-nav-left">
                     <button id="menuButton" class="menu-button" type="button" aria-label="Buka atau tutup menu">
@@ -99,9 +99,9 @@
                     <form method="get" action="{% url 'katalog' %}" style="display:flex; gap:10px; flex:1; max-width:460px;">
                         <div class="search-box" style="flex:1;">
                             <i class="fas fa-search"></i>
-                            <input type="text" name="q" value="{{ q }}" placeholder="Cari judul atau penulis, lalu tekan Enter..." autocomplete="off">
+                            <input type="text" name="q" value="{{ q }}" placeholder="Cari buku atau penulis..." autocomplete="off">
                         </div>
-                        <button type="submit" class="btn-filter" style="border:none; cursor:pointer;">
+                        <button type="submit" class="btn-filter" aria-label="Cari" style="border:none; cursor:pointer;">
                             <i class="fas fa-search"></i> Cari
                         </button>
                     </form>
@@ -283,7 +283,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 
 <script>
