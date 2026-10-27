@@ -3,10 +3,6 @@ venv/
 ENV/
 env/
 
-# Abaikan Database Lokal
-*.sqlite3
-db.sqlite3
-
 # Abaikan Python Cache
 __pycache__/
 *.py[cod]
@@ -15,4 +11,3 @@ __pycache__/
 # Abaikan Pengaturan Editor
 .vscode/
 .idea/
-media/
